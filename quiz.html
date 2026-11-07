@@ -54,21 +54,15 @@ function playDing() {
     });
   } catch (e) {}
 }
-function playWrong() {
-  try {
-    const ctx = getAudioCtx();
-    const now = ctx.currentTime;
-    const osc = ctx.createOscillator();
-    const g = ctx.createGain();
-    osc.type = "triangle";
-    osc.frequency.setValueAtTime(220, now);
-    osc.frequency.exponentialRampToValueAtTime(140, now + 0.25);
-    g.gain.setValueAtTime(0.2, now);
-    g.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
-    osc.connect(g).connect(ctx.destination);
-    osc.start(now);
-    osc.stop(now + 0.3);
-  } catch (e) {}
+const WRONG_CLIPS = ["feedback_vayena_1_np.m4a", "feedback_vayena_2_np.m4a"];
+const TEEN_WRONG_CLIPS = ["feedback_teen_wrong_1_np.m4a", "feedback_teen_wrong_2_np.m4a", "feedback_teen_wrong_3_np.m4a"];
+const feedbackPlayer = new Audio();
+function playWrongFeedback(isTeen) {
+  const clips = isTeen ? TEEN_WRONG_CLIPS : WRONG_CLIPS;
+  const file = clips[Math.floor(Math.random() * clips.length)];
+  feedbackPlayer.pause();
+  feedbackPlayer.src = "assets/audio/nepal-v1/" + file;
+  feedbackPlayer.play().catch(() => {});
 }
 let pack = null;
 let sections = [];
@@ -229,7 +223,7 @@ function answer(i, btn) {
     document.getElementById("next-word").hidden = false;
   } else {
     wrongIDs.add(opt.id);
-    playWrong();
+    playWrongFeedback(section.tier === "teen");
     btn.classList.add("wrong");
     btn.disabled = true;
     const stake = document.getElementById("stake");
