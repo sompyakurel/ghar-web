@@ -20,6 +20,7 @@
 const FREE = new Set(["alphabet", "numbers"]);
 const TIERS = { beginner: "🌱 Beginner", intermediate: "🌿 Intermediate", hard: "🌳 Hard", teen: "🔥 Teen" };
 function asset(u) {
+  if (!u) return "";
   return u.replace(/^\/images\/nepal-v1\//, "assets/images/")
           .replace(/^\/audio\/nepal-v1\//, "assets/audio/nepal-v1/");
 }
@@ -40,8 +41,11 @@ fetch("data/nepal-v1.json")
       const a = document.createElement("a");
       a.className = "card" + (free ? "" : " locked");
       a.href = free ? `deck.html?deck=${deck.id}` : "#";
+      const cover = deck.cover_image
+        ? `<img src="${asset(deck.cover_image)}" alt="${deck.title}" onerror="this.remove()">`
+        : "";
       a.innerHTML = `
-        <img src="${asset(deck.cover_image)}" alt="${deck.title}">
+        <div class="cover"><div class="cover-fallback">${deck.title.charAt(0)}</div>${cover}</div>
         <div class="card-body">
           <h2>${deck.title}</h2>
           <p>${deck.words.length} words · ${TIERS[deck.difficulty] || deck.difficulty}</p>
