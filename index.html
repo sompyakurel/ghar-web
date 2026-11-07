@@ -23,6 +23,16 @@
   <section class="home-section" id="lessons">
     <h2>📚 Lessons</h2>
     <p class="section-sub">Work through the decks in order — finishing one opens the next.</p>
+    <div class="motivation" id="motivation">
+      <img class="motivation-dog" src="assets/images/bhunte.svg" alt="Bhunte the dog">
+      <div class="motivation-body">
+        <p class="motivation-bubble" id="bhunte-says">Namaste! I'm Bhunte. Let's learn Nepali together — finish a lesson to earn XP!</p>
+        <p class="motivation-xp">⭐ <span id="xp-total">0</span> XP</p>
+        <p class="motivation-cert">📜 Certificate: <span id="cert-done">0</span> of 22 lessons done</p>
+        <div class="progress motivation-progress"><div id="cert-bar"></div></div>
+        <p class="motivation-goals">Earn XP to decorate your house · Complete all lessons for a certificate · Mystery rewards along the way</p>
+      </div>
+    </div>
     <div id="decks"></div>
     <p class="error" id="error" hidden>Couldn't load the lessons. Check your connection and refresh.</p>
   </section>
@@ -156,6 +166,19 @@ fetch("data/nepal-v1.json")
       });
       wrap.appendChild(grid);
     });
+    const xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
+    document.getElementById("xp-total").textContent = xp;
+    let done = 0;
+    pack.decks.forEach(deck => {
+      const heard = JSON.parse(localStorage.getItem(`ghar.heard.${deck.id}`) || "[]");
+      if (heard.length >= deck.words.length) done++;
+    });
+    document.getElementById("cert-done").textContent = done;
+    document.getElementById("cert-bar").style.width = (done / pack.decks.length * 100) + "%";
+    const says = document.getElementById("bhunte-says");
+    if (done >= pack.decks.length) says.textContent = "You did it! You earned your certificate! 🎉";
+    else if (done === 0) says.textContent = "Namaste! I'm Bhunte. Let's learn Nepali together — finish a lesson to earn XP!";
+    else says.textContent = `You're doing great! ${pack.decks.length - done} lessons to go for your certificate!`;
   })
   .catch(() => { document.getElementById("error").hidden = false; });
 if (TEST) {
