@@ -14,6 +14,12 @@
 </div>
 <script>
 const FREE = new Set(["alphabet", "numbers"]);
+const BRIGHT = {
+  color_rato: "#FF2D2D", color_nilo: "#0091FF", color_hariyo: "#00C853",
+  color_pahenlo: "#FFEA00", color_kalo: "#212121", color_seto: "#FFFFFF",
+  color_suntala: "#FF6D00", color_pyaji: "#AA00FF", color_khairo: "#8D6E63",
+  color_gulabi: "#FF4081",
+};
 function isTestUnlock() {
   const q = new URLSearchParams(location.search);
   if (q.has("test")) localStorage.setItem("ghar.testUnlock", q.get("test") === "off" ? "" : "1");
@@ -33,8 +39,43 @@ function play(url) {
   player.play().catch(() => {});
 }
 let playToken = 0;
+let mouthTimer = null;
+function portrait(speaker, frame) {
+  return `assets/images/portraits/${speaker === "A" ? "boy" : "girl"}-${frame}.jpg`;
+}
+function setSpeaker(speaker, word) {
+  clearSpeaker();
+  if (!speaker) return;
+  const actor = document.getElementById("actor-" + speaker);
+  const other = document.getElementById("actor-" + (speaker === "A" ? "B" : "A"));
+  if (!actor) return;
+  actor.classList.add("talking");
+  if (other) other.classList.add("listening");
+  const img = document.getElementById("img-" + speaker);
+  let mouthOpen = false;
+  mouthTimer = setInterval(() => {
+    mouthOpen = !mouthOpen;
+    if (img) img.src = portrait(speaker, mouthOpen ? "talking" : "neutral");
+  }, 320);
+  const slot = document.getElementById("bubble-slot");
+  if (slot && word) {
+    slot.innerHTML = `<div class="speak-bubble ${speaker === "A" ? "a" : "b"}"><div class="deva">${word.devanagari}</div><div class="roma">${word.romanized}</div></div>`;
+  }
+}
+function clearSpeaker() {
+  if (mouthTimer) { clearInterval(mouthTimer); mouthTimer = null; }
+  ["A", "B"].forEach(s => {
+    const actor = document.getElementById("actor-" + s);
+    if (actor) actor.classList.remove("talking", "listening");
+    const img = document.getElementById("img-" + s);
+    if (img) img.src = portrait(s, "neutral");
+  });
+  const slot = document.getElementById("bubble-slot");
+  if (slot) slot.innerHTML = "";
+}
 function stopSequence() {
   playToken++;
+  clearSpeaker();
   document.querySelectorAll(".word.playing").forEach(c => c.classList.remove("playing"));
   document.querySelectorAll(".play-btn").forEach(b => { b.textContent = "▶️ Play the conversation"; });
 }
@@ -65,11 +106,16 @@ async function playSection(words, cards, btn) {
     cards.forEach(c => c.classList.remove("playing"));
     cards[i].classList.add("playing");
     cards[i].scrollIntoView({ block: "nearest", behavior: "smooth" });
-    if (words[i].has_audio && words[i].audio_url) await playClip(asset(words[i].audio_url));
+    if (words[i].has_audio && words[i].audio_url) {
+      setSpeaker(words[i].speaker || "A", words[i]);
+      await playClip(asset(words[i].audio_url));
+      clearSpeaker();
+    }
     if (token !== playToken) break;
     await wait(450);
   }
   cards.forEach(c => c.classList.remove("playing"));
+  clearSpeaker();
   btn.textContent = "▶️ Play the conversation";
 }
 const storeKey = `ghar.heard.${deckId}`;
@@ -80,6 +126,7 @@ fetch("data/nepal-v1.json")
   .then(pack => {
     const deck = pack.decks.find(d => d.id === deckId);
     if (!deck) throw new Error("no deck");
+    const isConvo = deck.kind === "convo";
     document.title = `Ghar — ${deck.title}`;
     const content = document.getElementById("content");
     if (!FREE.has(deck.id) && !TEST) {
@@ -87,8 +134,26 @@ fetch("data/nepal-v1.json")
       return;
     }
     const total = deck.words.length;
+    const stage = isConvo ? `
+      <div class="stage">
+        <div class="bubble-slot" id="bubble-slot"></div>
+        <div class="actors">
+          <div class="actor boy" id="actor-A">
+            <div class="waves"><span></span><span></span><span></span></div>
+            <img id="img-A" src="assets/images/portraits/boy-neutral.jpg" alt="A">
+            <div class="actor-label a">A</div>
+          </div>
+          <div class="stage-mid">💬</div>
+          <div class="actor girl" id="actor-B">
+            <div class="waves"><span></span><span></span><span></span></div>
+            <img id="img-B" src="assets/images/portraits/girl-neutral.jpg" alt="B">
+            <div class="actor-label b">B</div>
+          </div>
+        </div>
+      </div>` : "";
     content.innerHTML = `
       <div class="deck-head"><h1>${deck.title}</h1><p>${total} words · tap a card to hear it, tap ✓ when you've heard it</p></div>
+      ${stage}
       <div class="progress"><div id="bar"></div></div>
       <p class="progress-label" id="prog-label"></p>
       <div id="sections"></div>
@@ -117,7 +182,7 @@ fetch("data/nepal-v1.json")
         const card = document.createElement("div");
         card.className = "word" + (heard.has(w.id) ? " heard" : "");
         const media = w.color_hex
-          ? `<div class="swatch" style="background:${w.color_hex}"></div>`
+          ? `<div class="swatch" style="background:${BRIGHT[w.id] || w.color_hex}"></div>`
           : (w.image ? `<img src="${asset(w.image)}" alt="" onerror="this.style.display='none'">` : "");
         card.innerHTML = `
           ${media}
@@ -135,6 +200,10 @@ fetch("data/nepal-v1.json")
             saveHeard();
             updateProgress();
           } else if (w.has_audio && w.audio_url) {
+            if (isConvo) {
+              setSpeaker(w.speaker || "A", w);
+              player.addEventListener("ended", () => clearSpeaker(), { once: true });
+            }
             play(asset(w.audio_url));
           }
         });

@@ -20,6 +20,12 @@
 <script>
 const FREE = new Set(["alphabet", "numbers"]);
 const TIERS = { beginner: "🌱 Beginner", intermediate: "🌿 Intermediate", hard: "🌳 Hard", teen: "🔥 Teen" };
+const BRIGHT = {
+  color_rato: "#FF2D2D", color_nilo: "#0091FF", color_hariyo: "#00C853",
+  color_pahenlo: "#FFEA00", color_kalo: "#212121", color_seto: "#FFFFFF",
+  color_suntala: "#FF6D00", color_pyaji: "#AA00FF", color_khairo: "#8D6E63",
+  color_gulabi: "#FF4081",
+};
 const COVER_OVERRIDES = {
   texting: "assets/images/txt_message.jpg",
   slang: "assets/images/slang_khatra.jpg",
@@ -59,7 +65,7 @@ fetch("data/nepal-v1.json")
       a.href = open ? `deck.html?deck=${deck.id}` : "#";
       let cover = "";
       if (deck.id === "colors") {
-        cover = `<div class="color-strip">${deck.words.map(w => `<span style="background:${w.color_hex || "#ccc"}"></span>`).join("")}</div>`;
+        cover = `<div class="color-strip">${deck.words.map(w => `<span style="background:${BRIGHT[w.id] || w.color_hex || "#ccc"}"></span>`).join("")}</div>`;
       } else {
         const coverUrl = COVER_OVERRIDES[deck.id] || deck.cover_image;
         if (coverUrl) cover = `<img src="${asset(coverUrl)}" alt="${deck.title}" onerror="this.remove()">`;
