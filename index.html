@@ -13,18 +13,51 @@
     <p>Learn Nepali, have fun.</p>
   </header>
   <nav class="subnav">
-    <a href="songs.html">🎵 Songs <span class="badge locked" id="badge-songs">🔒 Locked</span></a>
-    <a href="rhymes.html">🎶 Rhymes <span class="badge locked" id="badge-rhymes">🔒 Locked</span></a>
-    <a href="quiz.html">🎮 Quiz</a>
+    <a href="#lessons">📚 Lessons</a>
+    <a href="#songs">🎵 Songs</a>
+    <a href="#rhymes">🎶 Rhymes</a>
+    <a href="#quiz">🎮 Quiz</a>
   </nav>
   <p class="testmode" id="testmode" hidden>🧪 Test mode — all decks unlocked. <a href="index.html?test=off">Turn off</a></p>
-  <div class="grid" id="decks"></div>
-  <p class="error" id="error" hidden>Couldn't load the lessons. Check your connection and refresh.</p>
+
+  <section class="home-section" id="lessons">
+    <h2>📚 Lessons</h2>
+    <p class="section-sub">Work through the decks in order — finishing one opens the next.</p>
+    <div id="decks"></div>
+    <p class="error" id="error" hidden>Couldn't load the lessons. Check your connection and refresh.</p>
+  </section>
+
+  <section class="home-section" id="songs">
+    <h2>🎵 Songs <span class="badge locked" id="badge-songs">🔒 Locked</span></h2>
+    <p class="section-sub">Sing along in Nepali.</p>
+    <div class="home-lock" id="songs-lock">🔒 Songs unlock with Ghar Premium</div>
+    <div class="home-media" id="songs-list" hidden></div>
+    <p class="section-more"><a href="songs.html">See all songs with lyrics →</a></p>
+  </section>
+
+  <section class="home-section" id="rhymes">
+    <h2>🎶 Rhymes <span class="badge locked" id="badge-rhymes">🔒 Locked</span></h2>
+    <p class="section-sub">Nursery rhymes to sing together.</p>
+    <div class="home-lock" id="rhymes-lock">🔒 Rhymes unlock with Ghar Premium</div>
+    <div class="home-media" id="rhymes-list" hidden></div>
+    <p class="section-more"><a href="rhymes.html">See all rhymes with lyrics →</a></p>
+  </section>
+
+  <section class="home-section" id="quiz">
+    <h2>🎮 Quiz</h2>
+    <p class="section-sub">Test what you know — listen, look, and pick the right one.</p>
+    <a class="quiz-cta" href="quiz.html">
+      <span class="quiz-cta-icon">🎮</span>
+      <span><strong>Play the quiz</strong><br>5 free questions · +5 XP for a clean answer</span>
+      <span class="quiz-cta-arrow">→</span>
+    </a>
+  </section>
 </div>
 <div id="toast"></div>
 <script>
 const FREE = new Set(["alphabet", "numbers"]);
 const TIERS = { beginner: "🌱 Beginner", intermediate: "🌿 Intermediate", hard: "🌳 Hard", teen: "🔥 Teen" };
+const TIER_ORDER = ["beginner", "intermediate", "hard", "teen"];
 const BRIGHT = {
   color_rato: "#FF2D2D", color_nilo: "#0091FF", color_hariyo: "#00C853",
   color_pahenlo: "#FFEA00", color_kalo: "#212121", color_seto: "#FFFFFF",
@@ -50,6 +83,10 @@ if (TEST) {
   document.getElementById("badge-songs").className = "badge free";
   document.getElementById("badge-rhymes").textContent = "TEST";
   document.getElementById("badge-rhymes").className = "badge free";
+  document.getElementById("songs-lock").hidden = true;
+  document.getElementById("rhymes-lock").hidden = true;
+  document.getElementById("songs-list").hidden = false;
+  document.getElementById("rhymes-list").hidden = false;
 }
 function asset(u) {
   if (!u) return "";
@@ -64,35 +101,102 @@ function toast(msg) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove("show"), 2500);
 }
+const homePlayer = new Audio();
+let homePlayingBtn = null;
+function toggleHomeAudio(url, btn) {
+  if (homePlayingBtn === btn && !homePlayer.paused) {
+    homePlayer.pause();
+    btn.textContent = "▶️ Play";
+    homePlayingBtn = null;
+    return;
+  }
+  if (homePlayingBtn) homePlayingBtn.textContent = "▶️ Play";
+  homePlayer.pause();
+  homePlayer.src = url;
+  homePlayer.play().catch(() => {});
+  btn.textContent = "⏸ Playing…";
+  homePlayingBtn = btn;
+  homePlayer.onended = () => { btn.textContent = "▶️ Play"; homePlayingBtn = null; };
+}
 fetch("data/nepal-v1.json")
   .then(r => { if (!r.ok) throw new Error("load failed"); return r.json(); })
   .then(pack => {
-    const grid = document.getElementById("decks");
-    pack.decks.forEach(deck => {
-      const free = FREE.has(deck.id);
-      const open = free || TEST;
-      const a = document.createElement("a");
-      a.className = "card" + (open ? "" : " locked");
-      a.href = open ? `deck.html?deck=${deck.id}` : "#";
-      let cover = "";
-      if (deck.id === "colors") {
-        cover = `<div class="color-strip">${deck.words.map(w => `<span style="background:${BRIGHT[w.id] || w.color_hex || "#ccc"}"></span>`).join("")}</div>`;
-      } else {
-        const coverUrl = COVER_OVERRIDES[deck.id] || deck.cover_image;
-        if (coverUrl) cover = `<img src="${asset(coverUrl)}" alt="${deck.title}" onerror="this.remove()">`;
-      }
-      a.innerHTML = `
-        <div class="cover"><div class="cover-fallback">${deck.title.charAt(0)}</div>${cover}</div>
-        <div class="card-body">
-          <h2>${deck.title}</h2>
-          <p>${deck.words.length} words · ${TIERS[deck.difficulty] || deck.difficulty}</p>
-          <span class="badge ${free ? "free" : "locked"}">${free ? "FREE" : (TEST ? "TEST" : "🔒 Locked")}</span>
-        </div>`;
-      if (!open) a.addEventListener("click", e => { e.preventDefault(); toast("🔒 This deck unlocks with Ghar Premium"); });
-      grid.appendChild(a);
+    const wrap = document.getElementById("decks");
+    TIER_ORDER.forEach(tier => {
+      const decks = pack.decks.filter(d => d.difficulty === tier);
+      if (!decks.length) return;
+      const h = document.createElement("h3");
+      h.className = "tier-head";
+      h.textContent = TIERS[tier];
+      wrap.appendChild(h);
+      const grid = document.createElement("div");
+      grid.className = "grid";
+      decks.forEach(deck => {
+        const free = FREE.has(deck.id);
+        const open = free || TEST;
+        const a = document.createElement("a");
+        a.className = "card" + (open ? "" : " locked");
+        a.href = open ? `deck.html?deck=${deck.id}` : "#";
+        let cover = "";
+        if (deck.id === "colors") {
+          cover = `<div class="color-strip">${deck.words.map(w => `<span style="background:${BRIGHT[w.id] || w.color_hex || "#ccc"}"></span>`).join("")}</div>`;
+        } else {
+          const coverUrl = COVER_OVERRIDES[deck.id] || deck.cover_image;
+          if (coverUrl) cover = `<img src="${asset(coverUrl)}" alt="${deck.title}" onerror="this.remove()">`;
+        }
+        a.innerHTML = `
+          <div class="cover"><div class="cover-fallback">${deck.title.charAt(0)}</div>${cover}</div>
+          <div class="card-body">
+            <h2>${deck.title}</h2>
+            <p>${deck.words.length} words</p>
+            <span class="badge ${free ? "free" : "locked"}">${free ? "FREE" : (TEST ? "TEST" : "🔒 Locked")}</span>
+          </div>`;
+        if (!open) a.addEventListener("click", e => { e.preventDefault(); toast("🔒 This deck unlocks with Ghar Premium"); });
+        grid.appendChild(a);
+      });
+      wrap.appendChild(grid);
     });
   })
   .catch(() => { document.getElementById("error").hidden = false; });
+if (TEST) {
+  fetch("data/songs-v1.json")
+    .then(r => { if (!r.ok) throw new Error("load failed"); return r.json(); })
+    .then(data => {
+      const list = document.getElementById("songs-list");
+      data.songs.forEach(s => {
+        const url = "assets/audio/songs/songs-v1_" + s.audio;
+        const card = document.createElement("div");
+        card.className = "home-media-card";
+        card.innerHTML = `<h3>${s.title_ne}</h3><p>${s.title_en}</p>`;
+        const btn = document.createElement("button");
+        btn.className = "play-btn";
+        btn.textContent = "▶️ Play";
+        btn.addEventListener("click", () => toggleHomeAudio(url, btn));
+        card.appendChild(btn);
+        list.appendChild(card);
+      });
+    })
+    .catch(() => {});
+  fetch("data/rhymes-v1.json")
+    .then(r => { if (!r.ok) throw new Error("load failed"); return r.json(); })
+    .then(data => {
+      const list = document.getElementById("rhymes-list");
+      data.songs.forEach(s => {
+        const url = "assets/audio/rhymes/" + s.audio;
+        const card = document.createElement("div");
+        card.className = "home-media-card";
+        const img = s.image ? `<img class="home-media-img" src="${asset(s.image)}" alt="${s.title_ne}" onerror="this.remove()">` : "";
+        card.innerHTML = `${img}<h3>${s.title_ne}</h3><p>${s.title_en}</p>`;
+        const btn = document.createElement("button");
+        btn.className = "play-btn";
+        btn.textContent = "▶️ Play";
+        btn.addEventListener("click", () => toggleHomeAudio(url, btn));
+        card.appendChild(btn);
+        list.appendChild(card);
+      });
+    })
+    .catch(() => {});
+}
 </script>
 </body>
 </html>
