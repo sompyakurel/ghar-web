@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ghar — Rhymes</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">← All decks</a>
+  <div id="content"></div>
+  <p class="error" id="error" hidden>Couldn't load the rhymes.</p>
+</div>
+<script>
+function isTestUnlock() {
+  const q = new URLSearchParams(location.search);
+  if (q.has("test")) localStorage.setItem("ghar.testUnlock", q.get("test") === "off" ? "" : "1");
+  return localStorage.getItem("ghar.testUnlock") === "1";
+}
+const TEST = isTestUnlock();
+function asset(u) {
+  if (!u) return "";
+  return u.replace(/^\/images\/nepal-v1\//, "assets/images/")
+          .replace(/^\/audio\/nepal-v1\//, "assets/audio/nepal-v1/");
+}
+const player = new Audio();
+let currentBtn = null;
+function playSong(audioUrl, btn) {
+  if (currentBtn === btn) {
+    player.pause();
+    btn.textContent = "▶️ Play";
+    currentBtn = null;
+    return;
+  }
+  if (currentBtn) currentBtn.textContent = "▶️ Play";
+  player.pause();
+  player.src = audioUrl;
+  btn.textContent = "⏸ Playing…";
+  currentBtn = btn;
+  player.play().catch(() => { btn.textContent = "▶️ Play"; currentBtn = null; });
+  player.onended = () => { btn.textContent = "▶️ Play"; currentBtn = null; };
+}
+fetch("data/rhymes-v1.json")
+  .then(r => { if (!r.ok) throw new Error("load failed"); return r.json(); })
+  .then(pack => {
+    const content = document.getElementById("content");
+    if (!TEST) {
+      content.innerHTML = `<div class="deck-head"><h1>🔒 Rhymes</h1><p>These rhymes unlock with Ghar Premium.</p></div>`;
+      return;
+    }
+    document.title = "Ghar — Rhymes";
+    const list = document.createElement("div");
+    list.className = "song-list";
+    pack.songs.forEach(rhyme => {
+      const card = document.createElement("div");
+      card.className = "song-card";
+      const audioUrl = "assets/audio/rhymes/" + rhyme.audio;
+      const img = rhyme.image ? `<img class="rhyme-img" src="${asset(rhyme.image)}" alt="" onerror="this.style.display='none'">` : "";
+      const lines = rhyme.lyrics_ne.map((ne, i) => `
+        <div class="lyric-line"><div class="deva">${ne}</div><div class="roma">${rhyme.lyrics_en[i] || ""}</div></div>`).join("");
+      card.innerHTML = `
+        ${img}
+        <div class="song-head"><h2>${rhyme.title_ne}</h2><p>${rhyme.title_en}</p></div>
+        <button type="button" class="play-btn">▶️ Play</button>
+        <div class="lyrics">${lines}</div>`;
+      card.querySelector(".play-btn").addEventListener("click", e => {
+        playSong(audioUrl, e.currentTarget);
+      });
+      list.appendChild(card);
+    });
+    content.appendChild(list);
+  })
+  .catch(() => { document.getElementById("error").hidden = false; });
+</script>
+</body>
+</html>

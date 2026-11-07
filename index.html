@@ -12,6 +12,10 @@
     <h1>🏠 Ghar</h1>
     <p>Learn Nepali, have fun.</p>
   </header>
+  <nav class="subnav">
+    <a href="songs.html">🎵 Songs <span class="badge locked" id="badge-songs">🔒 Locked</span></a>
+    <a href="rhymes.html">🎶 Rhymes <span class="badge locked" id="badge-rhymes">🔒 Locked</span></a>
+  </nav>
   <p class="testmode" id="testmode" hidden>🧪 Test mode — all decks unlocked. <a href="index.html?test=off">Turn off</a></p>
   <div class="grid" id="decks"></div>
   <p class="error" id="error" hidden>Couldn't load the lessons. Check your connection and refresh.</p>
@@ -39,7 +43,13 @@ function isTestUnlock() {
   return localStorage.getItem("ghar.testUnlock") === "1";
 }
 const TEST = isTestUnlock();
-if (TEST) document.getElementById("testmode").hidden = false;
+if (TEST) {
+  document.getElementById("testmode").hidden = false;
+  document.getElementById("badge-songs").textContent = "TEST";
+  document.getElementById("badge-songs").className = "badge free";
+  document.getElementById("badge-rhymes").textContent = "TEST";
+  document.getElementById("badge-rhymes").className = "badge free";
+}
 function asset(u) {
   if (!u) return "";
   return u.replace(/^\/images\/nepal-v1\//, "assets/images/")
