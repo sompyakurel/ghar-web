@@ -242,8 +242,7 @@ header p { color: #6b5d4f; margin: 0; font-size: 17px; }
 .motivation-dog { animation: dog-bob 2.4s ease-in-out infinite; }
 .motivation-dog.bounce { animation: dog-bounce .5s ease; }
 .motivation-dog.celebrating { animation: dog-celebrate 1s ease infinite; }
-@keyframes dog-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
-@keyframes dog-bounce { 0%,100% { transform: translateY(0) scale(1); } 40% { transform: translateY(-14px) scale(1.05); } 70% { transform: translateY(0) scale(1.02); } }
+ }
 @keyframes dog-celebrate { 0%,100% { transform: translateY(0) rotate(0deg); } 25% { transform: translateY(-12px) rotate(-3deg); } 50% { transform: translateY(0) rotate(0deg); } 75% { transform: translateY(-12px) rotate(3deg); } }
 .celebration-dog { width: 96px; height: 96px; margin: 0 auto 8px; display: block; }
 .bubble-ne { display: block; font-size: 17px; }
@@ -319,25 +318,37 @@ header p { color: #6b5d4f; margin: 0; font-size: 17px; }
   .wrap { max-width: none; padding: 0; }
   .cert { box-shadow: none; margin: 0; }
 }
+ }
+ }
 .myghar-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
 .myghar-head h1 { margin: 8px 0 4px; }
 .myghar-sub { color: #666; margin: 0; }
-.myghar-stage { position: relative; width: min(1100px, calc(100vw - 32px)); height: min(760px, calc(100vh - 180px)); height: min(760px, calc(100dvh - 180px)); margin: 16px auto; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,.12); background: #f5e6c8; }
-.myghar-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center bottom; }
-.myghar-flags { position: absolute; top: 0; left: 0; width: 100%; height: 12%; z-index: 3; pointer-events: none; }
-.myghar-flags img { width: 100%; height: 100%; object-fit: cover; }
-.myghar-night { position: absolute; inset: 0; background: rgba(10, 20, 60, 0.35); z-index: 4; pointer-events: none; }
-.myghar-weather { position: absolute; top: 10px; right: 10px; z-index: 6; background: rgba(255,255,255,.85); border-radius: 999px; padding: 4px 12px; font-size: 14px; font-weight: 600; }
-.myghar-deco { position: absolute; transform: translate(-50%, -50%); z-index: 5; cursor: pointer; transition: transform .15s ease; }
-.myghar-deco.pop { animation: deco-pop .35s ease; }
+.myghar-stage { position: relative; width: min(1100px, calc(100vw - 32px)); height: min(760px, calc(100vh - 180px)); height: min(760px, calc(100dvh - 180px)); margin: 16px auto; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,.12); background: #f7ead0; }
+.myghar-floor { position: absolute; left: 0; right: 0; bottom: 0; height: 30%; background: linear-gradient(#c08a5a, #a06a3a); z-index: 1; }
+.myghar-rug { position: absolute; left: 50%; bottom: 1%; transform: translateX(-50%); width: 72%; z-index: 2; }
+.myghar-cabinet { position: absolute; left: 2%; top: 0; width: 24%; aspect-ratio: 320 / 931; z-index: 3; }
+.myghar-cabinet-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.myghar-trophy { position: absolute; transform: translate(-50%, -50%); width: 30%; z-index: 4; cursor: pointer; transition: transform .15s ease; }
+.myghar-trophy.pop { animation: deco-pop .35s ease; }
 @keyframes deco-pop { 0% { transform: translate(-50%, -50%) scale(1); } 40% { transform: translate(-50%, -50%) scale(1.18); } 100% { transform: translate(-50%, -50%) scale(1); } }
-.myghar-deco.arranging { cursor: grab; touch-action: none; outline: 2px dashed #2e7d32; outline-offset: 2px; border-radius: 8px; }
-.myghar-dog { position: absolute; left: 45.5%; top: 77.5%; width: 20%; transform: translate(-50%, -50%); z-index: 7; cursor: pointer; animation: dog-bob 2.4s ease-in-out infinite; }
-@keyframes dog-bob { 0%, 100% { transform: translate(-50%, -50%) translateY(0); } 50% { transform: translate(-50%, -50%) translateY(-4px); } }
+.myghar-trophy.arranging { cursor: grab; touch-action: none; outline: 2px dashed #2e7d32; outline-offset: 2px; border-radius: 8px; }
+.myghar-window { position: absolute; right: 3%; top: 5%; width: 24%; z-index: 3; }
+.myghar-himal { position: absolute; left: 50%; top: 7%; transform: translateX(-50%); width: 20%; z-index: 3; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,.2); }
+.myghar-sign-wrap { position: absolute; left: 50%; top: 34%; transform: translateX(-50%); width: 20%; z-index: 3; }
+.myghar-sign { width: 100%; display: block; }
+.myghar-sign-name { position: absolute; left: 50%; top: 58%; transform: translate(-50%, -50%); font-weight: 700; color: #5d4037; font-size: clamp(11px, 1.4vw, 18px); white-space: nowrap; }
+.myghar-night { position: absolute; inset: 0; background: rgba(10, 20, 60, 0.35); z-index: 6; pointer-events: none; }
+.myghar-weather { position: absolute; top: 10px; right: 10px; z-index: 7; background: rgba(255,255,255,.85); border-radius: 999px; padding: 4px 12px; font-size: 14px; font-weight: 600; }
+.myghar-dog { position: absolute; left: 50%; bottom: 10%; width: 20%; transform: translateX(-50%); z-index: 5; cursor: pointer; animation: dog-bob 2.4s ease-in-out infinite; }
+@keyframes dog-bob { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(-4px); } }
 .myghar-dog.bounce { animation: dog-bounce .5s ease; }
-@keyframes dog-bounce { 0% { transform: translate(-50%, -50%) scale(1); } 40% { transform: translate(-50%, -50%) scale(1.12) translateY(-8px); } 100% { transform: translate(-50%, -50%) scale(1); } }
-.myghar-dog-name { position: absolute; left: 45.5%; top: 60%; transform: translateX(-50%); z-index: 7; background: rgba(255,255,255,.9); border-radius: 999px; padding: 2px 10px; font-size: 13px; font-weight: 700; color: #5d4037; pointer-events: none; }
+@keyframes dog-bounce { 0% { transform: translateX(-50%) scale(1); } 40% { transform: translateX(-50%) scale(1.12) translateY(-8px); } 100% { transform: translateX(-50%) scale(1); } }
 .myghar-hint { text-align: center; color: #666; font-size: 14px; margin: 8px 0; }
+.myghar-earn { background: #fff; border: 1px solid #e5e0d8; border-radius: 12px; padding: 16px 20px; margin: 16px 0; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
+.myghar-earn h3 { margin: 0 0 4px; }
+.myghar-earn-sub { color: #666; font-size: 14px; margin: 0 0 8px; }
+.myghar-earn ul { margin: 0; padding-left: 20px; }
+.myghar-earn li { margin: 4px 0; font-size: 15px; }
 .myghar-names { display: flex; gap: 16px; flex-wrap: wrap; margin: 16px 0; }
 .myghar-names label { font-size: 14px; color: #666; flex: 1; min-width: 200px; }
 .myghar-names .auth-input { margin-top: 4px; }
@@ -355,8 +366,3 @@ header p { color: #6b5d4f; margin: 0; font-size: 17px; }
 .mission-record { background: #fff; border: 1px solid #e5e0d8; border-radius: 12px; padding: 20px; margin: 16px 0; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
 .mission-record h2 { margin: 0 0 4px; }
 .mission-record audio { width: 100%; margin: 12px 0; }
-.myghar-earn { background: #fff; border: 1px solid #e5e0d8; border-radius: 12px; padding: 16px 20px; margin: 16px 0; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
-.myghar-earn h3 { margin: 0 0 4px; }
-.myghar-earn-sub { color: #666; font-size: 14px; margin: 0 0 8px; }
-.myghar-earn ul { margin: 0; padding-left: 20px; }
-.myghar-earn li { margin: 4px 0; font-size: 15px; }

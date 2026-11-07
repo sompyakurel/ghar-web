@@ -17,12 +17,21 @@
     <button class="quiz-next" id="arrange-btn">🧱 Arrange</button>
   </div>
   <div class="myghar-stage" id="stage">
-    <img class="myghar-bg" src="assets/images/myghar/room_bg.png" alt="My Ghar room">
+    <div class="myghar-floor"></div>
+    <img class="myghar-rug" src="assets/images/myghar/rug.jpg" alt="Rug">
+    <div class="myghar-cabinet" id="cabinet">
+      <img class="myghar-cabinet-img" src="assets/images/myghar/shelf.jpg" alt="Trophy cabinet">
+      <div id="trophies"></div>
+    </div>
+    <img class="myghar-window" src="assets/images/myghar/windows.png" alt="Window">
+    <img class="myghar-himal" src="assets/images/myghar/himal.jpg" alt="Himalaya picture">
+    <div class="myghar-sign-wrap" id="sign-wrap">
+      <img class="myghar-sign" src="assets/images/myghar/sign.jpg" alt="Name sign">
+      <div class="myghar-sign-name" id="sign-name">Bhunte</div>
+    </div>
     <div class="myghar-night" id="night-tint" hidden></div>
     <div class="myghar-weather" id="weather">…</div>
-    <div id="decorations"></div>
     <img class="myghar-dog" id="dog" src="assets/images/bhunte.svg" alt="Bhunte the dog">
-    <div class="myghar-dog-name" id="dog-name-tag">Bhunte</div>
   </div>
   <p class="myghar-hint" id="hint">Tap Bhunte and he'll bark! 🐶</p>
   <div class="myghar-earn" id="earn-box">
@@ -46,21 +55,28 @@
 </div>
 <script src="auth.js"></script>
 <script>
-// My Ghar: the room starts EMPTY. Decorations are EARNED, never pre-placed.
-// Bhunte is the Figma Bhunte (assets/images/bhunte.svg) — the real Bhunte.
-// He grows by getting BIGGER as he earns XP (one dog, scaled up), not by
-// swapping to a different sprite. Puppy 20% wide, Young 25%, Big 30%.
+// My Ghar, composed as a real room that fits the wide stage:
+//   Walls: warm cream. Floor: wooden band at the bottom + the patterned rug.
+//   Left: the wooden trophy cabinet (shelves) -- earned trophies sit on its
+//     three boards. Right: the window with blue curtains + marigolds.
+//   Center wall: the Himalaya picture above the wooden name sign (the dog's
+//     name is written on the sign). Bhunte the Figma dog stands on the rug.
+// The room starts EMPTY of trophies; they appear only when earned.
+// Bhunte is the Figma Bhunte (assets/images/bhunte.svg). He grows by getting
+// BIGGER (one dog, scaled), not by swapping sprites.
 const EARNED = [
-  { id: "goldenDiyo", x: 0.155, y: 0.270, w: 14,
+  { id: "goldenDiyo", shelf: 0,
     label: "🪔 Golden Diyo — complete all 10 missions",
     earned: s => s.missionsDone >= 10 },
-  { id: "starBadge", x: 0.835, y: 0.370, w: 14,
+  { id: "starBadge", shelf: 1,
     label: "⭐ Star Badge — earn 100 XP",
     earned: s => s.xp >= 100 },
-  { id: "mukut", x: 0.490, y: 0.153, w: 18,
+  { id: "mukut", shelf: 2,
     label: "👑 Mukut (crown) — complete all 22 lessons",
     earned: s => s.decksDone >= 22 },
 ];
+// Trophy center height on each cabinet shelf board (fraction of cabinet height).
+const SHELF_Y = [0.38, 0.65, 0.87];
 const STAGE_NAMES = ["Puppy", "Young Dog", "Big Dog"];
 const STAGE_WIDTH = [20, 25, 30]; // % of the stage width, per stage
 const LAYOUT_KEY = "ghar.myghar.layout";
@@ -122,20 +138,18 @@ function readState() {
   } catch (e) { decksDone = 0; }
   return { xp, missionsDone, decksDone };
 }
-function renderDecorations(state) {
-  const wrap = document.getElementById("decorations");
+function renderTrophies(state) {
+  const wrap = document.getElementById("trophies");
   wrap.innerHTML = "";
-  const shown = EARNED.filter(d => d.earned(state));
-  shown.forEach(d => {
+  EARNED.filter(d => d.earned(state)).forEach(d => {
     const delta = layout[d.id] || [0, 0];
     const el = document.createElement("img");
     el.src = `assets/images/myghar/${d.id}.png`;
     el.alt = d.id;
-    el.className = "myghar-deco" + (arranging ? " arranging" : "");
+    el.className = "myghar-trophy" + (arranging ? " arranging" : "");
     el.dataset.id = d.id;
-    el.style.width = d.w + "%";
-    el.style.left = ((d.x + delta[0]) * 100) + "%";
-    el.style.top = ((d.y + delta[1]) * 100) + "%";
+    el.style.left = ((0.5 + delta[0]) * 100) + "%";
+    el.style.top = ((SHELF_Y[d.shelf] + delta[1]) * 100) + "%";
     el.addEventListener("click", () => {
       if (arranging) return;
       el.classList.remove("pop");
@@ -143,12 +157,13 @@ function renderDecorations(state) {
       el.classList.add("pop");
       play(`assets/audio/nepal-v1/myghar_${d.id}_np.m4a`);
     });
-    makeDraggable(el, d);
+    makeDraggable(el, d, document.getElementById("cabinet"));
     wrap.appendChild(el);
   });
-  document.getElementById("hint").textContent = shown.length === 0
+  const shown = EARNED.filter(d => d.earned(state)).length;
+  document.getElementById("hint").textContent = shown === 0
     ? "Your room is empty — earn decorations by learning! Tap Bhunte and he'll bark! 🐶"
-    : "Tap a decoration to hear it. Tap Bhunte and he'll bark! 🐶";
+    : "Tap a trophy to hear it. Tap Bhunte and he'll bark! 🐶";
   const list = document.getElementById("earn-list");
   list.innerHTML = "";
   EARNED.forEach(d => {
@@ -156,17 +171,18 @@ function renderDecorations(state) {
     li.textContent = (d.earned(state) ? "✅ " : "⬜ ") + d.label;
     list.appendChild(li);
   });
-  document.getElementById("earn-box").style.display = shown.length >= EARNED.length ? "none" : "";
+  document.getElementById("earn-box").style.display = shown >= EARNED.length ? "none" : "";
 }
-function makeDraggable(el, d) {
+function makeDraggable(el, d, container) {
   el.addEventListener("pointerdown", e => {
     if (!arranging) return;
     e.preventDefault();
-    const stage = document.getElementById("stage");
-    const rect = stage.getBoundingClientRect();
+    const rect = container.getBoundingClientRect();
     const startX = e.clientX, startY = e.clientY;
     const base = layout[d.id] || [0, 0];
-    const origLeft = d.x + base[0], origTop = d.y + base[1];
+    const homeX = d.shelf !== undefined ? 0.5 : 0.5;
+    const homeY = d.shelf !== undefined ? SHELF_Y[d.shelf] : 0.5;
+    const origLeft = homeX + base[0], origTop = homeY + base[1];
     function onMove(ev) {
       const dx = (ev.clientX - startX) / rect.width;
       const dy = (ev.clientY - startY) / rect.height;
@@ -174,7 +190,7 @@ function makeDraggable(el, d) {
       const ny = Math.min(0.95, Math.max(0.05, origTop + dy));
       el.style.left = (nx * 100) + "%";
       el.style.top = (ny * 100) + "%";
-      el._pending = [nx - d.x, ny - d.y];
+      el._pending = [nx - homeX, ny - homeY];
     }
     function onUp() {
       if (el._pending) {
@@ -209,7 +225,7 @@ function renderNames() {
   const dogName = localStorage.getItem(DOG_NAME_KEY) || "Bhunte";
   const houseName = localStorage.getItem(HOUSE_NAME_KEY) || "My Ghar";
   document.getElementById("dog-name-label").textContent = dogName;
-  document.getElementById("dog-name-tag").textContent = dogName;
+  document.getElementById("sign-name").textContent = dogName;
   document.getElementById("house-name-label").textContent = houseName;
   document.getElementById("dog-name").value = dogName;
   document.getElementById("house-name").value = houseName;
@@ -245,7 +261,7 @@ document.getElementById("arrange-btn").addEventListener("click", () => {
   arranging = !arranging;
   document.getElementById("arrange-btn").textContent = arranging ? "✅ Done arranging" : "🧱 Arrange";
   const state = readState();
-  renderDecorations(state);
+  renderTrophies(state);
 });
 document.getElementById("dog-name").addEventListener("input", e => {
   localStorage.setItem(DOG_NAME_KEY, e.target.value);
@@ -265,7 +281,7 @@ GharAuth.pull().catch(() => {}).then(async () => {
     }
   } catch (e) { /* deck count stays 0 */ }
   const state = readState();
-  renderDecorations(state);
+  renderTrophies(state);
   renderDog(state.xp);
   renderNames();
   renderDayNight();
