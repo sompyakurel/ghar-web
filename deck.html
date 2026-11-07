@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ghar — Deck</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">← All decks</a>
+  <div id="content"></div>
+  <p class="error" id="error" hidden>Couldn't load this deck.</p>
+</div>
+<script>
+const FREE = new Set(["alphabet", "numbers"]);
+const deckId = new URLSearchParams(location.search).get("deck");
+function asset(u) {
+  return u.replace(/^\/images\/nepal-v1\//, "assets/images/")
+          .replace(/^\/audio\/nepal-v1\//, "assets/audio/nepal-v1/");
+}
+const player = new Audio();
+function play(url) {
+  player.pause();
+  player.src = url;
+  player.play().catch(() => {});
+}
+const storeKey = `ghar.heard.${deckId}`;
+let heard = new Set(JSON.parse(localStorage.getItem(storeKey) || "[]"));
+function saveHeard() { localStorage.setItem(storeKey, JSON.stringify([...heard])); }
+fetch("data/nepal-v1.json")
+  .then(r => { if (!r.ok) throw new Error("load failed"); return r.json(); })
+  .then(pack => {
+    const deck = pack.decks.find(d => d.id === deckId);
+    if (!deck) throw new Error("no deck");
+    document.title = `Ghar — ${deck.title}`;
+    const content = document.getElementById("content");
+    if (!FREE.has(deck.id)) {
+      content.innerHTML = `<div class="deck-head"><h1>🔒 ${deck.title}</h1><p>This deck unlocks with Ghar Premium.</p></div>`;
+      return;
+    }
+    const total = deck.words.length;
+    content.innerHTML = `
+      <div class="deck-head"><h1>${deck.title}</h1><p>${total} words · tap a card to hear it, tap ✓ when you've heard it</p></div>
+      <div class="progress"><div id="bar"></div></div>
+      <p class="progress-label" id="prog-label"></p>
+      <div id="sections"></div>
+      <div class="complete" id="complete" hidden>🎉 Deck complete — you heard every word!</div>`;
+    const sectionsEl = document.getElementById("sections");
+    const groups = [];
+    deck.words.forEach(w => {
+      const s = w.section || "";
+      let g = groups.find(g => g.name === s);
+      if (!g) { g = { name: s, words: [] }; groups.push(g); }
+      g.words.push(w);
+    });
+    groups.forEach(g => {
+      if (g.name) {
+        const h = document.createElement("h2");
+        h.className = "section";
+        h.textContent = g.name;
+        sectionsEl.appendChild(h);
+      }
+      const grid = document.createElement("div");
+      grid.className = "words";
+      g.words.forEach(w => {
+        const card = document.createElement("div");
+        card.className = "word" + (heard.has(w.id) ? " heard" : "");
+        card.innerHTML = `
+          ${w.image ? `<img src="${asset(w.image)}" alt="" onerror="this.style.display='none'">` : ""}
+          <button type="button" class="heard" aria-label="Mark as heard">✓</button>
+          <div class="word-body">
+            <div class="deva">${w.devanagari}</div>
+            <div class="roma">${w.romanized}</div>
+            <div class="eng">${w.english}</div>
+          </div>`;
+        card.addEventListener("click", e => {
+          if (e.target.closest(".heard")) {
+            if (heard.has(w.id)) heard.delete(w.id); else heard.add(w.id);
+            card.classList.toggle("heard", heard.has(w.id));
+            saveHeard();
+            updateProgress();
+          } else if (w.has_audio && w.audio_url) {
+            play(asset(w.audio_url));
+          }
+        });
+        grid.appendChild(card);
+      });
+      sectionsEl.appendChild(grid);
+    });
+    function updateProgress() {
+      const n = heard.size;
+      document.getElementById("bar").style.width = (total ? (n / total * 100) : 0) + "%";
+      document.getElementById("prog-label").textContent = `${n} of ${total} heard`;
+      document.getElementById("complete").hidden = !(total > 0 && n === total);
+    }
+    updateProgress();
+  })
+  .catch(() => { document.getElementById("error").hidden = false; });
+</script>
+</body>
+</html>
