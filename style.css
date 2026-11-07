@@ -51,3 +51,4 @@ header p { color: #6b5d4f; margin: 0; font-size: 17px; }
 .section-head .section { margin: 0; }
 .play-btn { background: #2e7d32; color: #fff; border: none; border-radius: 999px; padding: 8px 14px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; }
 .word.playing { outline: 3px solid #2e7d32; }
+.swatch, .color-strip span { filter: saturate(1.4) brightness(1.15); }
