@@ -239,3 +239,10 @@ header p { color: #6b5d4f; margin: 0; font-size: 17px; }
 .confetti-piece { position: absolute; top: -12px; width: 10px; height: 16px; border-radius: 2px; animation: confetti-fall linear forwards; }
 @keyframes celeb-pop { from { transform: scale(.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 @keyframes confetti-fall { from { transform: translateY(0) rotate(0deg); opacity: 1; } to { transform: translateY(105vh) rotate(720deg); opacity: .6; } }
+.motivation-dog { animation: dog-bob 2.4s ease-in-out infinite; }
+.motivation-dog.bounce { animation: dog-bounce .5s ease; }
+.motivation-dog.celebrating { animation: dog-celebrate 1s ease infinite; }
+@keyframes dog-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@keyframes dog-bounce { 0%,100% { transform: translateY(0) scale(1); } 40% { transform: translateY(-14px) scale(1.05); } 70% { transform: translateY(0) scale(1.02); } }
+@keyframes dog-celebrate { 0%,100% { transform: translateY(0) rotate(0deg); } 25% { transform: translateY(-12px) rotate(-3deg); } 50% { transform: translateY(0) rotate(0deg); } 75% { transform: translateY(-12px) rotate(3deg); } }
+.celebration-dog { width: 96px; height: 96px; margin: 0 auto 8px; display: block; }

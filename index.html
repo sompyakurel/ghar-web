@@ -115,7 +115,11 @@ function toast(msg) {
 const homePlayer = new Audio();
 const bhuntePlayer = new Audio();
 let bhunteLine = "assets/audio/bhunte/bhunte_hello.m4a";
-document.getElementById("bhunte-dog").addEventListener("click", () => {
+const bhunteDog = document.getElementById("bhunte-dog");
+bhunteDog.addEventListener("click", () => {
+  bhunteDog.classList.remove("bounce");
+  void bhunteDog.offsetWidth;
+  bhunteDog.classList.add("bounce");
   bhuntePlayer.pause();
   bhuntePlayer.src = bhunteLine;
   bhuntePlayer.play().catch(() => {});
@@ -187,6 +191,11 @@ fetch("data/nepal-v1.json")
     if (done >= pack.decks.length) { says.textContent = "You did it! You earned your certificate! 🎉"; bhunteLine = "assets/audio/bhunte/bhunte_certificate.m4a"; }
     else if (done === 0) { says.textContent = "Namaste! I'm Bhunte. Let's learn Nepali together. Finish a lesson to earn XP!"; bhunteLine = "assets/audio/bhunte/bhunte_hello.m4a"; }
     else { says.textContent = "You're doing great! Keep going. Your certificate is waiting!"; bhunteLine = "assets/audio/bhunte/bhunte_keepgoing.m4a"; }
+    if (localStorage.getItem("ghar.justCompleted")) {
+      localStorage.removeItem("ghar.justCompleted");
+      bhunteDog.classList.add("celebrating");
+      setTimeout(() => bhunteDog.classList.remove("celebrating"), 2600);
+    }
   })
   .catch(() => { document.getElementById("error").hidden = false; });
 if (TEST) {

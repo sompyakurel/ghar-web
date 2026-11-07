@@ -15,6 +15,7 @@
 <div class="celebration" id="celebration" hidden>
   <div class="confetti" id="confetti"></div>
   <div class="celebration-card">
+    <img class="celebration-dog" src="assets/images/bhunte.svg" alt="Bhunte">
     <div class="celebration-emoji">🎉</div>
     <div class="celebration-title">Deck complete!</div>
     <div class="celebration-sub" id="celebration-sub"></div>
@@ -172,12 +173,16 @@ function spawnConfetti() {
     box.appendChild(piece);
   }
 }
-function showCelebration(title) {
+const bhuntePlayer = new Audio();
+function showCelebration(title, allDone) {
   const ov = document.getElementById("celebration");
   document.getElementById("celebration-sub").textContent = `${title} · +${COMPLETION_BONUS} XP`;
   ov.hidden = false;
   spawnConfetti();
   playDing();
+  bhuntePlayer.pause();
+  bhuntePlayer.src = allDone ? "assets/audio/bhunte/bhunte_certificate.m4a" : "assets/audio/bhunte/bhunte_keepgoing.m4a";
+  setTimeout(() => bhuntePlayer.play().catch(() => {}), 600);
   setTimeout(() => { ov.hidden = true; }, 3000);
 }
 document.getElementById("celebration").addEventListener("click", () => {
@@ -300,7 +305,8 @@ fetch("data/nepal-v1.json")
       localStorage.setItem(REWARDED_KEY, JSON.stringify([...rewarded]));
       const xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10) + COMPLETION_BONUS;
       localStorage.setItem("ghar.xp.total", String(xp));
-      showCelebration(deck.title);
+      localStorage.setItem("ghar.justCompleted", deck.title);
+      showCelebration(deck.title, rewarded.size === pack.decks.length);
     }
     function updateProgress() {
       const n = heard.size;
