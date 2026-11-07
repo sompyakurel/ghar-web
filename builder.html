@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ghar — Sentence Builder</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">← Home</a>
+  <div id="content"></div>
+  <p class="error" id="error" hidden>Couldn't load the sentence builder. Check your connection and refresh.</p>
+</div>
+<script>
+function isTestUnlock() {
+  const q = new URLSearchParams(location.search);
+  if (q.has("test")) localStorage.setItem("ghar.testUnlock", q.get("test") === "off" ? "" : "1");
+  return localStorage.getItem("ghar.testUnlock") === "1";
+}
+const TEST = isTestUnlock();
+function asset(u) {
+  if (!u) return "";
+  return u.replace(/^\/images\/nepal-v1\//, "assets/images/")
+          .replace(/^\/audio\/nepal-v1\//, "assets/audio/nepal-v1/");
+}
+let xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
+function saveXP() { localStorage.setItem("ghar.xp.total", String(xp)); }
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  return audioCtx;
+}
+function playDing() {
+  try {
+    const ctx = getAudioCtx();
+    const now = ctx.currentTime;
+    [[880, 0.25], [1318, 0.12]].forEach(([freq, vol]) => {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      g.gain.setValueAtTime(vol, now);
+      g.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+      osc.connect(g).connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.9);
+    });
+  } catch (e) {}
+}
+const WRONG_CLIPS = ["feedback_vayena_1_np.m4a", "feedback_vayena_2_np.m4a"];
+const feedbackPlayer = new Audio();
+function playWrongFeedback() {
+  const file = WRONG_CLIPS[Math.floor(Math.random() * WRONG_CLIPS.length)];
+  feedbackPlayer.pause();
+  feedbackPlayer.src = "assets/audio/nepal-v1/" + file;
+  feedbackPlayer.play().catch(() => {});
+}
+const player = new Audio();
+const ROUNDS = [
+  [
+    { english: "I eat momos", emoji: "🥟", wordIDs: ["sent_ma", "momo", "khaanchhu"] },
+    { english: "I drink tea", emoji: "🍵", wordIDs: ["sent_ma", "chiya", "piunchhu"] },
+    { english: "I eat apples", emoji: "🍎", wordIDs: ["sent_ma", "syau", "khaanchhu"] },
+    { english: "I drink water", emoji: "💧", wordIDs: ["sent_ma", "pani", "piunchhu"] },
+    { english: "I eat rice pudding", emoji: "🍚", wordIDs: ["sent_ma", "kheer", "khaanchhu"] },
+    { english: "I eat bananas", emoji: "🍌", wordIDs: ["sent_ma", "kera", "khaanchhu"] },
+    { english: "I eat ladoo", emoji: "🍬", wordIDs: ["sent_ma", "ladoo", "khaanchhu"] },
+    { english: "I eat mangoes", emoji: "🥭", wordIDs: ["sent_ma", "aanp", "khaanchhu"] },
+  ],
+  [
+    { english: "I write a letter", emoji: "✉️", wordIDs: ["sent_ma", "chitthi", "lekhchhu"] },
+    { english: "I go to school", emoji: "🏫", wordIDs: ["sent_ma", "vidyalaya", "jaanchhu"] },
+    { english: "I read books", emoji: "📖", wordIDs: ["sent_ma", "kitab", "padhchhu"] },
+    { english: "I go home", emoji: "🏠", wordIDs: ["sent_ma", "ghar", "jaanchhu"] },
+    { english: "I listen to songs", emoji: "🎵", wordIDs: ["sent_ma", "geet", "sunchhu"] },
+    { english: "I watch the cat", emoji: "🐱", wordIDs: ["sent_ma", "biralo", "herchhu"] },
+    { english: "I write my name", emoji: "✏️", wordIDs: ["sent_ma", "naam", "lekhchhu"] },
+    { english: "I watch the dog", emoji: "🐶", wordIDs: ["sent_ma", "kukur", "herchhu"] },
+  ],
+];
+let byID = {};
+let sessionRounds = [];
+let roundIndex = 0;
+let sentenceIndex = 0;
+let placedIDs = [];
+let poolIDs = [];
+let attempts = 0;
+let correctCount = 0;
+let roundCorrect = 0;
+let roundEarnedXP = 0;
+let totalEarnedXP = 0;
+let phase = "build";
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function round() { return sessionRounds[roundIndex]; }
+function sentence() { return round()[sentenceIndex]; }
+function startRound() {
+  sessionRounds = ROUNDS.map(r => shuffle([...r]));
+  sentenceIndex = 0;
+  roundCorrect = 0;
+  roundEarnedXP = 0;
+  phase = "build";
+  dealSentence();
+}
+function dealSentence() {
+  placedIDs = [];
+  attempts = 0;
+  poolIDs = shuffle([...sentence().wordIDs]);
+  render();
+}
+function place(id) {
+  placedIDs.push(id);
+  poolIDs = poolIDs.filter(x => x !== id);
+  render();
+  if (placedIDs.length === sentence().wordIDs.length) checkAnswer();
+}
+function unplace(id) {
+  placedIDs = placedIDs.filter(x => x !== id);
+  poolIDs.push(id);
+  render();
+}
+function playFullSentence() {
+  const words = sentence().wordIDs.map(id => byID[id]).filter(Boolean);
+  const urls = words.filter(w => w.has_audio && w.audio_url).map(w => asset(w.audio_url));
+  if (urls.length !== words.length || !urls.length) return;
+  let i = 0;
+  const playNext = () => {
+    if (i >= urls.length) return;
+    player.pause();
+    player.src = urls[i];
+    player.onended = () => { i++; playNext(); };
+    player.play().catch(() => { i++; playNext(); });
+  };
+  playNext();
+}
+function checkAnswer() {
+  const s = sentence();
+  if (JSON.stringify(placedIDs) === JSON.stringify(s.wordIDs)) {
+    correctCount += 1;
+    roundCorrect += 1;
+    const earned = attempts === 0 ? 5 : 2;
+    xp += earned;
+    roundEarnedXP += earned;
+    totalEarnedXP += earned;
+    saveXP();
+    playDing();
+    playFullSentence();
+    setTimeout(() => {
+      if (sentenceIndex + 1 < round().length) { sentenceIndex += 1; dealSentence(); }
+      else { phase = "roundDone"; render(); }
+    }, 1600);
+  } else {
+    attempts += 1;
+    playWrongFeedback();
+    const row = document.getElementById("answer-row");
+    if (row) {
+      row.classList.remove("shake");
+      void row.offsetWidth;
+      row.classList.add("shake");
+    }
+    const wrong = [...placedIDs];
+    setTimeout(() => {
+      placedIDs = [];
+      poolIDs = shuffle([...poolIDs, ...wrong]);
+      render();
+    }, 500);
+  }
+}
+function render() {
+  const content = document.getElementById("content");
+  if (phase === "roundDone") {
+    content.innerHTML = `
+      <div class="sent-done">
+        <div class="sent-done-emoji">🎉</div>
+        <h1>Round ${roundIndex + 1} done!</h1>
+        <p>+${roundEarnedXP} XP · ${roundCorrect}/${round().length} correct</p>
+        ${roundIndex + 1 < sessionRounds.length
+          ? `<button class="quiz-next" id="next-round">Next round →</button>`
+          : `<button class="quiz-next" id="finish">Finish</button>`}
+      </div>`;
+    const nr = document.getElementById("next-round");
+    if (nr) nr.addEventListener("click", () => { roundIndex += 1; startRound(); });
+    const fin = document.getElementById("finish");
+    if (fin) fin.addEventListener("click", () => { phase = "allDone"; render(); });
+    return;
+  }
+  if (phase === "allDone") {
+    const total = sessionRounds.flat().length;
+    content.innerHTML = `
+      <div class="sent-done">
+        <div class="sent-done-emoji">🏆</div>
+        <h1>Sentence builder!</h1>
+        <p>+${totalEarnedXP} XP · ${correctCount}/${total} sentences built</p>
+        <p class="sent-done-sub">म ___ ___छु। — you can say what you DO in Nepali now.</p>
+        <button class="quiz-next" id="again">Play again</button>
+      </div>`;
+    document.getElementById("again").addEventListener("click", () => {
+      roundIndex = 0; correctCount = 0; totalEarnedXP = 0; startRound();
+    });
+    return;
+  }
+  const s = sentence();
+  content.innerHTML = `
+    <div class="quiz-player">
+      <h1>🧱 Round ${roundIndex + 1}</h1>
+      <p class="quiz-xp">⭐ ${xp} XP · ${sentenceIndex + 1} / ${round().length}</p>
+      <div class="progress"><div style="width:${(sentenceIndex / round().length * 100)}%"></div></div>
+      <div class="builder-prompt">
+        <div class="builder-emoji">${s.emoji}</div>
+        <div class="builder-english">${s.english}</div>
+        <p class="sent-hint">Tap the words in order</p>
+        <p class="quiz-stake ${attempts === 0 ? "good" : "low"}">${attempts === 0 ? "⭐ +5 XP" : "😅 +2 XP now"}</p>
+      </div>
+      <div class="builder-answer" id="answer-row"></div>
+      <div class="builder-pool" id="pool"></div>
+    </div>`;
+  const row = document.getElementById("answer-row");
+  if (placedIDs.length === 0) {
+    row.innerHTML = `<span class="builder-blank">___ ___ ___।</span>`;
+  } else {
+    placedIDs.forEach(id => {
+      const w = byID[id];
+      if (!w) return;
+      const tile = document.createElement("button");
+      tile.className = "builder-tile placed";
+      tile.innerHTML = `<span class="opt-deva">${w.devanagari}</span><span class="opt-sub">${w.romanized}</span>`;
+      tile.addEventListener("click", () => unplace(id));
+      row.appendChild(tile);
+    });
+    if (placedIDs.length === s.wordIDs.length) {
+      const dot = document.createElement("span");
+      dot.className = "builder-dot";
+      dot.textContent = "।";
+      row.appendChild(dot);
+    }
+  }
+  const pool = document.getElementById("pool");
+  poolIDs.forEach(id => {
+    const w = byID[id];
+    if (!w) return;
+    const tile = document.createElement("button");
+    tile.className = "builder-tile";
+    tile.innerHTML = `<span class="opt-deva">${w.devanagari}</span><span class="opt-sub">${w.romanized}</span>`;
+    tile.addEventListener("click", () => place(id));
+    pool.appendChild(tile);
+  });
+}
+fetch("data/nepal-v1.json")
+  .then(r => { if (!r.ok) throw new Error("load failed"); return r.json(); })
+  .then(pack => {
+    const content = document.getElementById("content");
+    if (!TEST) {
+      content.innerHTML = `<div class="quiz-lock"><div class="big">🔒</div><h1>Sentence Builder</h1><p>This unlocks with Ghar Premium.</p></div>`;
+      return;
+    }
+    pack.decks.forEach(d => d.words.forEach(w => { byID[w.id] = w; }));
+    const missing = ROUNDS.flat().flatMap(s => s.wordIDs).filter(id => !byID[id]);
+    if (missing.length) throw new Error("missing words: " + missing.join(","));
+    startRound();
+  })
+  .catch(() => { document.getElementById("error").hidden = false; });
+</script>
+</body>
+</html>

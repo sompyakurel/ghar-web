@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ghar — Sentences</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">← Home</a>
+  <div id="content"></div>
+  <p class="error" id="error" hidden>Couldn't load the sentences. Check your connection and refresh.</p>
+</div>
+<script>
+function isTestUnlock() {
+  const q = new URLSearchParams(location.search);
+  if (q.has("test")) localStorage.setItem("ghar.testUnlock", q.get("test") === "off" ? "" : "1");
+  return localStorage.getItem("ghar.testUnlock") === "1";
+}
+const TEST = isTestUnlock();
+function asset(u) {
+  if (!u) return "";
+  return u.replace(/^\/images\/nepal-v1\//, "assets/images/")
+          .replace(/^\/audio\/nepal-v1\//, "assets/audio/nepal-v1/");
+}
+let xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
+function saveXP() { localStorage.setItem("ghar.xp.total", String(xp)); }
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  return audioCtx;
+}
+function playDing() {
+  try {
+    const ctx = getAudioCtx();
+    const now = ctx.currentTime;
+    [[880, 0.25], [1318, 0.12]].forEach(([freq, vol]) => {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      g.gain.setValueAtTime(vol, now);
+      g.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+      osc.connect(g).connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.9);
+    });
+  } catch (e) {}
+}
+const WRONG_CLIPS = ["feedback_vayena_1_np.m4a", "feedback_vayena_2_np.m4a"];
+const feedbackPlayer = new Audio();
+function playWrongFeedback() {
+  const file = WRONG_CLIPS[Math.floor(Math.random() * WRONG_CLIPS.length)];
+  feedbackPlayer.pause();
+  feedbackPlayer.src = "assets/audio/nepal-v1/" + file;
+  feedbackPlayer.play().catch(() => {});
+}
+const player = new Audio();
+const WANT = ["kitab", "kukur", "biralo", "chara", "syau", "kera"];
+let questions = [];
+let order = [];
+let index = 0;
+let options = [];
+let picked = null;
+let wrongPicks = new Set();
+let correctCount = 0;
+let earnedXP = 0;
+let finished = false;
+function shuffle(a) {
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function current() { return questions[order[index]]; }
+function dealQuestion() {
+  picked = null;
+  wrongPicks = new Set();
+  const q = current();
+  const pool = questions.map(x => x.pictureWord).filter(w => w.id !== q.pictureWord.id);
+  const distractors = shuffle([...pool]).slice(0, 2);
+  options = shuffle([q.pictureWord, ...distractors]);
+  render();
+}
+function render() {
+  const content = document.getElementById("content");
+  if (finished) {
+    content.innerHTML = `
+      <div class="sent-done">
+        <div class="sent-done-emoji">🎉</div>
+        <h1>You built sentences!</h1>
+        <p>+${earnedXP} XP · ${correctCount}/${questions.length} correct</p>
+        <p class="sent-done-sub">यो ___ हो। — you know how Nepali says "this is a ___".</p>
+        <button class="quiz-next" id="again">Play again</button>
+      </div>`;
+    document.getElementById("again").addEventListener("click", () => {
+      index = 0; correctCount = 0; earnedXP = 0; finished = false;
+      order = shuffle(questions.map((_, i) => i));
+      dealQuestion();
+    });
+    return;
+  }
+  const q = current();
+  const pic = q.pictureWord.image
+    ? `<img class="sent-picture" src="${asset(q.pictureWord.image)}" alt="${q.pictureWord.english}" onerror="this.style.display='none'">`
+    : `<div class="sent-picture sent-picture-fallback">${q.pictureWord.devanagari}</div>`;
+  content.innerHTML = `
+    <div class="quiz-player">
+      <h1>📝 This Is a Thing</h1>
+      <p class="quiz-xp">⭐ ${xp} XP · ${index + 1} / ${questions.length}</p>
+      <div class="progress"><div style="width:${(index / questions.length * 100)}%"></div></div>
+      ${pic}
+      <p class="sent-line"><span>यो</span> ${picked ? `<span class="sent-filled">${picked.devanagari}</span>` : `<span class="sent-blank">___</span>`} <span>हो।</span></p>
+      ${picked ? "" : `<p class="sent-hint">Tap the missing word</p>`}
+      <p class="quiz-stake ${wrongPicks.size === 0 ? "good" : "low"}">${wrongPicks.size === 0 ? "⭐ +5 XP" : "😅 +2 XP now"}</p>
+      <div class="sent-options" id="opts"></div>
+      ${picked ? `<button class="quiz-next" id="next">Next →</button>` : ""}
+    </div>`;
+  const optsEl = document.getElementById("opts");
+  options.forEach(w => {
+    const isWrong = wrongPicks.has(w.id);
+    const btn = document.createElement("button");
+    btn.className = "sent-option" + (isWrong ? " wrong" : "");
+    btn.disabled = picked !== null || isWrong;
+    btn.innerHTML = `<span class="opt-deva">${w.devanagari}</span><span class="opt-sub">${w.romanized}</span>`;
+    btn.addEventListener("click", () => pick(w));
+    optsEl.appendChild(btn);
+  });
+  const next = document.getElementById("next");
+  if (next) next.addEventListener("click", () => {
+    if (index + 1 < questions.length) { index += 1; dealQuestion(); }
+    else { finished = true; render(); }
+  });
+}
+function pick(w) {
+  const q = current();
+  if (w.id === q.pictureWord.id) {
+    picked = w;
+    correctCount += 1;
+    const earned = wrongPicks.size === 0 ? 5 : 2;
+    xp += earned;
+    earnedXP += earned;
+    saveXP();
+    playDing();
+    if (w.has_audio && w.audio_url) {
+      player.pause();
+      player.src = asset(w.audio_url);
+      player.play().catch(() => {});
+    }
+    render();
+  } else {
+    wrongPicks.add(w.id);
+    playWrongFeedback();
+    render();
+  }
+}
+fetch("data/nepal-v1.json")
+  .then(r => { if (!r.ok) throw new Error("load failed"); return r.json(); })
+  .then(pack => {
+    const content = document.getElementById("content");
+    if (!TEST) {
+      content.innerHTML = `<div class="quiz-lock"><div class="big">🔒</div><h1>Sentences</h1><p>This unlocks with Ghar Premium.</p></div>`;
+      return;
+    }
+    const byID = {};
+    pack.decks.forEach(d => d.words.forEach(w => { byID[w.id] = w; }));
+    const picked = WANT.map(id => byID[id]).filter(Boolean);
+    if (picked.length < 3) throw new Error("not enough words");
+    questions = picked.map(w => ({ pictureWord: w, prefix: "यो", suffix: "हो।" }));
+    order = shuffle(questions.map((_, i) => i));
+    dealQuestion();
+  })
+  .catch(() => { document.getElementById("error").hidden = false; });
+</script>
+</body>
+</html>
