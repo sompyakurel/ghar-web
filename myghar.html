@@ -18,14 +18,18 @@
   </div>
   <div class="myghar-stage" id="stage">
     <img class="myghar-bg" src="assets/images/myghar/room_bg.png" alt="My Ghar room">
-    <div class="myghar-flags" id="flags"><img src="assets/images/myghar/flags.png" alt="Prayer flags"></div>
     <div class="myghar-night" id="night-tint" hidden></div>
     <div class="myghar-weather" id="weather">…</div>
     <div id="decorations"></div>
     <img class="myghar-dog" id="dog" src="assets/images/myghar/dog_puppy_standing.png" alt="Bhunte the dog">
     <div class="myghar-dog-name" id="dog-name-tag">Bhunte</div>
   </div>
-  <p class="myghar-hint" id="hint">Tap a decoration to hear it. Tap Bhunte and he'll bark! 🐶</p>
+  <p class="myghar-hint" id="hint">Tap Bhunte and he'll bark! 🐶</p>
+  <div class="myghar-earn" id="earn-box">
+    <h3>🎁 Earn decorations for your room</h3>
+    <p class="myghar-earn-sub">Your room starts empty. Every decoration here is earned by learning — nothing is just given.</p>
+    <ul id="earn-list"></ul>
+  </div>
   <div class="myghar-names">
     <label>House name <input class="auth-input" id="house-name" type="text" placeholder="My Ghar" maxlength="30"></label>
     <label>Dog's name <input class="auth-input" id="dog-name" type="text" placeholder="Bhunte" maxlength="20"></label>
@@ -42,18 +46,20 @@
 </div>
 <script src="auth.js"></script>
 <script>
-// Home spots: the app's center-offsets (310x400 stage, center = 0,0),
-// converted to fractions of the stage (left/top = center of the item).
-// Windows is LOCKED (part of the room) and never drags.
-const DECORATIONS = [
-  { id: "windows", x: 0.806, y: 0.248, w: 38, locked: true },
-  { id: "himal", x: 0.490, y: 0.153, w: 40 },
-  { id: "goldenDiyo", x: 0.155, y: 0.270, w: 14 },
-  { id: "ghanta", x: 0.835, y: 0.370, w: 14 },
-  { id: "mandir", x: 0.158, y: 0.440, w: 22 },
-  { id: "tulsi", x: 0.813, y: 0.425, w: 18 },
-  { id: "rangoli", x: 0.474, y: 0.540, w: 30 },
-  { id: "door", x: 0.106, y: 0.790, w: 24 },
+// My Ghar: the room starts EMPTY. Decorations are EARNED, never pre-placed.
+// Each earned decoration has a home spot (fractions of the stage, center of
+// the item) and a rule for when it appears. The shop (buying with XP) is
+// a later step; for now the room only fills by learning.
+const EARNED = [
+  { id: "goldenDiyo", x: 0.155, y: 0.270, w: 14,
+    label: "🪔 Golden Diyo — complete all 10 missions",
+    earned: s => s.missionsDone >= 10 },
+  { id: "starBadge", x: 0.835, y: 0.370, w: 14,
+    label: "⭐ Star Badge — earn 100 XP",
+    earned: s => s.xp >= 100 },
+  { id: "mukut", x: 0.490, y: 0.153, w: 18,
+    label: "👑 Mukut (crown) — complete all 22 lessons",
+    earned: s => s.decksDone >= 22 },
 ];
 const STAGE_NAMES = ["Puppy", "Young Dog", "Big Dog"];
 const STAGE_PREFIX = ["dog_puppy", "dog_young", "dog_adult"];
@@ -94,15 +100,38 @@ document.getElementById("celebration").addEventListener("click", () => {
   document.getElementById("celebration").hidden = true;
 });
 function dogStageFor(xp) { return xp >= 150 ? 2 : xp >= 50 ? 1 : 0; }
-function renderDecorations() {
+function readState() {
+  const xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
+  let missionsDone = 0;
+  try {
+    const c = JSON.parse(localStorage.getItem("ghar.missions.completed") || "[]");
+    const v = JSON.parse(localStorage.getItem("ghar.missions.verified") || "[]");
+    missionsDone = new Set([...c, ...v]).size;
+  } catch (e) { missionsDone = 0; }
+  let decksDone = 0;
+  try {
+    const pack = JSON.parse(localStorage.getItem("ghar.pack.cache") || "null");
+    if (pack && pack.decks) {
+      decksDone = pack.decks.filter(d => {
+        try {
+          const heard = JSON.parse(localStorage.getItem("ghar.heard." + d.id) || "[]");
+          return heard.length >= (d.words || []).length && (d.words || []).length > 0;
+        } catch (e) { return false; }
+      }).length;
+    }
+  } catch (e) { decksDone = 0; }
+  return { xp, missionsDone, decksDone };
+}
+function renderDecorations(state) {
   const wrap = document.getElementById("decorations");
   wrap.innerHTML = "";
-  DECORATIONS.forEach(d => {
+  const shown = EARNED.filter(d => d.earned(state));
+  shown.forEach(d => {
     const delta = layout[d.id] || [0, 0];
     const el = document.createElement("img");
     el.src = `assets/images/myghar/${d.id}.png`;
     el.alt = d.id;
-    el.className = "myghar-deco" + (d.locked ? " locked" : "") + (arranging && !d.locked ? " arranging" : "");
+    el.className = "myghar-deco" + (arranging ? " arranging" : "");
     el.dataset.id = d.id;
     el.style.width = d.w + "%";
     el.style.left = ((d.x + delta[0]) * 100) + "%";
@@ -114,9 +143,20 @@ function renderDecorations() {
       el.classList.add("pop");
       play(`assets/audio/nepal-v1/myghar_${d.id}_np.m4a`);
     });
-    if (!d.locked) makeDraggable(el, d);
+    makeDraggable(el, d);
     wrap.appendChild(el);
   });
+  document.getElementById("hint").textContent = shown.length === 0
+    ? "Your room is empty — earn decorations by learning! Tap Bhunte and he'll bark! 🐶"
+    : "Tap a decoration to hear it. Tap Bhunte and he'll bark! 🐶";
+  const list = document.getElementById("earn-list");
+  list.innerHTML = "";
+  EARNED.forEach(d => {
+    const li = document.createElement("li");
+    li.textContent = (d.earned(state) ? "✅ " : "⬜ ") + d.label;
+    list.appendChild(li);
+  });
+  document.getElementById("earn-box").style.display = shown.length >= EARNED.length ? "none" : "";
 }
 function makeDraggable(el, d) {
   el.addEventListener("pointerdown", e => {
@@ -204,10 +244,8 @@ document.getElementById("dog").addEventListener("click", () => {
 document.getElementById("arrange-btn").addEventListener("click", () => {
   arranging = !arranging;
   document.getElementById("arrange-btn").textContent = arranging ? "✅ Done arranging" : "🧱 Arrange";
-  document.getElementById("hint").textContent = arranging
-    ? "Drag the decorations to move them. Tap Done arranging when you're happy."
-    : "Tap a decoration to hear it. Tap Bhunte and he'll bark! 🐶";
-  renderDecorations();
+  const state = readState();
+  renderDecorations(state);
 });
 document.getElementById("dog-name").addEventListener("input", e => {
   localStorage.setItem(DOG_NAME_KEY, e.target.value);
@@ -217,10 +255,18 @@ document.getElementById("house-name").addEventListener("input", e => {
   localStorage.setItem(HOUSE_NAME_KEY, e.target.value);
   renderNames();
 });
-GharAuth.pull().catch(() => {}).then(() => {
-  const xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
-  renderDecorations();
-  renderDog(xp);
+GharAuth.pull().catch(() => {}).then(async () => {
+  // Cache the pack so the deck count (for the Mukut) can be read locally.
+  try {
+    const r = await fetch("data/nepal-v1.json");
+    if (r.ok) {
+      const pack = await r.json();
+      localStorage.setItem("ghar.pack.cache", JSON.stringify({ decks: pack.decks.map(d => ({ id: d.id, words: d.words.map(w => w.id) })) }));
+    }
+  } catch (e) { /* deck count stays 0 */ }
+  const state = readState();
+  renderDecorations(state);
+  renderDog(state.xp);
   renderNames();
   renderDayNight();
   renderWeather();

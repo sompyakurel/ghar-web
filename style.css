@@ -322,7 +322,7 @@ header p { color: #6b5d4f; margin: 0; font-size: 17px; }
 .myghar-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
 .myghar-head h1 { margin: 8px 0 4px; }
 .myghar-sub { color: #666; margin: 0; }
-.myghar-stage { position: relative; width: 100%; max-width: 760px; aspect-ratio: 310 / 400; margin: 16px auto; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,.12); background: #f5e6c8; }
+.myghar-stage { position: relative; width: 100%; max-width: 560px; aspect-ratio: 310 / 400; margin: 16px auto; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,.12); background: #f5e6c8; }
 .myghar-bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .myghar-flags { position: absolute; top: 0; left: 0; width: 100%; height: 12%; z-index: 3; pointer-events: none; }
 .myghar-flags img { width: 100%; height: 100%; object-fit: cover; }
@@ -332,7 +332,7 @@ header p { color: #6b5d4f; margin: 0; font-size: 17px; }
 .myghar-deco.pop { animation: deco-pop .35s ease; }
 @keyframes deco-pop { 0% { transform: translate(-50%, -50%) scale(1); } 40% { transform: translate(-50%, -50%) scale(1.18); } 100% { transform: translate(-50%, -50%) scale(1); } }
 .myghar-deco.arranging { cursor: grab; touch-action: none; outline: 2px dashed #2e7d32; outline-offset: 2px; border-radius: 8px; }
-.myghar-dog { position: absolute; left: 45.5%; top: 77.5%; width: 28%; transform: translate(-50%, -50%); z-index: 7; cursor: pointer; animation: dog-bob 2.4s ease-in-out infinite; }
+.myghar-dog { position: absolute; left: 45.5%; top: 77.5%; width: 20%; transform: translate(-50%, -50%); z-index: 7; cursor: pointer; animation: dog-bob 2.4s ease-in-out infinite; }
 @keyframes dog-bob { 0%, 100% { transform: translate(-50%, -50%) translateY(0); } 50% { transform: translate(-50%, -50%) translateY(-4px); } }
 .myghar-dog.bounce { animation: dog-bounce .5s ease; }
 @keyframes dog-bounce { 0% { transform: translate(-50%, -50%) scale(1); } 40% { transform: translate(-50%, -50%) scale(1.12) translateY(-8px); } 100% { transform: translate(-50%, -50%) scale(1); } }
@@ -355,3 +355,8 @@ header p { color: #6b5d4f; margin: 0; font-size: 17px; }
 .mission-record { background: #fff; border: 1px solid #e5e0d8; border-radius: 12px; padding: 20px; margin: 16px 0; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
 .mission-record h2 { margin: 0 0 4px; }
 .mission-record audio { width: 100%; margin: 12px 0; }
+.myghar-earn { background: #fff; border: 1px solid #e5e0d8; border-radius: 12px; padding: 16px 20px; margin: 16px 0; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
+.myghar-earn h3 { margin: 0 0 4px; }
+.myghar-earn-sub { color: #666; font-size: 14px; margin: 0 0 8px; }
+.myghar-earn ul { margin: 0; padding-left: 20px; }
+.myghar-earn li { margin: 4px 0; font-size: 15px; }
