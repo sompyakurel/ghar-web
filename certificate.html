@@ -78,8 +78,23 @@ function renderCert(content, name, dateStr, total, nameEditable) {
 }
 async function main() {
   const content = document.getElementById("content");
+  const params = new URLSearchParams(location.search);
   const pack = await (await fetch("data/nepal-v1.json")).json();
   const total = pack.decks.length;
+  // Preview: ?preview shows the certificate as it will look when earned,
+  // without needing all 22 lessons done. Uses the signed-in child's name
+  // when available, otherwise a sample name. Does NOT record an award date.
+  if (params.has("preview")) {
+    let name = "Asha";
+    if (GharAuth.signedIn() && GharAuth.childId()) {
+      try {
+        const p = await GharAuth.api("/accounts/children/" + GharAuth.childId() + "/progress");
+        name = p.name || name;
+      } catch (e) { /* fall back to the sample name */ }
+    }
+    renderCert(content, name, todayStr(), total, false);
+    return;
+  }
   const signedIn = GharAuth.signedIn() && GharAuth.childId();
   if (signedIn) {
     // Per-account: progress and name come from the child's profile.
