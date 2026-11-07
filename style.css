@@ -248,3 +248,5 @@ header p { color: #6b5d4f; margin: 0; font-size: 17px; }
 .celebration-dog { width: 96px; height: 96px; margin: 0 auto 8px; display: block; }
 .bubble-ne { display: block; font-size: 17px; }
 .bubble-en { display: block; font-size: 13px; color: #777; font-weight: 400; margin-top: 2px; }
+.bubble-ne { display: block; font-size: 17px; }
+.bubble-en { display: block; font-size: 13px; color: #777; font-weight: 400; margin-top: 2px; }
