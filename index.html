@@ -24,9 +24,10 @@
     <h2>📚 Lessons</h2>
     <p class="section-sub">Work through the decks in order — finishing one opens the next.</p>
     <div class="motivation" id="motivation">
-      <img class="motivation-dog" src="assets/images/bhunte.svg" alt="Bhunte the dog">
+      <img class="motivation-dog" id="bhunte-dog" src="assets/images/bhunte.svg" alt="Bhunte the dog" title="Tap me to hear me talk!">
       <div class="motivation-body">
-        <p class="motivation-bubble" id="bhunte-says">Namaste! I'm Bhunte. Let's learn Nepali together — finish a lesson to earn XP!</p>
+        <p class="motivation-bubble" id="bhunte-says">Namaste! I'm Bhunte. Let's learn Nepali together. Finish a lesson to earn XP!</p>
+        <p class="motivation-hint">👆 Tap Bhunte to hear him talk</p>
         <p class="motivation-xp">⭐ <span id="xp-total">0</span> XP</p>
         <p class="motivation-cert">📜 Certificate: <span id="cert-done">0</span> of 22 lessons done</p>
         <div class="progress motivation-progress"><div id="cert-bar"></div></div>
@@ -112,6 +113,13 @@ function toast(msg) {
   toastTimer = setTimeout(() => t.classList.remove("show"), 2500);
 }
 const homePlayer = new Audio();
+const bhuntePlayer = new Audio();
+let bhunteLine = "assets/audio/bhunte/bhunte_hello.m4a";
+document.getElementById("bhunte-dog").addEventListener("click", () => {
+  bhuntePlayer.pause();
+  bhuntePlayer.src = bhunteLine;
+  bhuntePlayer.play().catch(() => {});
+});
 let homePlayingBtn = null;
 function toggleHomeAudio(url, btn) {
   if (homePlayingBtn === btn && !homePlayer.paused) {
@@ -176,9 +184,9 @@ fetch("data/nepal-v1.json")
     document.getElementById("cert-done").textContent = done;
     document.getElementById("cert-bar").style.width = (done / pack.decks.length * 100) + "%";
     const says = document.getElementById("bhunte-says");
-    if (done >= pack.decks.length) says.textContent = "You did it! You earned your certificate! 🎉";
-    else if (done === 0) says.textContent = "Namaste! I'm Bhunte. Let's learn Nepali together — finish a lesson to earn XP!";
-    else says.textContent = `You're doing great! ${pack.decks.length - done} lessons to go for your certificate!`;
+    if (done >= pack.decks.length) { says.textContent = "You did it! You earned your certificate! 🎉"; bhunteLine = "assets/audio/bhunte/bhunte_certificate.m4a"; }
+    else if (done === 0) { says.textContent = "Namaste! I'm Bhunte. Let's learn Nepali together. Finish a lesson to earn XP!"; bhunteLine = "assets/audio/bhunte/bhunte_hello.m4a"; }
+    else { says.textContent = "You're doing great! Keep going. Your certificate is waiting!"; bhunteLine = "assets/audio/bhunte/bhunte_keepgoing.m4a"; }
   })
   .catch(() => { document.getElementById("error").hidden = false; });
 if (TEST) {
