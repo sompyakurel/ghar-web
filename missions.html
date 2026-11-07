@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ghar — Missions</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">← Home</a>
+  <h1>🎯 Missions</h1>
+  <p class="myghar-sub">Do these in real life! "Done it" is +10 XP. "Prove it" — record yourself, a grown-up confirms it — is +25 XP.</p>
+  <p class="error" id="error" hidden>Couldn't load the missions. Check your connection and refresh.</p>
+  <div id="missions"></div>
+  <div class="mission-record" id="record-panel" hidden>
+    <h2 id="record-title"></h2>
+    <p id="record-prompt"></p>
+    <button class="quiz-next" id="record-btn">🎤 Start recording</button>
+    <p class="auth-note" id="record-status"></p>
+    <div id="playback" hidden>
+      <audio id="playback-audio" controls></audio>
+      <p class="auth-note">Grown-up: listen, then confirm below.</p>
+      <button class="quiz-next" id="confirm-btn">✅ Yes, they did it! (+25 XP)</button>
+      <button class="quiz-next" id="rerecord-btn" style="background:#e0e0e0;color:#333;">↻ Record again</button>
+    </div>
+    <button class="back" id="record-close" style="margin-top:12px;">Close</button>
+  </div>
+</div>
+<script src="auth.js"></script>
+<script>
+let pack = null;
+let completed = new Set();
+let verified = new Set();
+let xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
+function loadSets() {
+  try { completed = new Set(JSON.parse(localStorage.getItem("ghar.missions.completed") || "[]")); } catch (e) { completed = new Set(); }
+  try { verified = new Set(JSON.parse(localStorage.getItem("ghar.missions.verified") || "[]")); } catch (e) { verified = new Set(); }
+}
+function saveSets() {
+  localStorage.setItem("ghar.missions.completed", JSON.stringify([...completed]));
+  localStorage.setItem("ghar.missions.verified", JSON.stringify([...verified]));
+}
+function saveXP() { localStorage.setItem("ghar.xp.total", String(xp)); }
+const player = new Audio();
+function play(url) { player.pause(); player.src = url; player.play().catch(() => {}); }
+function asset(u) {
+  if (!u) return "";
+  return u.replace(/^\/images\/nepal-v1\//, "assets/images/")
+          .replace(/^\/audio\/nepal-v1\//, "assets/audio/nepal-v1/");
+}
+async function syncMissionsFromServer() {
+  if (!GharAuth.signedIn() || !GharAuth.childId()) return;
+  try {
+    const m = await GharAuth.api("/accounts/children/" + GharAuth.childId() + "/missions");
+    completed = new Set(Object.keys(m).filter(id => m[id] === "done" || m[id] === "verified"));
+    verified = new Set(Object.keys(m).filter(id => m[id] === "verified"));
+    saveSets();
+  } catch (e) { /* stay local */ }
+}
+async function pushMission(id, status) {
+  if (!GharAuth.signedIn() || !GharAuth.childId()) return;
+  try {
+    await GharAuth.api("/accounts/children/" + GharAuth.childId() + "/missions", "POST", { mission_id: id, status });
+    await GharAuth.pushTotals();
+  } catch (e) { /* local state is already saved */ }
+}
+function render() {
+  const wrap = document.getElementById("missions");
+  wrap.innerHTML = "";
+  pack.missions.forEach(m => {
+    const isVerified = verified.has(m.id);
+    const isDone = completed.has(m.id) || isVerified;
+    const card = document.createElement("div");
+    card.className = "mission-card" + (isVerified ? " verified" : isDone ? " done" : "");
+    card.innerHTML = `
+      <div class="mission-head">
+        <div>
+          <span class="mission-title-ne">${m.title_ne}</span>
+          <span class="mission-title-en">${m.title_en}</span>
+        </div>
+        <span class="mission-badge">${isVerified ? "⭐ Verified" : isDone ? "✅ Done" : m.difficulty}</span>
+      </div>
+      <p class="mission-prompt">${m.prompt_en}</p>
+      <p class="mission-prompt-ne">${m.prompt_ne}</p>
+      <div class="mission-actions">
+        <button class="quiz-next mission-play">▶️ Hear it</button>
+        ${isVerified ? "" : `<button class="quiz-next mission-done">Done it! +${m.xp || 10} XP</button>
+        <button class="quiz-next mission-prove">🎤 Prove it (+${m.verified_xp || 25} XP)</button>`}
+      </div>`;
+    card.querySelector(".mission-play").addEventListener("click", () => {
+      if (m.has_audio && m.audio_url) play(asset(m.audio_url));
+    });
+    const doneBtn = card.querySelector(".mission-done");
+    if (doneBtn) doneBtn.addEventListener("click", () => {
+      completed.add(m.id);
+      xp += (m.xp || 10);
+      saveSets(); saveXP();
+      pushMission(m.id, "done");
+      render();
+    });
+    const proveBtn = card.querySelector(".mission-prove");
+    if (proveBtn) proveBtn.addEventListener("click", () => openRecord(m));
+    wrap.appendChild(card);
+  });
+}
+// --- Prove it: record, grown-up listens and confirms ---
+let recorder = null, chunks = [], recordMission = null, recordBlob = null;
+function openRecord(m) {
+  recordMission = m;
+  recordBlob = null;
+  document.getElementById("record-title").textContent = `🎤 Prove it: ${m.title_en}`;
+  document.getElementById("record-prompt").textContent = m.prompt_en;
+  document.getElementById("record-status").textContent = "";
+  document.getElementById("playback").hidden = true;
+  document.getElementById("record-btn").textContent = "🎤 Start recording";
+  document.getElementById("record-panel").hidden = false;
+  document.getElementById("record-panel").scrollIntoView({ behavior: "smooth" });
+}
+document.getElementById("record-close").addEventListener("click", () => {
+  if (recorder && recorder.state !== "inactive") recorder.stop();
+  document.getElementById("record-panel").hidden = true;
+});
+document.getElementById("record-btn").addEventListener("click", async () => {
+  const btn = document.getElementById("record-btn");
+  const status = document.getElementById("record-status");
+  if (recorder && recorder.state === "recording") {
+    recorder.stop();
+    btn.textContent = "🎤 Start recording";
+    return;
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    chunks = [];
+    recorder = new MediaRecorder(stream);
+    recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+    recorder.onstop = () => {
+      stream.getTracks().forEach(t => t.stop());
+      recordBlob = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
+      const url = URL.createObjectURL(recordBlob);
+      document.getElementById("playback-audio").src = url;
+      document.getElementById("playback").hidden = false;
+      status.textContent = "Recorded! Play it back, then a grown-up confirms.";
+    };
+    recorder.start();
+    btn.textContent = "⏹ Stop recording";
+    status.textContent = "Recording… say it in Nepali!";
+    document.getElementById("playback").hidden = true;
+  } catch (e) {
+    status.textContent = "Couldn't start the microphone. Check the browser's microphone permission and try again.";
+  }
+});
+document.getElementById("rerecord-btn").addEventListener("click", () => {
+  document.getElementById("playback").hidden = true;
+  document.getElementById("record-status").textContent = "";
+});
+document.getElementById("confirm-btn").addEventListener("click", () => {
+  if (!recordMission) return;
+  verified.add(recordMission.id);
+  completed.add(recordMission.id);
+  xp += (recordMission.verified_xp || 25);
+  saveSets(); saveXP();
+  pushMission(recordMission.id, "verified");
+  document.getElementById("record-panel").hidden = true;
+  render();
+});
+GharAuth.pull().catch(() => {}).then(async () => {
+  xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
+  await syncMissionsFromServer();
+  const r = await fetch("data/nepal-v1.json");
+  if (!r.ok) throw new Error("load failed");
+  pack = await r.json();
+  loadSets();
+  render();
+}).catch(() => { document.getElementById("error").hidden = false; });
+</script>
+</body>
+</html>
