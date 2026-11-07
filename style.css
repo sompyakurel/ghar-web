@@ -330,6 +330,7 @@ EOF'
  }
  }
 EOF'
+
 .myghar-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
 .myghar-head h1 { margin: 8px 0 4px; }
 .myghar-sub { color: #666; margin: 0; }
@@ -346,8 +347,6 @@ EOF'
 @keyframes dog-bob { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(-4px); } }
 .myghar-dog.bounce { animation: dog-bounce .5s ease; }
 @keyframes dog-bounce { 0% { transform: translateX(-50%) scale(1); } 40% { transform: translateX(-50%) scale(1.12) translateY(-8px); } 100% { transform: translateX(-50%) scale(1); } }
-.myghar-suga { position: absolute; right: 4%; bottom: 9%; width: 12%; z-index: 5; cursor: pointer; }
-.myghar-suga.bounce { animation: dog-bounce .5s ease; }
 .myghar-hint { text-align: center; color: #666; font-size: 14px; margin: 8px 0; }
 .myghar-earn { background: #fff; border: 1px solid #e5e0d8; border-radius: 12px; padding: 16px 20px; margin: 16px 0; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
 .myghar-earn h3 { margin: 0 0 4px; }
@@ -375,6 +374,7 @@ EOF'
 .myghar-shop-item.pop { animation: deco-pop .35s ease; }
 .myghar-shop-item.arranging { cursor: grab; touch-action: none; outline: 2px dashed #2e7d32; outline-offset: 2px; border-radius: 8px; }
 .shop-btn { text-decoration: none; }
+#mystery-btn:disabled { opacity: 0.55; cursor: not-allowed; }
 .shop-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
 .shop-head h1 { margin: 8px 0 4px; }
 .shop-sub { color: #666; margin: 0; }

@@ -15,6 +15,7 @@
       <p class="myghar-sub"><span id="dog-name-label">Bhunte</span> · <span id="dog-stage-label">Puppy</span> · ⭐ <span id="xp-label">0</span> XP</p>
     </div>
     <a class="quiz-next shop-btn" href="shop.html">🛍️ Shop</a>
+    <button class="quiz-next" id="mystery-btn">🎁 Mystery Box</button>
     <button class="quiz-next" id="arrange-btn">🧱 Arrange</button>
   </div>
   <div class="myghar-stage" id="stage">
@@ -63,9 +64,15 @@
 //   P1 Perch -- Suga, bottom-right.
 // Layers, back to front: room picture, trophies + shop items, dog, name,
 // night tint, weather. Bhunte grows by getting BIGGER (one dog, scaled).
-// The room starts EMPTY of trophies AND shop items. Trophies appear when
-// earned by learning; shop items (including Suga the parrot) appear only
-// after the kid buys them with XP in the Shop. Nothing is just given.
+// The room starts EMPTY of trophies, shop items AND mystery treasures.
+// Trophies appear when earned by learning; shop items (including Suga
+// the parrot) appear only after the kid buys them with XP in the Shop;
+// mystery treasures (karuwa, charkha, nanglo, khukuri, sarangi, guleyli)
+// appear only from a Mystery Box -- one box is earned for every 3 decks
+// completed, and opening it reveals a random treasure not yet owned.
+// Nothing is just given. Every room item -- trophy, shop piece, treasure,
+// Suga -- uses the SAME placement: left/top as % (its CENTER) plus
+// translate(-50%,-50%). No more right/bottom pinning.
 const EARNED = [
   { id: "goldenDiyo", shelf: 0, cell: 0,
     label: "🪔 Golden Diyo — complete all 10 missions",
@@ -192,7 +199,7 @@ function renderShopItems() {
     const el = document.createElement("img");
     el.src = `assets/images/myghar/${item.img}`;
     el.alt = item.en;
-    el.className = (item.id === "suga" ? "myghar-suga" : "myghar-shop-item") + (arranging ? " arranging" : "");
+    el.className = "myghar-shop-item" + (arranging ? " arranging" : "");
     el.dataset.id = item.id;
     el.style.left = ((item.x + delta[0]) * 100) + "%";
     el.style.top = ((item.y + delta[1]) * 100) + "%";
@@ -211,6 +218,62 @@ function renderShopItems() {
     makeDraggable(el, item, document.getElementById("stage"), item.x, item.y);
     wrap.appendChild(el);
   });
+}
+// Mystery treasures the kid has earned from a Mystery Box, rendered in
+// the room at their home spot (MYSTERY catalog x/y) plus any Arrange drag
+// delta. Same placement system as shop items and trophies.
+function renderMysteryItems() {
+  const wrap = document.getElementById("shop-items");
+  const owned = mysteryOwned();
+  MYSTERY.filter(item => owned.includes(item.id)).forEach(item => {
+    const delta = layout[item.id] || [0, 0];
+    const el = document.createElement("img");
+    el.src = `assets/images/myghar/${item.img}`;
+    el.alt = item.en;
+    el.className = "myghar-shop-item" + (arranging ? " arranging" : "");
+    el.dataset.id = item.id;
+    el.style.left = ((item.x + delta[0]) * 100) + "%";
+    el.style.top = ((item.y + delta[1]) * 100) + "%";
+    el.style.width = item.w + "%";
+    el.addEventListener("click", () => {
+      if (arranging) return;
+      el.classList.remove("pop");
+      void el.offsetWidth;
+      el.classList.add("pop");
+      if (item.audio) play(`assets/audio/nepal-v1/myghar_${item.audio}_np.m4a`);
+    });
+    makeDraggable(el, item, document.getElementById("stage"), item.x, item.y);
+    wrap.appendChild(el);
+  });
+}
+// Mystery Boxes: one earned for every 3 decks completed. Opening a box
+// reveals a random treasure the kid does not own yet.
+function mysteryBoxesAvailable(state) {
+  const earned = Math.floor(state.decksDone / MYSTERY_DECKS_PER_BOX);
+  return Math.max(0, earned - mysteryOwned().length);
+}
+function renderMysteryButton(state) {
+  const btn = document.getElementById("mystery-btn");
+  const n = mysteryBoxesAvailable(state);
+  const remaining = MYSTERY.filter(t => !mysteryOwned().includes(t.id)).length;
+  btn.textContent = n > 0 ? `🎁 Mystery Box (${n})` : "🎁 Mystery Box";
+  btn.disabled = n === 0 || remaining === 0;
+  btn.title = n === 0
+    ? `Complete ${MYSTERY_DECKS_PER_BOX} more decks to earn a Mystery Box`
+    : remaining === 0 ? "You found all the mystery treasures!" : "Open a Mystery Box!";
+}
+function openMysteryBox(state) {
+  const remaining = MYSTERY.filter(t => !mysteryOwned().includes(t.id));
+  if (mysteryBoxesAvailable(state) === 0 || remaining.length === 0) return;
+  const pick = remaining[Math.floor(Math.random() * remaining.length)];
+  const list = mysteryOwned();
+  list.push(pick.id);
+  mysterySaveOwned(list);
+  if (window.GharAuth) GharAuth.api("/accounts/children/" + GharAuth.childId() + "/mystery", "POST", { item_id: pick.id }).catch(() => {});
+  renderMysteryItems();
+  renderMysteryButton(readState());
+  showCelebration(`🎁 ${pick.emoji} ${pick.ne}!`, `You found the ${pick.en}!`);
+  if (pick.audio) play(`assets/audio/nepal-v1/myghar_${pick.audio}_np.m4a`);
 }
 function makeDraggable(el, d, container, homeX, homeY) {
   el.addEventListener("pointerdown", e => {
@@ -297,12 +360,17 @@ document.getElementById("dog").addEventListener("click", () => {
   dog.classList.add("bounce");
   play(stage === 0 ? "assets/audio/nepal-v1/dog_bark.m4a" : "assets/audio/nepal-v1/dog_bark_big.m4a");
 });
+document.getElementById("mystery-btn").addEventListener("click", () => {
+  openMysteryBox(readState());
+});
 document.getElementById("arrange-btn").addEventListener("click", () => {
   arranging = !arranging;
   document.getElementById("arrange-btn").textContent = arranging ? "✅ Done arranging" : "🧱 Arrange";
   const state = readState();
   renderTrophies(state);
   renderShopItems();
+  renderMysteryItems();
+  renderMysteryButton(state);
 });
 document.getElementById("dog-name").addEventListener("input", e => {
   localStorage.setItem(DOG_NAME_KEY, e.target.value);
@@ -313,6 +381,13 @@ document.getElementById("house-name").addEventListener("input", e => {
   renderNames();
 });
 GharAuth.pull().catch(() => {}).then(async () => {
+  try {
+    const m = await GharAuth.api("/accounts/children/" + GharAuth.childId() + "/mystery", "GET");
+    if (m && Array.isArray(m.items)) {
+      const merged = [...new Set([...mysteryOwned(), ...m.items])];
+      mysterySaveOwned(merged);
+    }
+  } catch (e) { /* guest or offline -- local list stands */ }
   // Cache the pack so the deck count (for the Mukut) can be read locally.
   try {
     const r = await fetch("data/nepal-v1.json");
@@ -324,6 +399,8 @@ GharAuth.pull().catch(() => {}).then(async () => {
   const state = readState();
   renderTrophies(state);
   renderShopItems();
+  renderMysteryItems();
+  renderMysteryButton(state);
   renderDog(state.xp);
   renderNames();
   renderDayNight();
