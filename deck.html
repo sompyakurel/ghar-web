@@ -12,6 +12,14 @@
   <div id="content"></div>
   <p class="error" id="error" hidden>Couldn't load this deck.</p>
 </div>
+<div class="celebration" id="celebration" hidden>
+  <div class="confetti" id="confetti"></div>
+  <div class="celebration-card">
+    <div class="celebration-emoji">🎉</div>
+    <div class="celebration-title">Deck complete!</div>
+    <div class="celebration-sub" id="celebration-sub"></div>
+  </div>
+</div>
 <script>
 const FREE = new Set(["alphabet", "numbers"]);
 const BRIGHT = {
@@ -129,6 +137,52 @@ async function playSection(words, cards, btn) {
   unpinStage();
   btn.textContent = "▶️ Play the conversation";
 }
+const REWARDED_KEY = "ghar.decks.rewarded";
+const COMPLETION_BONUS = 25;
+let deckAudioCtx = null;
+function playDing() {
+  try {
+    if (!deckAudioCtx) deckAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (deckAudioCtx.state === "suspended") deckAudioCtx.resume();
+    const now = deckAudioCtx.currentTime;
+    [[880, 0.25], [1318, 0.12]].forEach(([freq, vol]) => {
+      const osc = deckAudioCtx.createOscillator();
+      const g = deckAudioCtx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      g.gain.setValueAtTime(vol, now);
+      g.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+      osc.connect(g).connect(deckAudioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.9);
+    });
+  } catch (e) {}
+}
+function spawnConfetti() {
+  const box = document.getElementById("confetti");
+  box.innerHTML = "";
+  const colors = ["#ff5252", "#ffb300", "#00c853", "#0091ff", "#aa00ff", "#ff4081"];
+  for (let i = 0; i < 50; i++) {
+    const piece = document.createElement("div");
+    piece.className = "confetti-piece";
+    piece.style.left = Math.random() * 100 + "%";
+    piece.style.background = colors[i % colors.length];
+    piece.style.animationDelay = (Math.random() * 0.4) + "s";
+    piece.style.animationDuration = (1.6 + Math.random() * 1.2) + "s";
+    box.appendChild(piece);
+  }
+}
+function showCelebration(title) {
+  const ov = document.getElementById("celebration");
+  document.getElementById("celebration-sub").textContent = `${title} · +${COMPLETION_BONUS} XP`;
+  ov.hidden = false;
+  spawnConfetti();
+  playDing();
+  setTimeout(() => { ov.hidden = true; }, 3000);
+}
+document.getElementById("celebration").addEventListener("click", () => {
+  document.getElementById("celebration").hidden = true;
+});
 const storeKey = `ghar.heard.${deckId}`;
 let heard = new Set(JSON.parse(localStorage.getItem(storeKey) || "[]"));
 function saveHeard() { localStorage.setItem(storeKey, JSON.stringify([...heard])); }
@@ -236,11 +290,25 @@ fetch("data/nepal-v1.json")
       if (head.children.length) sectionsEl.appendChild(head);
       sectionsEl.appendChild(grid);
     });
+    function evaluateCompletion() {
+      if (!(total > 0 && heard.size === total)) return;
+      let rewarded;
+      try { rewarded = new Set(JSON.parse(localStorage.getItem(REWARDED_KEY) || "[]")); }
+      catch (e) { rewarded = new Set(); }
+      if (rewarded.has(deckId)) return;
+      rewarded.add(deckId);
+      localStorage.setItem(REWARDED_KEY, JSON.stringify([...rewarded]));
+      const xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10) + COMPLETION_BONUS;
+      localStorage.setItem("ghar.xp.total", String(xp));
+      showCelebration(deck.title);
+    }
     function updateProgress() {
       const n = heard.size;
       document.getElementById("bar").style.width = (total ? (n / total * 100) : 0) + "%";
       document.getElementById("prog-label").textContent = `${n} of ${total} heard`;
-      document.getElementById("complete").hidden = !(total > 0 && n === total);
+      const done = total > 0 && n === total;
+      document.getElementById("complete").hidden = !done;
+      if (done) evaluateCompletion();
     }
     updateProgress();
   })
