@@ -32,6 +32,7 @@
     <div class="myghar-night" id="night-tint" hidden></div>
     <div class="myghar-weather" id="weather">…</div>
     <img class="myghar-dog" id="dog" src="assets/images/bhunte.svg" alt="Bhunte the dog">
+    <img class="myghar-suga" id="suga" src="assets/images/myghar/suga.png" alt="Suga the parrot">
   </div>
   <p class="myghar-hint" id="hint">Tap Bhunte and he'll bark! 🐶</p>
   <div class="myghar-earn" id="earn-box">
@@ -55,26 +56,32 @@
 </div>
 <script src="auth.js"></script>
 <script>
-// My Ghar, composed as a real room that fits the wide stage:
-//   Walls: warm cream. Floor: wooden band at the bottom + the patterned rug.
-//   Left: the wooden trophy cabinet (shelves) -- earned trophies sit on its
-//     three boards. Right: the window with blue curtains + marigolds.
-//   Center wall: the Himalaya picture above the wooden name sign (the dog's
-//     name is written on the sign). Bhunte the Figma dog stands on the rug.
+// My Ghar -- SLOT SYSTEM (after Claude's room design, but OUR art).
+// Every item belongs to a named slot with a fixed shape, so nothing overlaps
+// and the room scales as one picture on any screen.
+//   W1 Window (right wall)     W2 Hung picture + name sign (center wall)
+//   S1 Trophy cabinet (left) -- 6 cells, 2 per shelf x 3 shelves
+//   F1 Rug (floor) -- the base layer; Bhunte stands on it
+//   P1 Perch (bottom-right) -- Suga the parrot, tap him to hear a word
+// Layers, back to front: wall, wall pictures, cabinet + trophies, rug,
+// pets (Bhunte + Suga), night tint, weather.
+// Bhunte is OUR Figma Bhunte (assets/images/bhunte.svg) and Suga is OUR
+// parrot (assets/images/myghar/suga.png) -- never a drawn stand-in.
+// Bhunte grows by getting BIGGER (one dog, scaled), not by swapping sprites.
 // The room starts EMPTY of trophies; they appear only when earned.
-// Bhunte is the Figma Bhunte (assets/images/bhunte.svg). He grows by getting
-// BIGGER (one dog, scaled), not by swapping sprites.
 const EARNED = [
-  { id: "goldenDiyo", shelf: 0,
+  { id: "goldenDiyo", shelf: 0, cell: 0,
     label: "🪔 Golden Diyo — complete all 10 missions",
     earned: s => s.missionsDone >= 10 },
-  { id: "starBadge", shelf: 1,
+  { id: "starBadge", shelf: 1, cell: 0,
     label: "⭐ Star Badge — earn 100 XP",
     earned: s => s.xp >= 100 },
-  { id: "mukut", shelf: 2,
+  { id: "mukut", shelf: 2, cell: 0,
     label: "👑 Mukut (crown) — complete all 22 lessons",
     earned: s => s.decksDone >= 22 },
 ];
+// Trophy cell centers: 2 cells per shelf (left 25%, right 75% of the cabinet).
+const CELL_X = [0.25, 0.75];
 // Trophy center height on each cabinet shelf board (fraction of cabinet height).
 const SHELF_Y = [0.38, 0.65, 0.87];
 const STAGE_NAMES = ["Puppy", "Young Dog", "Big Dog"];
@@ -148,7 +155,7 @@ function renderTrophies(state) {
     el.alt = d.id;
     el.className = "myghar-trophy" + (arranging ? " arranging" : "");
     el.dataset.id = d.id;
-    el.style.left = ((0.5 + delta[0]) * 100) + "%";
+    el.style.left = ((CELL_X[d.cell] + delta[0]) * 100) + "%";
     el.style.top = ((SHELF_Y[d.shelf] + delta[1]) * 100) + "%";
     el.addEventListener("click", () => {
       if (arranging) return;
@@ -180,8 +187,8 @@ function makeDraggable(el, d, container) {
     const rect = container.getBoundingClientRect();
     const startX = e.clientX, startY = e.clientY;
     const base = layout[d.id] || [0, 0];
-    const homeX = d.shelf !== undefined ? 0.5 : 0.5;
-    const homeY = d.shelf !== undefined ? SHELF_Y[d.shelf] : 0.5;
+    const homeX = CELL_X[d.cell];
+    const homeY = SHELF_Y[d.shelf];
     const origLeft = homeX + base[0], origTop = homeY + base[1];
     function onMove(ev) {
       const dx = (ev.clientX - startX) / rect.width;
@@ -248,6 +255,14 @@ async function renderWeather() {
     el.textContent = "";
   }
 }
+const SUGA_CLIPS = ["assets/audio/nepal-v1/myghar_sugaMitho_np.m4a", "assets/audio/nepal-v1/myghar_sugaGreeting_np.m4a"];
+document.getElementById("suga").addEventListener("click", () => {
+  const suga = document.getElementById("suga");
+  suga.classList.remove("bounce");
+  void suga.offsetWidth;
+  suga.classList.add("bounce");
+  play(SUGA_CLIPS[Math.floor(Math.random() * SUGA_CLIPS.length)]);
+});
 document.getElementById("dog").addEventListener("click", () => {
   const xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
   const stage = dogStageFor(xp);

@@ -320,21 +320,23 @@ header p { color: #6b5d4f; margin: 0; font-size: 17px; }
 }
  }
  }
+ }
+ }
 .myghar-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
 .myghar-head h1 { margin: 8px 0 4px; }
 .myghar-sub { color: #666; margin: 0; }
 .myghar-stage { position: relative; width: min(1100px, calc(100vw - 32px)); height: min(760px, calc(100vh - 180px)); height: min(760px, calc(100dvh - 180px)); margin: 16px auto; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,.12); background: #f7ead0; }
 .myghar-floor { position: absolute; left: 0; right: 0; bottom: 0; height: 30%; background: linear-gradient(#c08a5a, #a06a3a); z-index: 1; }
-.myghar-rug { position: absolute; left: 50%; bottom: 1%; transform: translateX(-50%); width: 72%; z-index: 2; }
+.myghar-rug { position: absolute; left: 50%; bottom: 1%; transform: translateX(-50%); width: 72%; z-index: 4; }
 .myghar-cabinet { position: absolute; left: 2%; top: 0; width: 24%; aspect-ratio: 320 / 931; z-index: 3; }
 .myghar-cabinet-img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .myghar-trophy { position: absolute; transform: translate(-50%, -50%); width: 30%; z-index: 4; cursor: pointer; transition: transform .15s ease; }
 .myghar-trophy.pop { animation: deco-pop .35s ease; }
 @keyframes deco-pop { 0% { transform: translate(-50%, -50%) scale(1); } 40% { transform: translate(-50%, -50%) scale(1.18); } 100% { transform: translate(-50%, -50%) scale(1); } }
 .myghar-trophy.arranging { cursor: grab; touch-action: none; outline: 2px dashed #2e7d32; outline-offset: 2px; border-radius: 8px; }
-.myghar-window { position: absolute; right: 3%; top: 5%; width: 24%; z-index: 3; }
-.myghar-himal { position: absolute; left: 50%; top: 7%; transform: translateX(-50%); width: 20%; z-index: 3; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,.2); }
-.myghar-sign-wrap { position: absolute; left: 50%; top: 34%; transform: translateX(-50%); width: 20%; z-index: 3; }
+.myghar-window { position: absolute; right: 3%; top: 5%; width: 24%; z-index: 2; }
+.myghar-himal { position: absolute; left: 50%; top: 7%; transform: translateX(-50%); width: 20%; z-index: 2; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,.2); }
+.myghar-sign-wrap { position: absolute; left: 50%; top: 34%; transform: translateX(-50%); width: 20%; z-index: 2; }
 .myghar-sign { width: 100%; display: block; }
 .myghar-sign-name { position: absolute; left: 50%; top: 58%; transform: translate(-50%, -50%); font-weight: 700; color: #5d4037; font-size: clamp(11px, 1.4vw, 18px); white-space: nowrap; }
 .myghar-night { position: absolute; inset: 0; background: rgba(10, 20, 60, 0.35); z-index: 6; pointer-events: none; }
@@ -343,6 +345,8 @@ header p { color: #6b5d4f; margin: 0; font-size: 17px; }
 @keyframes dog-bob { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(-4px); } }
 .myghar-dog.bounce { animation: dog-bounce .5s ease; }
 @keyframes dog-bounce { 0% { transform: translateX(-50%) scale(1); } 40% { transform: translateX(-50%) scale(1.12) translateY(-8px); } 100% { transform: translateX(-50%) scale(1); } }
+.myghar-suga { position: absolute; right: 4%; bottom: 9%; width: 12%; z-index: 5; cursor: pointer; }
+.myghar-suga.bounce { animation: dog-bounce .5s ease; }
 .myghar-hint { text-align: center; color: #666; font-size: 14px; margin: 8px 0; }
 .myghar-earn { background: #fff; border: 1px solid #e5e0d8; border-radius: 12px; padding: 16px 20px; margin: 16px 0; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
 .myghar-earn h3 { margin: 0 0 4px; }
