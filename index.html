@@ -4,16 +4,54 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ghar — Learn Nepali</title>
-<style>
-  body { font-family: system-ui, -apple-system, sans-serif; background: #fff3e0; color: #26221f; margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; text-align: center; padding: 24px; }
-  h1 { font-size: 56px; margin: 0 0 8px; }
-  p.tag { font-size: 20px; color: #6b5d4f; margin: 0 0 24px; }
-  p { max-width: 520px; line-height: 1.6; }
-</style>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>🏠 Ghar</h1>
-  <p class="tag">Learn Nepali, have fun.</p>
-  <p>Lessons, quizzes, missions, and a pet dog that grows with you — for the diaspora growing up abroad. Coming soon.</p>
+<div class="wrap">
+  <header>
+    <h1>🏠 Ghar</h1>
+    <p>Learn Nepali, have fun.</p>
+  </header>
+  <div class="grid" id="decks"></div>
+  <p class="error" id="error" hidden>Couldn't load the lessons. Check your connection and refresh.</p>
+</div>
+<div id="toast"></div>
+<script>
+const FREE = new Set(["alphabet", "numbers"]);
+const TIERS = { beginner: "🌱 Beginner", intermediate: "🌿 Intermediate", hard: "🌳 Hard", teen: "🔥 Teen" };
+function asset(u) {
+  return u.replace(/^\/images\/nepal-v1\//, "assets/images/")
+          .replace(/^\/audio\/nepal-v1\//, "assets/audio/nepal-v1/");
+}
+let toastTimer;
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2500);
+}
+fetch("data/nepal-v1.json")
+  .then(r => { if (!r.ok) throw new Error("load failed"); return r.json(); })
+  .then(pack => {
+    const grid = document.getElementById("decks");
+    pack.decks.forEach(deck => {
+      const free = FREE.has(deck.id);
+      const a = document.createElement("a");
+      a.className = "card" + (free ? "" : " locked");
+      a.href = free ? `deck.html?deck=${deck.id}` : "#";
+      a.innerHTML = `
+        <img src="${asset(deck.cover_image)}" alt="${deck.title}">
+        <div class="card-body">
+          <h2>${deck.title}</h2>
+          <p>${deck.words.length} words · ${TIERS[deck.difficulty] || deck.difficulty}</p>
+          <span class="badge ${free ? "free" : "locked"}">${free ? "FREE" : "🔒 Locked"}</span>
+        </div>`;
+      if (!free) a.addEventListener("click", e => { e.preventDefault(); toast("🔒 This deck unlocks with Ghar Premium"); });
+      grid.appendChild(a);
+    });
+  })
+  .catch(() => { document.getElementById("error").hidden = false; });
+</script>
 </body>
 </html>

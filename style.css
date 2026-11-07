@@ -1,0 +1,19 @@
+* { box-sizing: border-box; }
+body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: #fff3e0; color: #26221f; margin: 0; padding: 0; }
+.wrap { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
+header { text-align: center; margin-bottom: 24px; }
+header h1 { font-size: 44px; margin: 0 0 4px; }
+header p { color: #6b5d4f; margin: 0; font-size: 17px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; }
+.card { background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.08); cursor: pointer; text-decoration: none; color: inherit; display: block; }
+.card img { width: 100%; aspect-ratio: 16/10; object-fit: cover; display: block; }
+.card-body { padding: 12px 14px 14px; }
+.card-body h2 { font-size: 17px; margin: 0 0 4px; }
+.card-body p { margin: 0; color: #6b5d4f; font-size: 14px; }
+.badge { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; margin-top: 8px; }
+.badge.free { background: #e6f4ea; color: #1e7d32; }
+.badge.locked { background: #f1ece6; color: #6b5d4f; }
+.card.locked { cursor: default; }
+#toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: #26221f; color: #fff; padding: 10px 18px; border-radius: 999px; font-size: 15px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+#toast.show { opacity: 1; }
+.error { text-align: center; color: #b3261e; }
