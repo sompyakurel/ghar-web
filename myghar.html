@@ -21,7 +21,7 @@
     <div class="myghar-night" id="night-tint" hidden></div>
     <div class="myghar-weather" id="weather">…</div>
     <div id="decorations"></div>
-    <img class="myghar-dog" id="dog" src="assets/images/myghar/dog_puppy_standing.png" alt="Bhunte the dog">
+    <img class="myghar-dog" id="dog" src="assets/images/bhunte.svg" alt="Bhunte the dog">
     <div class="myghar-dog-name" id="dog-name-tag">Bhunte</div>
   </div>
   <p class="myghar-hint" id="hint">Tap Bhunte and he'll bark! 🐶</p>
@@ -47,9 +47,9 @@
 <script src="auth.js"></script>
 <script>
 // My Ghar: the room starts EMPTY. Decorations are EARNED, never pre-placed.
-// Each earned decoration has a home spot (fractions of the stage, center of
-// the item) and a rule for when it appears. The shop (buying with XP) is
-// a later step; for now the room only fills by learning.
+// Bhunte is the Figma Bhunte (assets/images/bhunte.svg) — the real Bhunte.
+// He grows by getting BIGGER as he earns XP (one dog, scaled up), not by
+// swapping to a different sprite. Puppy 20% wide, Young 25%, Big 30%.
 const EARNED = [
   { id: "goldenDiyo", x: 0.155, y: 0.270, w: 14,
     label: "🪔 Golden Diyo — complete all 10 missions",
@@ -62,7 +62,7 @@ const EARNED = [
     earned: s => s.decksDone >= 22 },
 ];
 const STAGE_NAMES = ["Puppy", "Young Dog", "Big Dog"];
-const STAGE_PREFIX = ["dog_puppy", "dog_young", "dog_adult"];
+const STAGE_WIDTH = [20, 25, 30]; // % of the stage width, per stage
 const LAYOUT_KEY = "ghar.myghar.layout";
 const DOG_STAGE_KEY = "ghar.dog.stage";
 const DOG_NAME_KEY = "ghar.dog.name";
@@ -192,7 +192,7 @@ function makeDraggable(el, d) {
 function renderDog(xp) {
   const stage = dogStageFor(xp);
   const dog = document.getElementById("dog");
-  dog.src = `assets/images/myghar/${STAGE_PREFIX[stage]}_standing.png`;
+  dog.style.width = STAGE_WIDTH[stage] + "%";
   document.getElementById("dog-stage-label").textContent = STAGE_NAMES[stage];
   document.getElementById("xp-label").textContent = xp;
   const prev = parseInt(localStorage.getItem(DOG_STAGE_KEY) || "0", 10);
