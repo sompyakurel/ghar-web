@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ghar — Parent dashboard</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">← Home</a>
+  <div class="dash-head">
+    <div>
+      <h1>Parent dashboard</h1>
+      <p class="dash-email" id="parent-email"></p>
+    </div>
+    <button class="quiz-next" id="sign-out" style="background:#e0e0e0;color:#333;">Sign out</button>
+  </div>
+  <p class="error" id="error" hidden>Couldn't load the dashboard. Check your connection and refresh.</p>
+  <div id="children-list"></div>
+  <div class="auth-card">
+    <h2>Add a child</h2>
+    <input class="auth-input" id="child-name" type="text" placeholder="Child's first name" maxlength="60">
+    <button class="quiz-next" id="add-child">Add child →</button>
+    <p class="error" id="add-error" hidden></p>
+  </div>
+  <p class="auth-note">One unlock covers the whole family. A child's progress is saved to their profile — it follows them across devices. Delete a child any time and their data goes with them.</p>
+</div>
+<script src="auth.js"></script>
+<script>
+if (!GharAuth.signedIn()) location.href = "signin.html";
+let pack = null;
+async function load() {
+  try {
+    const me = await GharAuth.api("/accounts/me");
+    document.getElementById("parent-email").textContent = "Signed in as " + me.email;
+    pack = await (await fetch("data/nepal-v1.json")).json();
+    const list = document.getElementById("children-list");
+    if (me.children.length === 0) {
+      list.innerHTML = `<p class="auth-note">No children yet — add one below to get started.</p>`;
+      return;
+    }
+    list.innerHTML = "";
+    for (const child of me.children) {
+      const p = await GharAuth.api("/accounts/children/" + child.id + "/progress");
+      let done = 0;
+      pack.decks.forEach(deck => {
+        const heard = p.heard[deck.id] || [];
+        if (heard.length >= deck.words.length) done++;
+      });
+      const active = GharAuth.childId() === child.id;
+      const card = document.createElement("div");
+      card.className = "child-card" + (active ? " active" : "");
+      card.innerHTML = `
+        <div class="child-info">
+          <span class="child-name">${child.name}</span>
+          <span class="child-progress">⭐ ${child.xp} XP · 📜 ${done} of ${pack.decks.length} lessons done</span>
+        </div>
+        <button class="quiz-next child-play">${active ? "✓ Learning as " + child.name : "Learn as " + child.name + " →"}</button>`;
+      card.querySelector(".child-play").addEventListener("click", async () => {
+        localStorage.setItem(CHILD_KEY, child.id);
+        await GharAuth.carryOver();
+        location.href = "index.html";
+      });
+      list.appendChild(card);
+    }
+  } catch (e) {
+    document.getElementById("error").hidden = false;
+  }
+}
+document.getElementById("sign-out").addEventListener("click", () => GharAuth.signOut());
+document.getElementById("add-child").addEventListener("click", async () => {
+  const name = document.getElementById("child-name").value.trim();
+  const err = document.getElementById("add-error");
+  err.hidden = true;
+  if (!name) { err.hidden = false; err.textContent = "Type the child's first name."; return; }
+  try {
+    const child = await GharAuth.api("/accounts/children", "POST", { name });
+    localStorage.setItem(CHILD_KEY, child.id);
+    await GharAuth.carryOver();
+    location.href = "index.html";
+  } catch (e) {
+    err.hidden = false;
+    err.textContent = "Couldn't add the child. Try again.";
+  }
+});
+document.getElementById("child-name").addEventListener("keydown", e => {
+  if (e.key === "Enter") document.getElementById("add-child").click();
+});
+load();
+</script>
+</body>
+</html>

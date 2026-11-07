@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ghar — Sign in</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">← Home</a>
+  <div class="auth-card">
+    <img class="auth-dog" src="assets/images/bhunte.svg" alt="Bhunte">
+    <h1>Sign in to Ghar</h1>
+    <p class="auth-sub">Parents sign in with an email link — no password to remember. Each child's progress is saved to their profile.</p>
+    <div id="form-view">
+      <input class="auth-input" id="email" type="email" placeholder="Parent's email address" autocomplete="email">
+      <button class="quiz-next" id="send-link">Send me a sign-in link →</button>
+      <p class="error" id="error" hidden></p>
+      <p class="auth-note" id="sent" hidden>✅ Link sent! Check your email — it works once and expires in 15 minutes.</p>
+      <p class="auth-note" id="dev-link" hidden>Testing link (no email configured): <a id="dev-link-a" href="#">sign in</a></p>
+    </div>
+    <div id="verifying-view" hidden>
+      <p>Signing you in…</p>
+      <p class="error" id="verify-error" hidden></p>
+    </div>
+  </div>
+</div>
+<script src="auth.js"></script>
+<script>
+const params = new URLSearchParams(location.search);
+const token = params.get("token");
+if (token) {
+  document.getElementById("form-view").hidden = true;
+  document.getElementById("verifying-view").hidden = false;
+  GharAuth.api("/accounts/verify", "POST", { token })
+    .then(d => {
+      localStorage.setItem(SESSION_KEY, d.session_token);
+      location.href = "dashboard.html";
+    })
+    .catch(() => {
+      const e = document.getElementById("verify-error");
+      e.hidden = false;
+      e.textContent = "That link expired or was already used. Ask for a fresh one below.";
+      document.getElementById("verifying-view").hidden = true;
+      document.getElementById("form-view").hidden = false;
+    });
+} else if (GharAuth.signedIn()) {
+  location.href = "dashboard.html";
+}
+document.getElementById("send-link").addEventListener("click", async () => {
+  const email = document.getElementById("email").value.trim();
+  const err = document.getElementById("error");
+  err.hidden = true;
+  document.getElementById("sent").hidden = true;
+  document.getElementById("dev-link").hidden = true;
+  if (!email || !email.includes("@")) {
+    err.hidden = false;
+    err.textContent = "Enter a valid email address.";
+    return;
+  }
+  try {
+    const d = await GharAuth.api("/accounts/request-link", "POST", { email });
+    if (d.dev_link) {
+      const a = document.getElementById("dev-link-a");
+      a.href = d.dev_link;
+      document.getElementById("dev-link").hidden = false;
+    } else {
+      document.getElementById("sent").hidden = false;
+    }
+  } catch (e) {
+    err.hidden = false;
+    err.textContent = "Couldn't send the link. Check your connection and try again.";
+  }
+});
+document.getElementById("email").addEventListener("keydown", e => {
+  if (e.key === "Enter") document.getElementById("send-link").click();
+});
+</script>
+</body>
+</html>

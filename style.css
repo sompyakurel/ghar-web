@@ -280,3 +280,18 @@ header p { color: #6b5d4f; margin: 0; font-size: 17px; }
 .builder-tile .opt-sub { font-size: 12px; color: #777; }
 .builder-tile.placed { background: #e8f5e9; border-color: #2e7d32; }
 .builder-answer.shake { animation: shake .4s; }
+.auth-card { background: #fff; border: 1px solid #e5e0d8; border-radius: 12px; padding: 28px 24px; margin: 24px 0; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+.auth-dog { width: 96px; height: 96px; }
+.auth-card h1 { font-size: 26px; margin: 8px 0 4px; }
+.auth-card h2 { font-size: 20px; margin: 0 0 12px; }
+.auth-sub { color: #666; font-size: 15px; margin: 0 0 16px; }
+.auth-input { font-family: inherit; font-size: 17px; padding: 12px 14px; border: 1px solid #ccc; border-radius: 8px; width: 100%; max-width: 380px; margin: 0 0 12px; box-sizing: border-box; }
+.auth-note { color: #666; font-size: 14px; margin: 12px 0 0; }
+.dash-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.dash-head h1 { margin: 8px 0 4px; }
+.dash-email { color: #666; margin: 0; }
+.child-card { background: #fff; border: 1px solid #e5e0d8; border-radius: 12px; padding: 16px 20px; margin: 12px 0; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
+.child-card.active { border-color: #2e7d32; }
+.child-info { display: flex; flex-direction: column; gap: 4px; }
+.child-name { font-size: 20px; font-weight: 700; }
+.child-progress { color: #666; font-size: 14px; }
