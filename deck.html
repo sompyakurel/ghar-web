@@ -174,15 +174,17 @@ function spawnConfetti() {
   }
 }
 const bhuntePlayer = new Audio();
-function showCelebration(title, allDone) {
+function showCelebration(title, allDone, isTeen) {
   const ov = document.getElementById("celebration");
   document.getElementById("celebration-sub").textContent = `${title} · +${COMPLETION_BONUS} XP`;
   ov.hidden = false;
   spawnConfetti();
   playDing();
-  bhuntePlayer.pause();
-  bhuntePlayer.src = allDone ? "assets/audio/bhunte/bhunte_certificate.m4a" : "assets/audio/bhunte/bhunte_keepgoing.m4a";
-  setTimeout(() => bhuntePlayer.play().catch(() => {}), 600);
+  if (!isTeen) {
+    bhuntePlayer.pause();
+    bhuntePlayer.src = allDone ? "assets/audio/bhunte/bhunte_certificate.m4a" : "assets/audio/bhunte/bhunte_keepgoing.m4a";
+    setTimeout(() => bhuntePlayer.play().catch(() => {}), 600);
+  }
   setTimeout(() => { ov.hidden = true; }, 3000);
 }
 document.getElementById("celebration").addEventListener("click", () => {
@@ -306,7 +308,7 @@ fetch("data/nepal-v1.json")
       const xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10) + COMPLETION_BONUS;
       localStorage.setItem("ghar.xp.total", String(xp));
       localStorage.setItem("ghar.justCompleted", deck.title);
-      showCelebration(deck.title, rewarded.size === pack.decks.length);
+      showCelebration(deck.title, rewarded.size === pack.decks.length, deck.difficulty === "teen");
     }
     function updateProgress() {
       const n = heard.size;

@@ -26,7 +26,7 @@
     <div class="motivation" id="motivation">
       <img class="motivation-dog" id="bhunte-dog" src="assets/images/bhunte.svg" alt="Bhunte the dog" title="Tap me to hear me talk!">
       <div class="motivation-body">
-        <p class="motivation-bubble" id="bhunte-says">Namaste! I'm Bhunte. Let's learn Nepali together. Finish a lesson to earn XP!</p>
+        <p class="motivation-bubble" id="bhunte-says"><span class="bubble-ne" id="bhunte-ne">नमस्ते! म भुन्ते हुँ। सँगै नेपाली सिकौं। एउटा पाठ पूरा गरेर XP कमाऔं!</span><span class="bubble-en" id="bhunte-en">Namaste! I'm Bhunte. Let's learn Nepali together. Finish a lesson to earn XP!</span></p>
         <p class="motivation-hint">👆 Tap Bhunte to hear him talk</p>
         <p class="motivation-xp">⭐ <span id="xp-total">0</span> XP</p>
         <p class="motivation-cert">📜 Certificate: <span id="cert-done">0</span> of 22 lessons done</p>
@@ -187,10 +187,11 @@ fetch("data/nepal-v1.json")
     });
     document.getElementById("cert-done").textContent = done;
     document.getElementById("cert-bar").style.width = (done / pack.decks.length * 100) + "%";
-    const says = document.getElementById("bhunte-says");
-    if (done >= pack.decks.length) { says.textContent = "You did it! You earned your certificate! 🎉"; bhunteLine = "assets/audio/bhunte/bhunte_certificate.m4a"; }
-    else if (done === 0) { says.textContent = "Namaste! I'm Bhunte. Let's learn Nepali together. Finish a lesson to earn XP!"; bhunteLine = "assets/audio/bhunte/bhunte_hello.m4a"; }
-    else { says.textContent = "You're doing great! Keep going. Your certificate is waiting!"; bhunteLine = "assets/audio/bhunte/bhunte_keepgoing.m4a"; }
+    const ne = document.getElementById("bhunte-ne");
+    const en = document.getElementById("bhunte-en");
+    if (done >= pack.decks.length) { ne.textContent = "तिमीले गर्‍यौ! तिमीले प्रमाणपत्र पायौ! 🎉"; en.textContent = "You did it! You earned your certificate!"; bhunteLine = "assets/audio/bhunte/bhunte_certificate.m4a"; }
+    else if (done === 0) { ne.textContent = "नमस्ते! म भुन्ते हुँ। सँगै नेपाली सिकौं। एउटा पाठ पूरा गरेर XP कमाऔं!"; en.textContent = "Namaste! I'm Bhunte. Let's learn Nepali together. Finish a lesson to earn XP!"; bhunteLine = "assets/audio/bhunte/bhunte_hello.m4a"; }
+    else { ne.textContent = "स्याबास! अगाडि बढ। तिम्रो प्रमाणपत्र पर्खिरहेको छ!"; en.textContent = "You're doing great! Keep going. Your certificate is waiting!"; bhunteLine = "assets/audio/bhunte/bhunte_keepgoing.m4a"; }
     if (localStorage.getItem("ghar.justCompleted")) {
       localStorage.removeItem("ghar.justCompleted");
       bhunteDog.classList.add("celebrating");
