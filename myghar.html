@@ -17,18 +17,9 @@
     <button class="quiz-next" id="arrange-btn">🧱 Arrange</button>
   </div>
   <div class="myghar-stage" id="stage">
-    <div class="myghar-floor"></div>
-    <img class="myghar-rug" src="assets/images/myghar/rug.jpg" alt="Rug">
-    <div class="myghar-cabinet" id="cabinet">
-      <img class="myghar-cabinet-img" src="assets/images/myghar/shelf.jpg" alt="Trophy cabinet">
-      <div id="trophies"></div>
-    </div>
-    <img class="myghar-window" src="assets/images/myghar/windows.png" alt="Window">
-    <img class="myghar-himal" src="assets/images/myghar/himal.jpg" alt="Himalaya picture">
-    <div class="myghar-sign-wrap" id="sign-wrap">
-      <img class="myghar-sign" src="assets/images/myghar/sign.jpg" alt="Name sign">
-      <div class="myghar-sign-name" id="sign-name">Bhunte</div>
-    </div>
+    <img class="myghar-room" src="assets/images/myghar/room.jpg" alt="My Ghar room">
+    <div id="trophies"></div>
+    <div class="myghar-sign-name" id="sign-name">Bhunte</div>
     <div class="myghar-night" id="night-tint" hidden></div>
     <div class="myghar-weather" id="weather">…</div>
     <img class="myghar-dog" id="dog" src="assets/images/bhunte.svg" alt="Bhunte the dog">
@@ -56,18 +47,20 @@
 </div>
 <script src="auth.js"></script>
 <script>
-// My Ghar -- SLOT SYSTEM (after Claude's room design, but OUR art).
-// Every item belongs to a named slot with a fixed shape, so nothing overlaps
-// and the room scales as one picture on any screen.
-//   W1 Window (right wall)     W2 Hung picture + name sign (center wall)
-//   S1 Trophy cabinet (left) -- 6 cells, 2 per shelf x 3 shelves
-//   F1 Rug (floor) -- the base layer; Bhunte stands on it
-//   P1 Perch (bottom-right) -- Suga the parrot, tap him to hear a word
-// Layers, back to front: wall, wall pictures, cabinet + trophies, rug,
-// pets (Bhunte + Suga), night tint, weather.
-// Bhunte is OUR Figma Bhunte (assets/images/bhunte.svg) and Suga is OUR
-// parrot (assets/images/myghar/suga.png) -- never a drawn stand-in.
-// Bhunte grows by getting BIGGER (one dog, scaled), not by swapping sprites.
+// My Ghar -- ONE ROOM PICTURE (v8).
+// The room is a single wide image (assets/images/myghar/room.jpg): one
+// coherent picture -- wooden trophy cabinet + prayer flags (left), Himalaya
+// picture + name sign (center wall), window + marigolds (right), rug on a
+// wooden floor. Only the LIVING things sit on top of it: Bhunte (our Figma
+// dog), Suga (our parrot), and the earned trophies on the cabinet shelves.
+// Slots (fractions of the room picture, measured from the image itself):
+//   S1 Trophy cabinet -- 6 cells, 2 per shelf x 3 shelves (boards at
+//      y 0.377 / 0.547 / 0.720; cells at x 0.10 / 0.26).
+//   W2 Name sign -- the dog's name is written on it (center 0.50, 0.427).
+//   F1 Rug -- Bhunte stands on it (feet at y ~0.89, center x 0.475).
+//   P1 Perch -- Suga, bottom-right.
+// Layers, back to front: room picture, trophies, dog + Suga, name, night
+// tint, weather. Bhunte grows by getting BIGGER (one dog, scaled).
 // The room starts EMPTY of trophies; they appear only when earned.
 const EARNED = [
   { id: "goldenDiyo", shelf: 0, cell: 0,
@@ -80,10 +73,11 @@ const EARNED = [
     label: "👑 Mukut (crown) — complete all 22 lessons",
     earned: s => s.decksDone >= 22 },
 ];
-// Trophy cell centers: 2 cells per shelf (left 25%, right 75% of the cabinet).
-const CELL_X = [0.25, 0.75];
-// Trophy center height on each cabinet shelf board (fraction of cabinet height).
-const SHELF_Y = [0.38, 0.65, 0.87];
+// Trophy cell centers: 2 cells per shelf (fractions of the ROOM picture).
+const CELL_X = [0.10, 0.26];
+// Trophy centers: just above each shelf board so the trophy sits ON it.
+// Boards are at y 0.377 / 0.547 / 0.720 in the room picture.
+const SHELF_Y = [0.33, 0.50, 0.68];
 const STAGE_NAMES = ["Puppy", "Young Dog", "Big Dog"];
 const STAGE_WIDTH = [20, 25, 30]; // % of the stage width, per stage
 const LAYOUT_KEY = "ghar.myghar.layout";
@@ -164,7 +158,7 @@ function renderTrophies(state) {
       el.classList.add("pop");
       play(`assets/audio/nepal-v1/myghar_${d.id}_np.m4a`);
     });
-    makeDraggable(el, d, document.getElementById("cabinet"));
+    makeDraggable(el, d, document.getElementById("stage"));
     wrap.appendChild(el);
   });
   const shown = EARNED.filter(d => d.earned(state)).length;
