@@ -12,6 +12,7 @@
     <h1>🏠 Ghar</h1>
     <p>Learn Nepali, have fun.</p>
   </header>
+  <p class="testmode" id="testmode" hidden>🧪 Test mode — all decks unlocked. <a href="index.html?test=off">Turn off</a></p>
   <div class="grid" id="decks"></div>
   <p class="error" id="error" hidden>Couldn't load the lessons. Check your connection and refresh.</p>
 </div>
@@ -19,6 +20,13 @@
 <script>
 const FREE = new Set(["alphabet", "numbers"]);
 const TIERS = { beginner: "🌱 Beginner", intermediate: "🌿 Intermediate", hard: "🌳 Hard", teen: "🔥 Teen" };
+function isTestUnlock() {
+  const q = new URLSearchParams(location.search);
+  if (q.has("test")) localStorage.setItem("ghar.testUnlock", q.get("test") === "off" ? "" : "1");
+  return localStorage.getItem("ghar.testUnlock") === "1";
+}
+const TEST = isTestUnlock();
+if (TEST) document.getElementById("testmode").hidden = false;
 function asset(u) {
   if (!u) return "";
   return u.replace(/^\/images\/nepal-v1\//, "assets/images/")
@@ -38,9 +46,10 @@ fetch("data/nepal-v1.json")
     const grid = document.getElementById("decks");
     pack.decks.forEach(deck => {
       const free = FREE.has(deck.id);
+      const open = free || TEST;
       const a = document.createElement("a");
-      a.className = "card" + (free ? "" : " locked");
-      a.href = free ? `deck.html?deck=${deck.id}` : "#";
+      a.className = "card" + (open ? "" : " locked");
+      a.href = open ? `deck.html?deck=${deck.id}` : "#";
       const cover = deck.cover_image
         ? `<img src="${asset(deck.cover_image)}" alt="${deck.title}" onerror="this.remove()">`
         : "";
@@ -49,9 +58,9 @@ fetch("data/nepal-v1.json")
         <div class="card-body">
           <h2>${deck.title}</h2>
           <p>${deck.words.length} words · ${TIERS[deck.difficulty] || deck.difficulty}</p>
-          <span class="badge ${free ? "free" : "locked"}">${free ? "FREE" : "🔒 Locked"}</span>
+          <span class="badge ${free ? "free" : "locked"}">${free ? "FREE" : (TEST ? "TEST" : "🔒 Locked")}</span>
         </div>`;
-      if (!free) a.addEventListener("click", e => { e.preventDefault(); toast("🔒 This deck unlocks with Ghar Premium"); });
+      if (!open) a.addEventListener("click", e => { e.preventDefault(); toast("🔒 This deck unlocks with Ghar Premium"); });
       grid.appendChild(a);
     });
   })

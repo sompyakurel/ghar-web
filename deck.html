@@ -14,8 +14,15 @@
 </div>
 <script>
 const FREE = new Set(["alphabet", "numbers"]);
+function isTestUnlock() {
+  const q = new URLSearchParams(location.search);
+  if (q.has("test")) localStorage.setItem("ghar.testUnlock", q.get("test") === "off" ? "" : "1");
+  return localStorage.getItem("ghar.testUnlock") === "1";
+}
+const TEST = isTestUnlock();
 const deckId = new URLSearchParams(location.search).get("deck");
 function asset(u) {
+  if (!u) return "";
   return u.replace(/^\/images\/nepal-v1\//, "assets/images/")
           .replace(/^\/audio\/nepal-v1\//, "assets/audio/nepal-v1/");
 }
@@ -35,7 +42,7 @@ fetch("data/nepal-v1.json")
     if (!deck) throw new Error("no deck");
     document.title = `Ghar — ${deck.title}`;
     const content = document.getElementById("content");
-    if (!FREE.has(deck.id)) {
+    if (!FREE.has(deck.id) && !TEST) {
       content.innerHTML = `<div class="deck-head"><h1>🔒 ${deck.title}</h1><p>This deck unlocks with Ghar Premium.</p></div>`;
       return;
     }
