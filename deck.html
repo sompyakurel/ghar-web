@@ -32,6 +32,46 @@ function play(url) {
   player.src = url;
   player.play().catch(() => {});
 }
+let playToken = 0;
+function stopSequence() {
+  playToken++;
+  document.querySelectorAll(".word.playing").forEach(c => c.classList.remove("playing"));
+  document.querySelectorAll(".play-btn").forEach(b => { b.textContent = "▶️ Play the conversation"; });
+}
+function playClip(url) {
+  return new Promise(resolve => {
+    player.pause();
+    player.src = url;
+    let done = false;
+    const finish = () => { if (done) return; done = true; cleanup(); resolve(); };
+    const cleanup = () => {
+      player.removeEventListener("ended", finish);
+      player.removeEventListener("error", finish);
+      clearTimeout(fallback);
+    };
+    const fallback = setTimeout(finish, 6000);
+    player.addEventListener("ended", finish);
+    player.addEventListener("error", finish);
+    player.play().catch(finish);
+  });
+}
+const wait = ms => new Promise(r => setTimeout(r, ms));
+async function playSection(words, cards, btn) {
+  const token = ++playToken;
+  document.querySelectorAll(".play-btn").forEach(b => { if (b !== btn) b.textContent = "▶️ Play the conversation"; });
+  btn.textContent = "⏹ Stop";
+  for (let i = 0; i < words.length; i++) {
+    if (token !== playToken) break;
+    cards.forEach(c => c.classList.remove("playing"));
+    cards[i].classList.add("playing");
+    cards[i].scrollIntoView({ block: "nearest", behavior: "smooth" });
+    if (words[i].has_audio && words[i].audio_url) await playClip(asset(words[i].audio_url));
+    if (token !== playToken) break;
+    await wait(450);
+  }
+  cards.forEach(c => c.classList.remove("playing"));
+  btn.textContent = "▶️ Play the conversation";
+}
 const storeKey = `ghar.heard.${deckId}`;
 let heard = new Set(JSON.parse(localStorage.getItem(storeKey) || "[]"));
 function saveHeard() { localStorage.setItem(storeKey, JSON.stringify([...heard])); }
@@ -62,19 +102,25 @@ fetch("data/nepal-v1.json")
       g.words.push(w);
     });
     groups.forEach(g => {
+      const head = document.createElement("div");
+      head.className = "section-head";
       if (g.name) {
         const h = document.createElement("h2");
         h.className = "section";
         h.textContent = g.name;
-        sectionsEl.appendChild(h);
+        head.appendChild(h);
       }
       const grid = document.createElement("div");
       grid.className = "words";
+      const cards = [];
       g.words.forEach(w => {
         const card = document.createElement("div");
         card.className = "word" + (heard.has(w.id) ? " heard" : "");
+        const media = w.color_hex
+          ? `<div class="swatch" style="background:${w.color_hex}"></div>`
+          : (w.image ? `<img src="${asset(w.image)}" alt="" onerror="this.style.display='none'">` : "");
         card.innerHTML = `
-          ${w.image ? `<img src="${asset(w.image)}" alt="" onerror="this.style.display='none'">` : ""}
+          ${media}
           <button type="button" class="heard" aria-label="Mark as heard">✓</button>
           <div class="word-body">
             <div class="deva">${w.devanagari}</div>
@@ -82,6 +128,7 @@ fetch("data/nepal-v1.json")
             <div class="eng">${w.english}</div>
           </div>`;
         card.addEventListener("click", e => {
+          stopSequence();
           if (e.target.closest(".heard")) {
             if (heard.has(w.id)) heard.delete(w.id); else heard.add(w.id);
             card.classList.toggle("heard", heard.has(w.id));
@@ -91,8 +138,21 @@ fetch("data/nepal-v1.json")
             play(asset(w.audio_url));
           }
         });
+        cards.push(card);
         grid.appendChild(card);
       });
+      if (deck.kind === "convo" && g.words.length > 1) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "play-btn";
+        btn.textContent = "▶️ Play the conversation";
+        btn.addEventListener("click", () => {
+          if (btn.textContent.startsWith("⏹")) stopSequence();
+          else playSection(g.words, cards, btn);
+        });
+        head.appendChild(btn);
+      }
+      if (head.children.length) sectionsEl.appendChild(head);
       sectionsEl.appendChild(grid);
     });
     function updateProgress() {

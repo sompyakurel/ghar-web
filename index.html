@@ -21,7 +21,6 @@
 const FREE = new Set(["alphabet", "numbers"]);
 const TIERS = { beginner: "🌱 Beginner", intermediate: "🌿 Intermediate", hard: "🌳 Hard", teen: "🔥 Teen" };
 const COVER_OVERRIDES = {
-  colors: "assets/images/colors_rato.jpg",
   texting: "assets/images/txt_message.jpg",
   slang: "assets/images/slang_khatra.jpg",
   comebacks: "assets/images/comeback_hasayo.jpg",
@@ -58,10 +57,13 @@ fetch("data/nepal-v1.json")
       const a = document.createElement("a");
       a.className = "card" + (open ? "" : " locked");
       a.href = open ? `deck.html?deck=${deck.id}` : "#";
-      const coverUrl = COVER_OVERRIDES[deck.id] || deck.cover_image;
-      const cover = coverUrl
-        ? `<img src="${asset(coverUrl)}" alt="${deck.title}" onerror="this.remove()">`
-        : "";
+      let cover = "";
+      if (deck.id === "colors") {
+        cover = `<div class="color-strip">${deck.words.map(w => `<span style="background:${w.color_hex || "#ccc"}"></span>`).join("")}</div>`;
+      } else {
+        const coverUrl = COVER_OVERRIDES[deck.id] || deck.cover_image;
+        if (coverUrl) cover = `<img src="${asset(coverUrl)}" alt="${deck.title}" onerror="this.remove()">`;
+      }
       a.innerHTML = `
         <div class="cover"><div class="cover-fallback">${deck.title.charAt(0)}</div>${cover}</div>
         <div class="card-body">
