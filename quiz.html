@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ghar — Quiz</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">← All decks</a>
+  <div id="content"></div>
+  <p class="error" id="error" hidden>Couldn't load the quiz.</p>
+</div>
+<script>
+const TIERS = { beginner: "🌱 Beginner", intermediate: "🌿 Intermediate", hard: "🌳 Hard", teen: "🔥 Teen" };
+function isTestUnlock() {
+  const q = new URLSearchParams(location.search);
+  if (q.has("test")) localStorage.setItem("ghar.testUnlock", q.get("test") === "off" ? "" : "1");
+  return localStorage.getItem("ghar.testUnlock") === "1";
+}
+const TEST = isTestUnlock();
+function asset(u) {
+  if (!u) return "";
+  return u.replace(/^\/images\/nepal-v1\//, "assets/images/")
+          .replace(/^\/audio\/nepal-v1\//, "assets/audio/nepal-v1/");
+}
+const FREE_LIMIT = 5;
+let xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
+let freeUsed = parseInt(localStorage.getItem("ghar.quiz.freeUsed") || "0", 10);
+function saveXP() { localStorage.setItem("ghar.xp.total", String(xp)); }
+function saveFree() { localStorage.setItem("ghar.quiz.freeUsed", String(freeUsed)); }
+const player = new Audio();
+let pack = null;
+let sections = [];
+let section = null;
+let queue = [];
+let current = null;
+let options = [];
+let solved = false;
+let wrongIDs = new Set();
+function shuffle(a) {
+  const arr = [...a];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+function wordsFor(id) {
+  const d = pack.decks.find(x => x.id === id);
+  return d ? d.words : [];
+}
+function wordsForTier(tier, exclude) {
+  return pack.decks.filter(d => (d.difficulty || "beginner") === tier && !exclude.includes(d.id)).flatMap(d => d.words);
+}
+function buildSections() {
+  return [
+    { tier: "beginner", title: "Words", icon: "💬", words: wordsForTier("beginner", ["animals", "colors"]), mode: "listen" },
+    { tier: "beginner", title: "Animals", icon: "🐾", words: wordsFor("animals"), mode: "listen" },
+    { tier: "beginner", title: "Colors", icon: "🎨", words: wordsFor("colors"), mode: "listen" },
+    { tier: "intermediate", title: "Words", icon: "📚", words: wordsForTier("intermediate", []), mode: "listen" },
+    { tier: "hard", title: "Words", icon: "🧠", words: wordsForTier("hard", ["dashain", "tihar", "months"]), mode: "listen" },
+    { tier: "hard", title: "Months", icon: "📅", words: wordsFor("months"), mode: "listen" },
+    { tier: "hard", title: "Dashain", icon: "🪔", words: wordsFor("dashain"), mode: "picture" },
+    { tier: "hard", title: "Tihar", icon: "✨", words: wordsFor("tihar"), mode: "picture" },
+    { tier: "teen", title: "Text Pack", icon: "💬", words: wordsFor("texting"), mode: "listen" },
+    { tier: "teen", title: "Slang", icon: "🔥", words: wordsFor("slang"), mode: "listen" },
+    { tier: "teen", title: "Comebacks", icon: "💥", words: wordsFor("comebacks"), mode: "listen" },
+    { tier: "teen", title: "Captions", icon: "📸", words: wordsFor("captions"), mode: "listen" },
+    { tier: "teen", title: "Lyrics", icon: "🎵", words: wordsFor("lyrics"), mode: "listen" },
+  ].filter(s => s.words.length > 0);
+}
+function freeLeft() { return TEST ? "unlimited" : `${FREE_LIMIT - freeUsed} of ${FREE_LIMIT} free left`; }
+function showMenu() {
+  section = null;
+  const content = document.getElementById("content");
+  let html = `<div class="deck-head"><h1>🎮 Pick a quiz</h1><p>+5 XP per correct answer · ⭐ ${xp} XP · ${freeLeft()}</p></div>`;
+  ["beginner", "intermediate", "hard", "teen"].forEach(tier => {
+    const secs = sections.filter(s => s.tier === tier);
+    if (!secs.length) return;
+    html += `<h2 class="quiz-tier">${TIERS[tier] || tier}</h2><div class="quiz-sections">`;
+    secs.forEach((s, i) => {
+      const idx = sections.indexOf(s);
+      html += `<button type="button" class="quiz-card" data-idx="${idx}"><div class="icon">${s.icon}</div><h3>${s.title}</h3><p>${s.words.length} words${s.mode === "picture" ? " · picture quiz" : ""}</p></button>`;
+    });
+    html += `</div>`;
+  });
+  content.innerHTML = html;
+  content.querySelectorAll(".quiz-card").forEach(btn => {
+    btn.addEventListener("click", () => startQuiz(sections[parseInt(btn.dataset.idx, 10)]));
+  });
+}
+function showLock() {
+  const content = document.getElementById("content");
+  content.innerHTML = `<div class="quiz-lock"><div class="big">🔒</div><h1>You've used your 5 free questions!</h1><p>Unlock unlimited quizzes with Ghar Premium.</p><button type="button" class="quiz-next" id="lock-menu">← Back to quiz menu</button></div>`;
+  document.getElementById("lock-menu").addEventListener("click", showMenu);
+}
+function startQuiz(sec) {
+  section = sec;
+  queue = [];
+  newQuestion();
+}
+function playCurrent() {
+  if (!current || !current.has_audio || !current.audio_url) return;
+  player.pause();
+  player.src = asset(current.audio_url);
+  player.play().catch(() => {});
+}
+function newQuestion() {
+  if (!TEST && freeUsed >= FREE_LIMIT) { showLock(); return; }
+  if (!TEST) { freeUsed += 1; saveFree(); }
+  const pool = section.words.filter(w => section.mode === "picture" ? w.image : (w.has_audio !== false));
+  if (queue.length === 0) {
+    queue = shuffle(pool.filter(w => !current || w.id !== current.id));
+    if (queue.length === 0) queue = shuffle(pool);
+  }
+  if (queue.length === 0) { showMenu(); return; }
+  current = queue.shift();
+  const distractors = shuffle(pool.filter(w => w.id !== current.id)).slice(0, 3);
+  options = shuffle([current, ...distractors]);
+  solved = false;
+  wrongIDs = new Set();
+  renderPlayer();
+  if (section.mode === "listen") playCurrent();
+}
+function optionHTML(opt) {
+  if (opt.color_hex) {
+    return `<div class="quiz-swatch" style="background:${opt.color_hex}"></div>`;
+  }
+  if (section.mode === "picture") {
+    return `<div><div class="opt-deva">${opt.devanagari}</div><div class="opt-sub">${opt.english}</div></div>`;
+  }
+  const img = opt.image ? `<img src="${asset(opt.image)}" alt="" onerror="this.style.display='none'">` : "";
+  return `${img}<div class="opt-eng">${opt.english}</div>`;
+}
+function renderPlayer() {
+  const content = document.getElementById("content");
+  const isPicture = section.mode === "picture";
+  const stake = wrongIDs.size === 0 ? "⭐ +5 XP" : "😅 +2 XP now";
+  const stakeClass = wrongIDs.size === 0 ? "good" : "low";
+  let questionHTML = "";
+  if (isPicture) {
+    const img = current.image ? `<img class="quiz-picture" src="${asset(current.image)}" alt="">` : "";
+    const hint = current.quiz_hint ? `<p class="quiz-hint">${current.quiz_hint}</p>` : "";
+    questionHTML = `${img}${hint}`;
+  } else {
+    questionHTML = `<button type="button" class="quiz-play" id="play-word">🔊 Play word</button>`;
+  }
+  const optsHTML = options.map((opt, i) => {
+    const isSwatch = !!opt.color_hex;
+    return `<button type="button" class="quiz-option${isSwatch ? " swatch-btn" : ""}" data-i="${i}">${optionHTML(opt)}</button>`;
+  }).join("");
+  content.innerHTML = `
+    <div class="quiz-player">
+      <button type="button" class="quiz-back" id="quiz-back">← Quiz menu</button>
+      <h1>${section.icon} ${section.title}</h1>
+      <p class="quiz-xp">⭐ ${xp} XP · ${freeLeft()}</p>
+      <p class="quiz-prompt">${isPicture ? "What is this?" : "What did you hear?"}</p>
+      ${questionHTML}
+      <p class="quiz-stake ${stakeClass}" id="stake">${stake}</p>
+      <div class="celebrate" id="celebrate"></div>
+      <div class="quiz-options">${optsHTML}</div>
+      <button type="button" class="quiz-next" id="next-word" hidden>Next word →</button>
+    </div>`;
+  document.getElementById("quiz-back").addEventListener("click", () => { player.pause(); showMenu(); });
+  if (!isPicture) document.getElementById("play-word").addEventListener("click", playCurrent);
+  content.querySelectorAll(".quiz-option").forEach(btn => {
+    btn.addEventListener("click", () => answer(parseInt(btn.dataset.i, 10), btn));
+  });
+  document.getElementById("next-word").addEventListener("click", newQuestion);
+}
+function answer(i, btn) {
+  if (solved) return;
+  const opt = options[i];
+  if (opt.id === current.id) {
+    solved = true;
+    xp += wrongIDs.size === 0 ? 5 : 2;
+    saveXP();
+    btn.classList.add("correct");
+    document.getElementById("celebrate").textContent = "🎉";
+    document.querySelector(".quiz-xp").textContent = `⭐ ${xp} XP · ${freeLeft()}`;
+    document.querySelectorAll(".quiz-option").forEach(b => { b.disabled = true; });
+    document.getElementById("next-word").hidden = false;
+  } else {
+    wrongIDs.add(opt.id);
+    btn.classList.add("wrong");
+    btn.disabled = true;
+    const stake = document.getElementById("stake");
+    stake.textContent = "😅 +2 XP now";
+    stake.className = "quiz-stake low";
+  }
+}
+fetch("data/nepal-v1.json")
+  .then(r => { if (!r.ok) throw new Error("load failed"); return r.json(); })
+  .then(p => {
+    pack = p;
+    sections = buildSections();
+    document.title = "Ghar — Quiz";
+    showMenu();
+  })
+  .catch(() => { document.getElementById("error").hidden = false; });
+</script>
+</body>
+</html>
