@@ -20,6 +20,14 @@
 <script>
 const FREE = new Set(["alphabet", "numbers"]);
 const TIERS = { beginner: "🌱 Beginner", intermediate: "🌿 Intermediate", hard: "🌳 Hard", teen: "🔥 Teen" };
+const COVER_OVERRIDES = {
+  colors: "assets/images/colors_rato.jpg",
+  texting: "assets/images/txt_message.jpg",
+  slang: "assets/images/slang_khatra.jpg",
+  comebacks: "assets/images/comeback_hasayo.jpg",
+  captions: "assets/images/caption_dashain.jpg",
+  lyrics: "assets/images/lyric_resham.jpg",
+};
 function isTestUnlock() {
   const q = new URLSearchParams(location.search);
   if (q.has("test")) localStorage.setItem("ghar.testUnlock", q.get("test") === "off" ? "" : "1");
@@ -50,8 +58,9 @@ fetch("data/nepal-v1.json")
       const a = document.createElement("a");
       a.className = "card" + (open ? "" : " locked");
       a.href = open ? `deck.html?deck=${deck.id}` : "#";
-      const cover = deck.cover_image
-        ? `<img src="${asset(deck.cover_image)}" alt="${deck.title}" onerror="this.remove()">`
+      const coverUrl = COVER_OVERRIDES[deck.id] || deck.cover_image;
+      const cover = coverUrl
+        ? `<img src="${asset(coverUrl)}" alt="${deck.title}" onerror="this.remove()">`
         : "";
       a.innerHTML = `
         <div class="cover"><div class="cover-fallback">${deck.title.charAt(0)}</div>${cover}</div>
