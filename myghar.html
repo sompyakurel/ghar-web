@@ -14,6 +14,7 @@
       <h1>🏠 <span id="house-name-label">My Ghar</span></h1>
       <p class="myghar-sub"><span id="dog-name-label">Bhunte</span> · <span id="dog-stage-label">Puppy</span> · ⭐ <span id="xp-label">0</span> XP</p>
     </div>
+    <a class="quiz-next shop-btn" href="shop.html">🛍️ Shop</a>
     <button class="quiz-next" id="arrange-btn">🧱 Arrange</button>
   </div>
   <div class="myghar-stage" id="stage">
@@ -22,8 +23,8 @@
     <div class="myghar-sign-name" id="sign-name">Bhunte</div>
     <div class="myghar-night" id="night-tint" hidden></div>
     <div class="myghar-weather" id="weather">…</div>
+    <div id="shop-items"></div>
     <img class="myghar-dog" id="dog" src="assets/images/bhunte.svg" alt="Bhunte the dog">
-    <img class="myghar-suga" id="suga" src="assets/images/myghar/suga.png" alt="Suga the parrot">
   </div>
   <p class="myghar-hint" id="hint">Tap Bhunte and he'll bark! 🐶</p>
   <div class="myghar-earn" id="earn-box">
@@ -46,6 +47,7 @@
   </div>
 </div>
 <script src="auth.js"></script>
+<script src="shop-data.js"></script>
 <script>
 // My Ghar -- ONE ROOM PICTURE (v8).
 // The room is a single wide image (assets/images/myghar/room.jpg): one
@@ -59,9 +61,11 @@
 //   W2 Name sign -- the dog's name is written on it (center 0.50, 0.427).
 //   F1 Rug -- Bhunte stands on it (feet at y ~0.89, center x 0.475).
 //   P1 Perch -- Suga, bottom-right.
-// Layers, back to front: room picture, trophies, dog + Suga, name, night
-// tint, weather. Bhunte grows by getting BIGGER (one dog, scaled).
-// The room starts EMPTY of trophies; they appear only when earned.
+// Layers, back to front: room picture, trophies + shop items, dog, name,
+// night tint, weather. Bhunte grows by getting BIGGER (one dog, scaled).
+// The room starts EMPTY of trophies AND shop items. Trophies appear when
+// earned by learning; shop items (including Suga the parrot) appear only
+// after the kid buys them with XP in the Shop. Nothing is just given.
 const EARNED = [
   { id: "goldenDiyo", shelf: 0, cell: 0,
     label: "🪔 Golden Diyo — complete all 10 missions",
@@ -162,9 +166,10 @@ function renderTrophies(state) {
     wrap.appendChild(el);
   });
   const shown = EARNED.filter(d => d.earned(state)).length;
-  document.getElementById("hint").textContent = shown === 0
-    ? "Your room is empty — earn decorations by learning! Tap Bhunte and he'll bark! 🐶"
-    : "Tap a trophy to hear it. Tap Bhunte and he'll bark! 🐶";
+  const ownedCount = shopOwned().length;
+  document.getElementById("hint").textContent = (shown === 0 && ownedCount === 0)
+    ? "Your room is empty — earn XP by learning, then buy things for it in the 🛍️ Shop! Tap Bhunte and he'll bark! 🐶"
+    : "Tap a trophy or decoration to hear it. Tap Bhunte and he'll bark! 🐶";
   const list = document.getElementById("earn-list");
   list.innerHTML = "";
   EARNED.forEach(d => {
@@ -174,15 +179,48 @@ function renderTrophies(state) {
   });
   document.getElementById("earn-box").style.display = shown >= EARNED.length ? "none" : "";
 }
-function makeDraggable(el, d, container) {
+// Shop items the kid owns, rendered in the room at their home position
+// (SHOP catalog x/y) plus any Arrange drag delta. Suga is a shop pet: he
+// only appears here after he is bought. Tapping an item plays its name
+// clip when one exists (myghar_<id>_np.m4a); Suga says a Nepali word.
+function renderShopItems() {
+  const wrap = document.getElementById("shop-items");
+  wrap.innerHTML = "";
+  const owned = shopOwned();
+  SHOP.filter(item => owned.includes(item.id)).forEach(item => {
+    const delta = layout[item.id] || [0, 0];
+    const el = document.createElement("img");
+    el.src = `assets/images/myghar/${item.img}`;
+    el.alt = item.en;
+    el.className = (item.id === "suga" ? "myghar-suga" : "myghar-shop-item") + (arranging ? " arranging" : "");
+    el.dataset.id = item.id;
+    el.style.left = ((item.x + delta[0]) * 100) + "%";
+    el.style.top = ((item.y + delta[1]) * 100) + "%";
+    el.style.width = item.w + "%";
+    el.addEventListener("click", () => {
+      if (arranging) return;
+      el.classList.remove("pop");
+      void el.offsetWidth;
+      el.classList.add("pop");
+      if (item.audio === "suga") {
+        play(SUGA_CLIPS[Math.floor(Math.random() * SUGA_CLIPS.length)]);
+      } else if (item.audio) {
+        play(`assets/audio/nepal-v1/myghar_${item.audio}_np.m4a`);
+      }
+    });
+    makeDraggable(el, item, document.getElementById("stage"), item.x, item.y);
+    wrap.appendChild(el);
+  });
+}
+function makeDraggable(el, d, container, homeX, homeY) {
   el.addEventListener("pointerdown", e => {
     if (!arranging) return;
     e.preventDefault();
     const rect = container.getBoundingClientRect();
     const startX = e.clientX, startY = e.clientY;
     const base = layout[d.id] || [0, 0];
-    const homeX = CELL_X[d.cell];
-    const homeY = SHELF_Y[d.shelf];
+    if (homeX === undefined) homeX = CELL_X[d.cell];
+    if (homeY === undefined) homeY = SHELF_Y[d.shelf];
     const origLeft = homeX + base[0], origTop = homeY + base[1];
     function onMove(ev) {
       const dx = (ev.clientX - startX) / rect.width;
@@ -250,13 +288,6 @@ async function renderWeather() {
   }
 }
 const SUGA_CLIPS = ["assets/audio/nepal-v1/myghar_sugaMitho_np.m4a", "assets/audio/nepal-v1/myghar_sugaGreeting_np.m4a"];
-document.getElementById("suga").addEventListener("click", () => {
-  const suga = document.getElementById("suga");
-  suga.classList.remove("bounce");
-  void suga.offsetWidth;
-  suga.classList.add("bounce");
-  play(SUGA_CLIPS[Math.floor(Math.random() * SUGA_CLIPS.length)]);
-});
 document.getElementById("dog").addEventListener("click", () => {
   const xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
   const stage = dogStageFor(xp);
@@ -271,6 +302,7 @@ document.getElementById("arrange-btn").addEventListener("click", () => {
   document.getElementById("arrange-btn").textContent = arranging ? "✅ Done arranging" : "🧱 Arrange";
   const state = readState();
   renderTrophies(state);
+  renderShopItems();
 });
 document.getElementById("dog-name").addEventListener("input", e => {
   localStorage.setItem(DOG_NAME_KEY, e.target.value);
@@ -291,6 +323,7 @@ GharAuth.pull().catch(() => {}).then(async () => {
   } catch (e) { /* deck count stays 0 */ }
   const state = readState();
   renderTrophies(state);
+  renderShopItems();
   renderDog(state.xp);
   renderNames();
   renderDayNight();

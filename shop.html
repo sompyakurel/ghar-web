@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ghar — Shop</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="myghar.html">← My Ghar</a>
+  <div class="shop-head">
+    <div>
+      <h1>🛍️ Ghar Shop</h1>
+      <p class="shop-sub">Spend the XP you earn by learning on things for your room. Nothing here costs real money — only XP.</p>
+    </div>
+    <div class="shop-balance">⭐ <span id="xp-label">0</span> XP</div>
+  </div>
+  <p class="shop-hint" id="hint">Tap an item to buy it. Bought things appear in your room — drag them around in Arrange mode.</p>
+  <div class="shop-grid" id="shop-grid"></div>
+  <div class="shop-owned" id="shop-owned"></div>
+</div>
+<script src="auth.js"></script>
+<script src="shop-data.js"></script>
+<script>
+// Ghar Shop -- buy room decorations and Suga the parrot with XP.
+// Prices are in XP. Buying deducts XP (localStorage ghar.xp.total, pushed
+// to the server) and records the item in ghar.shop.owned (pushed to the
+// server too). Trophies are NOT sold here -- they are earned by learning.
+const player = new Audio();
+function play(url) { player.pause(); player.src = url; player.play().catch(() => {}); }
+function xp() { return parseInt(localStorage.getItem("ghar.xp.total") || "0", 10); }
+function saveXP(v) {
+  localStorage.setItem("ghar.xp.total", String(v));
+  if (window.GharAuth) GharAuth.pushTotals().catch(() => {});
+}
+function render() {
+  const balance = xp();
+  document.getElementById("xp-label").textContent = balance;
+  const owned = shopOwned();
+  const grid = document.getElementById("shop-grid");
+  grid.innerHTML = "";
+  SHOP.forEach(item => {
+    const isOwned = owned.includes(item.id);
+    const afford = balance >= item.price;
+    const card = document.createElement("div");
+    card.className = "shop-card" + (isOwned ? " owned" : "") + (!isOwned && !afford ? " too-expensive" : "");
+    const img = document.createElement("img");
+    img.src = `assets/images/myghar/${item.img}`;
+    img.alt = item.en;
+    img.className = "shop-img";
+    const ne = document.createElement("div");
+    ne.className = "shop-name-ne";
+    ne.textContent = `${item.emoji} ${item.ne}`;
+    const en = document.createElement("div");
+    en.className = "shop-name-en";
+    en.textContent = item.en;
+    const price = document.createElement("div");
+    price.className = "shop-price";
+    price.textContent = isOwned ? "✅ Owned" : `⭐ ${item.price} XP`;
+    card.appendChild(img);
+    card.appendChild(ne);
+    card.appendChild(en);
+    card.appendChild(price);
+    if (!isOwned) {
+      const btn = document.createElement("button");
+      btn.className = "quiz-next shop-buy";
+      btn.textContent = afford ? "Buy" : `Need ${item.price - balance} more XP`;
+      btn.disabled = !afford;
+      btn.addEventListener("click", () => {
+        if (xp() < item.price) return;
+        if (!confirm(`Buy ${item.en} for ${item.price} XP?`)) return;
+        saveXP(xp() - item.price);
+        const list = shopOwned();
+        list.push(item.id);
+        shopSaveOwned(list);
+        if (window.GharAuth) GharAuth.api("/accounts/children/" + GharAuth.childId() + "/shop", "POST", { item_id: item.id }).catch(() => {});
+        if (item.audio === "suga") {
+          play("assets/audio/nepal-v1/myghar_sugaMitho_np.m4a");
+        } else if (item.audio) {
+          play(`assets/audio/nepal-v1/myghar_${item.audio}_np.m4a`);
+        } else {
+          play("assets/audio/nepal-v1/myghar_sugaGreeting_np.m4a");
+        }
+        render();
+      });
+      card.appendChild(btn);
+    } else {
+      const link = document.createElement("a");
+      link.className = "shop-see";
+      link.href = "myghar.html";
+      link.textContent = "See it in your room →";
+      card.appendChild(link);
+    }
+    grid.appendChild(card);
+  });
+  const ownedBox = document.getElementById("shop-owned");
+  ownedBox.textContent = owned.length === 0
+    ? "You haven't bought anything yet. Earn XP from lessons, quizzes and missions, then come back!"
+    : `You own ${owned.length} of ${SHOP.length} shop items.`;
+}
+GharAuth.pull().catch(() => {}).then(async () => {
+  // Pull the server's owned list so a purchase on another device shows up.
+  try {
+    const me = await GharAuth.api("/accounts/children/" + GharAuth.childId() + "/shop", "GET");
+    if (me && Array.isArray(me.items)) {
+      const local = shopOwned();
+      const merged = [...new Set([...local, ...me.items])];
+      shopSaveOwned(merged);
+    }
+  } catch (e) { /* guest or offline -- local list stands */ }
+  render();
+}).catch(() => { render(); });
+</script>
+</body>
+</html>
