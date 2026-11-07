@@ -295,3 +295,27 @@ header p { color: #6b5d4f; margin: 0; font-size: 17px; }
 .child-info { display: flex; flex-direction: column; gap: 4px; }
 .child-name { font-size: 20px; font-weight: 700; }
 .child-progress { color: #666; font-size: 14px; }
+.cert-lock { text-align: center; padding: 40px 20px; }
+.cert-lock-emoji { font-size: 64px; }
+.cert-lock h1 { font-size: 28px; margin: 8px 0; }
+.cert-lock p { color: #666; font-size: 17px; }
+.cert-wrap { position: relative; }
+.cert { background: #fffdf5; border: 4px solid #d4a017; border-radius: 8px; outline: 1px solid #d4a017; outline-offset: 6px; text-align: center; padding: 36px 24px 28px; margin: 16px 0 20px; box-shadow: 0 4px 16px rgba(0,0,0,.10); position: relative; z-index: 2; }
+.cert-dog { width: 110px; height: 110px; }
+.cert-kicker { letter-spacing: 3px; font-size: 13px; font-weight: 700; color: #7a5c00; margin: 8px 0 4px; }
+.cert-title { font-size: 34px; margin: 0 0 12px; }
+.cert-line { color: #666; font-size: 16px; margin: 6px 0; }
+.cert-name { font-family: inherit; font-size: 30px; font-weight: 700; text-align: center; border: none; border-bottom: 2px solid #d4a017; background: transparent; padding: 4px 8px; margin: 8px 0; width: 100%; max-width: 420px; color: #26221f; }
+.cert-name:focus { outline: none; border-bottom-color: #2e7d32; }
+.cert-name-text { font-size: 30px; font-weight: 700; margin: 8px 0; color: #26221f; }
+.cert-neprican { font-size: 30px; font-weight: 800; color: #2e7d32; margin: 10px 0 2px; }
+.cert-nepali { font-size: 20px; color: #6b5d4f; margin: 0 0 12px; }
+.cert-date { color: #666; font-size: 15px; margin: 0; }
+.cert-actions { display: flex; gap: 16px; align-items: center; justify-content: center; flex-wrap: wrap; }
+.cert-note { text-align: center; color: #999; font-size: 13px; margin-top: 12px; }
+@media print {
+  body { background: #fff; }
+  .back, .cert-actions, .cert-note, #error { display: none !important; }
+  .wrap { max-width: none; padding: 0; }
+  .cert { box-shadow: none; margin: 0; }
+}

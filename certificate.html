@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ghar — Certificate</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">← Home</a>
+  <div id="content"></div>
+  <p class="error" id="error" hidden>Couldn't load the certificate. Check your connection and refresh.</p>
+</div>
+<script src="auth.js"></script>
+<script>
+const NAME_KEY = "ghar.cert.name";
+const DATE_KEY = "ghar.cert.date";
+function todayStr() {
+  return new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+}
+function spawnConfetti() {
+  const box = document.getElementById("cert-confetti");
+  if (!box) return;
+  box.innerHTML = "";
+  const colors = ["#ff5252", "#ffb300", "#00c853", "#0091ff", "#aa00ff", "#ff4081"];
+  for (let i = 0; i < 60; i++) {
+    const piece = document.createElement("div");
+    piece.className = "confetti-piece";
+    piece.style.left = Math.random() * 100 + "%";
+    piece.style.background = colors[i % colors.length];
+    piece.style.animationDelay = (Math.random() * 0.5) + "s";
+    piece.style.animationDuration = (1.8 + Math.random() * 1.4) + "s";
+    box.appendChild(piece);
+  }
+}
+function renderLock(content, done, total) {
+  content.innerHTML = `
+    <div class="cert-lock">
+      <div class="cert-lock-emoji">📜</div>
+      <h1>Your certificate is waiting</h1>
+      <p>Complete all ${total} lessons to earn your Certified Neprican certificate.</p>
+      <div class="progress"><div style="width:${(done / total * 100)}%"></div></div>
+      <p class="progress-label">${done} of ${total} lessons done · ${total - done} to go</p>
+      <a class="quiz-next" href="index.html#lessons" style="text-decoration:none;display:inline-block;">Keep learning →</a>
+    </div>`;
+}
+function renderCert(content, name, dateStr, total, nameEditable) {
+  const nameBlock = nameEditable
+    ? `<input class="cert-name" id="cert-name" type="text" placeholder="Type your name here" value="${name.replace(/"/g, "&quot;")}" maxlength="60">`
+    : `<p class="cert-name-text">${name.replace(/</g, "&lt;")}</p>`;
+  content.innerHTML = `
+    <div class="cert-wrap">
+      <div class="confetti" id="cert-confetti"></div>
+      <div class="cert">
+        <img class="cert-dog" src="assets/images/bhunte.svg" alt="Bhunte">
+        <p class="cert-kicker">🏠 GHAR · LEARN NEPALI</p>
+        <h1 class="cert-title">Certificate of Achievement</h1>
+        <p class="cert-line">This certifies that</p>
+        ${nameBlock}
+        <p class="cert-line">has completed all ${total} lessons and is hereby</p>
+        <p class="cert-neprican">Certified Neprican</p>
+        <p class="cert-nepali">प्रमाणित नेप्रिकन</p>
+        <p class="cert-date">Awarded ${dateStr}</p>
+      </div>
+      <div class="cert-actions">
+        <button class="quiz-next" id="print-cert">🖨️ Print certificate</button>
+        <a class="back" href="index.html" style="margin:0;">← Back home</a>
+      </div>
+      ${nameEditable ? `<p class="cert-note">Tip: tap your name above to edit it — it's saved in this browser. Sign in to save it to your child's profile.</p>` : ""}
+    </div>`;
+  spawnConfetti();
+  if (nameEditable) {
+    const nameInput = document.getElementById("cert-name");
+    nameInput.addEventListener("input", () => localStorage.setItem(NAME_KEY, nameInput.value));
+  }
+  document.getElementById("print-cert").addEventListener("click", () => window.print());
+}
+async function main() {
+  const content = document.getElementById("content");
+  const pack = await (await fetch("data/nepal-v1.json")).json();
+  const total = pack.decks.length;
+  const signedIn = GharAuth.signedIn() && GharAuth.childId();
+  if (signedIn) {
+    // Per-account: progress and name come from the child's profile.
+    await GharAuth.pull().catch(() => {});
+    const p = await GharAuth.api("/accounts/children/" + GharAuth.childId() + "/progress");
+    let done = 0;
+    pack.decks.forEach(deck => {
+      const heard = p.heard[deck.id] || [];
+      if (heard.length >= deck.words.length) done++;
+    });
+    if (done < total) { renderLock(content, done, total); return; }
+    const cert = await GharAuth.api("/accounts/children/" + GharAuth.childId() + "/certificate", "POST");
+    renderCert(content, cert.name, cert.cert_date, total, false);
+    return;
+  }
+  // Guest (not signed in): progress and name from this browser.
+  let done = 0;
+  pack.decks.forEach(deck => {
+    const heard = JSON.parse(localStorage.getItem(`ghar.heard.${deck.id}`) || "[]");
+    if (heard.length >= deck.words.length) done++;
+  });
+  if (done < total) { renderLock(content, done, total); return; }
+  let dateStr = localStorage.getItem(DATE_KEY);
+  if (!dateStr) { dateStr = todayStr(); localStorage.setItem(DATE_KEY, dateStr); }
+  renderCert(content, localStorage.getItem(NAME_KEY) || "", dateStr, total, true);
+}
+main().catch(() => { document.getElementById("error").hidden = false; });
+</script>
+</body>
+</html>
