@@ -146,3 +146,10 @@ header p { color: #6b5d4f; margin: 0; font-size: 17px; }
 .quiz-lock { text-align: center; padding: 40px 20px; }
 .quiz-lock .big { font-size: 56px; }
 .celebrate { text-align: center; font-size: 40px; min-height: 48px; }
+.quiz-option.wrong { border-color: #e53935; background: #fde8e8; opacity: 1; animation: shake .3s; }
+.quiz-option.swatch-btn.wrong { opacity: .35; }
+.quiz-option.swatch-btn.wrong .quiz-swatch { border-color: #e53935; }
+.quiz-feedback { text-align: center; font-weight: 700; font-size: 17px; min-height: 24px; margin: 0 0 10px; }
+.quiz-feedback.good { color: #2e7d32; }
+.quiz-feedback.bad { color: #e53935; }
+@keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }

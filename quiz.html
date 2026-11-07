@@ -31,6 +31,45 @@ let freeUsed = parseInt(localStorage.getItem("ghar.quiz.freeUsed") || "0", 10);
 function saveXP() { localStorage.setItem("ghar.xp.total", String(xp)); }
 function saveFree() { localStorage.setItem("ghar.quiz.freeUsed", String(freeUsed)); }
 const player = new Audio();
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  return audioCtx;
+}
+function playDing() {
+  try {
+    const ctx = getAudioCtx();
+    const now = ctx.currentTime;
+    [[880, 0.25], [1318, 0.12]].forEach(([freq, vol]) => {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      g.gain.setValueAtTime(vol, now);
+      g.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+      osc.connect(g).connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.9);
+    });
+  } catch (e) {}
+}
+function playWrong() {
+  try {
+    const ctx = getAudioCtx();
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(220, now);
+    osc.frequency.exponentialRampToValueAtTime(140, now + 0.25);
+    g.gain.setValueAtTime(0.2, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+    osc.connect(g).connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.3);
+  } catch (e) {}
+}
 let pack = null;
 let sections = [];
 let section = null;
@@ -159,6 +198,7 @@ function renderPlayer() {
       <p class="quiz-prompt">${isPicture ? "What is this?" : "What did you hear?"}</p>
       ${questionHTML}
       <p class="quiz-stake ${stakeClass}" id="stake">${stake}</p>
+      <p class="quiz-feedback" id="feedback"></p>
       <div class="celebrate" id="celebrate"></div>
       <div class="quiz-options">${optsHTML}</div>
       <button type="button" class="quiz-next" id="next-word" hidden>Next word →</button>
@@ -175,20 +215,29 @@ function answer(i, btn) {
   const opt = options[i];
   if (opt.id === current.id) {
     solved = true;
-    xp += wrongIDs.size === 0 ? 5 : 2;
+    const earned = wrongIDs.size === 0 ? 5 : 2;
+    xp += earned;
     saveXP();
+    playDing();
     btn.classList.add("correct");
     document.getElementById("celebrate").textContent = "🎉";
+    const fb = document.getElementById("feedback");
+    fb.textContent = `✅ Correct! +${earned} XP`;
+    fb.className = "quiz-feedback good";
     document.querySelector(".quiz-xp").textContent = `⭐ ${xp} XP · ${freeLeft()}`;
     document.querySelectorAll(".quiz-option").forEach(b => { b.disabled = true; });
     document.getElementById("next-word").hidden = false;
   } else {
     wrongIDs.add(opt.id);
+    playWrong();
     btn.classList.add("wrong");
     btn.disabled = true;
     const stake = document.getElementById("stake");
     stake.textContent = "😅 +2 XP now";
     stake.className = "quiz-stake low";
+    const fb = document.getElementById("feedback");
+    fb.textContent = "✗ Not quite — try again!";
+    fb.className = "quiz-feedback bad";
   }
 }
 fetch("data/nepal-v1.json")
