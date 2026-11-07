@@ -43,6 +43,14 @@ let mouthTimer = null;
 function portrait(speaker, frame) {
   return `assets/images/portraits/${speaker === "A" ? "boy" : "girl"}-${frame}.jpg`;
 }
+function pinStage() {
+  const st = document.querySelector(".stage");
+  if (st) st.classList.add("playing");
+}
+function unpinStage() {
+  const st = document.querySelector(".stage");
+  if (st) st.classList.remove("playing");
+}
 function setSpeaker(speaker, word) {
   clearSpeaker();
   if (!speaker) return;
@@ -76,6 +84,7 @@ function clearSpeaker() {
 function stopSequence() {
   playToken++;
   clearSpeaker();
+  unpinStage();
   document.querySelectorAll(".word.playing").forEach(c => c.classList.remove("playing"));
   document.querySelectorAll(".play-btn").forEach(b => { b.textContent = "▶️ Play the conversation"; });
 }
@@ -99,6 +108,7 @@ function playClip(url) {
 const wait = ms => new Promise(r => setTimeout(r, ms));
 async function playSection(words, cards, btn) {
   const token = ++playToken;
+  pinStage();
   document.querySelectorAll(".play-btn").forEach(b => { if (b !== btn) b.textContent = "▶️ Play the conversation"; });
   btn.textContent = "⏹ Stop";
   for (let i = 0; i < words.length; i++) {
@@ -116,6 +126,7 @@ async function playSection(words, cards, btn) {
   }
   cards.forEach(c => c.classList.remove("playing"));
   clearSpeaker();
+  unpinStage();
   btn.textContent = "▶️ Play the conversation";
 }
 const storeKey = `ghar.heard.${deckId}`;
@@ -201,8 +212,9 @@ fetch("data/nepal-v1.json")
             updateProgress();
           } else if (w.has_audio && w.audio_url) {
             if (isConvo) {
+              pinStage();
               setSpeaker(w.speaker || "A", w);
-              player.addEventListener("ended", () => clearSpeaker(), { once: true });
+              player.addEventListener("ended", () => { clearSpeaker(); unpinStage(); }, { once: true });
             }
             play(asset(w.audio_url));
           }

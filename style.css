@@ -89,3 +89,13 @@ header p { color: #6b5d4f; margin: 0; font-size: 17px; }
 .actor-label.a { color: #1e88e5; }
 .actor-label.b { color: #f57c00; }
 .stage-mid { font-size: 26px; padding-bottom: 44px; opacity: .55; }
+.stage.playing { position: sticky; top: 0; z-index: 20; box-shadow: 0 2px 12px rgba(0,0,0,.18); padding: 6px 14px 4px; }
+.stage.playing .bubble-slot { min-height: 52px; }
+.stage.playing .speak-bubble { padding: 5px 12px; }
+.stage.playing .speak-bubble .deva { font-size: 15px; }
+.stage.playing .speak-bubble .roma { font-size: 12px; }
+.stage.playing .actor img { height: 96px; }
+.stage.playing .actor.girl img { height: 84px; }
+.stage.playing .actor-label { display: none; }
+.stage.playing .stage-mid { padding-bottom: 18px; font-size: 20px; }
+.stage.playing .waves { top: 12px; }
