@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Leaderboard — Ghar</title>
+<link rel="stylesheet" href="style.css?v=4">
+<style>
+.lb-card { background: #fff; border: 1px solid #e5e0d8; border-radius: 16px; padding: 20px; margin: 16px 0; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+.lb-card h2 { margin: 0 0 8px; font-size: 20px; }
+.lb-card p { color: #666; font-size: 15px; margin: 0 0 12px; }
+.lb-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.lb-input { font-family: inherit; font-size: 17px; padding: 12px 14px; border: 1px solid #ccc; border-radius: 10px; flex: 1; min-width: 180px; box-sizing: border-box; }
+.lb-code { font-size: 28px; font-weight: 800; letter-spacing: 2px; text-align: center; background: #fff8ee; border: 1px dashed #d4a017; border-radius: 12px; padding: 12px; margin: 12px 0; }
+.lb-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0 8px; }
+.lb-tab { font-family: inherit; font-size: 15px; font-weight: 700; padding: 9px 14px; border-radius: 999px; border: 2px solid #f0e8dc; background: #fff; cursor: pointer; color: inherit; }
+.lb-tab.active { border-color: #2e7d32; background: #e8f5e9; }
+.lb-list { list-style: none; margin: 8px 0 0; padding: 0; }
+.lb-list li { display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid #f0e8dc; border-radius: 12px; padding: 12px 14px; margin: 8px 0; }
+.lb-list li.me { border-color: #2e7d32; background: #e8f5e9; }
+.lb-rank { font-size: 20px; font-weight: 800; width: 36px; text-align: center; flex-shrink: 0; }
+.lb-name { flex: 1; font-size: 17px; font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lb-stat { font-size: 17px; font-weight: 800; color: #2e7d32; flex-shrink: 0; }
+.lb-note { font-size: 13px; color: #999; text-align: center; margin: 16px 0 0; }
+.lb-empty { text-align: center; color: #666; padding: 24px 12px; }
+.lb-danger { background: none; border: none; color: #c62828; font-size: 14px; cursor: pointer; padding: 0; text-decoration: underline; font-family: inherit; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="index.html">← Home</a>
+  <h1>🏆 Leaderboard</h1>
+  <p class="section-sub">Family and friends only — share a code, see who's ahead.</p>
+
+  <div id="setup"></div>
+
+  <div id="board" hidden>
+    <div class="lb-card">
+      <h2 id="group-title">Your group</h2>
+      <p>Group code: <strong id="group-code"></strong> · <button type="button" class="lb-danger" id="leave-group">Leave group</button></p>
+      <div class="lb-row">
+        <input class="lb-input" id="nickname" maxlength="20" placeholder="Pick a fun nickname — not your real name">
+        <button type="button" class="quiz-next" id="save-nickname">Save nickname</button>
+      </div>
+      <p class="lb-note" style="text-align:left;margin:8px 0 0">Your nickname shows on the board. Use a fun one — never your real name.</p>
+    </div>
+
+    <div class="lb-tabs" id="tabs">
+      <button type="button" class="lb-tab active" data-board="xp">⭐ XP</button>
+      <button type="button" class="lb-tab" data-board="quiz_streak_best">🔥 Streak</button>
+      <button type="button" class="lb-tab" data-board="quiz_correct_total">✅ Quiz</button>
+      <button type="button" class="lb-tab" data-board="missions_done">🎯 Missions</button>
+    </div>
+
+    <div class="lb-card" style="margin-top:0">
+      <div class="lb-row" style="justify-content:space-between">
+        <h2 id="board-title" style="margin:0">⭐ XP</h2>
+        <button type="button" class="quiz-next" id="share-score">Share my score</button>
+      </div>
+      <ul class="lb-list" id="players"></ul>
+      <p class="lb-note" id="board-note"></p>
+      <p style="text-align:center;margin:16px 0 0"><button type="button" class="lb-danger" id="delete-score">Delete my score from this group</button></p>
+    </div>
+    <p class="lb-note">Groups disappear after 30 days with no activity. Only people with your code can see this board.</p>
+  </div>
+
+  <p class="error" id="error" hidden></p>
+</div>
+<script src="auth.js"></script>
+<script>
+const LB_API = "https://backend-patient-wave-3724.fly.dev/leaderboard";
+const CODE_KEY = "ghar.lb.code";
+const NAME_KEY = "ghar.lb.groupName";
+const NICK_KEY = "ghar.lb.nickname";
+const BOARDS = {
+  xp: { title: "⭐ XP", label: "XP" },
+  quiz_streak_best: { title: "🔥 Best quiz streak", label: "" },
+  quiz_correct_total: { title: "✅ Quiz correct", label: "" },
+  missions_done: { title: "🎯 Missions done", label: "" },
+};
+let board = "xp";
+let players = [];
+let groupName = "";
+
+function showError(msg) {
+  const el = document.getElementById("error");
+  el.textContent = msg;
+  el.hidden = false;
+  setTimeout(() => { el.hidden = true; }, 5000);
+}
+function code() { return (localStorage.getItem(CODE_KEY) || "").trim().toUpperCase(); }
+function nickname() { return (localStorage.getItem(NICK_KEY) || "").trim(); }
+function myStats() {
+  let missions = 0;
+  try {
+    const c = JSON.parse(localStorage.getItem("ghar.missions.completed") || "[]");
+    const v = JSON.parse(localStorage.getItem("ghar.missions.verified") || "[]");
+    missions = new Set([...c, ...v]).size;
+  } catch (e) { missions = 0; }
+  return {
+    xp: parseInt(localStorage.getItem("ghar.xp.total") || "0", 10) || 0,
+    quiz_streak_best: parseInt(localStorage.getItem("ghar.quiz.streakBest") || "0", 10) || 0,
+    quiz_correct_total: parseInt(localStorage.getItem("ghar.quiz.correctTotal") || "0", 10) || 0,
+    missions_done: missions,
+  };
+}
+
+function renderSetup() {
+  const el = document.getElementById("setup");
+  el.innerHTML = `
+    <div class="lb-card">
+      <h2>👋 Pick your nickname</h2>
+      <p>This is the name everyone in your group will see.</p>
+      <div class="lb-row">
+        <input class="lb-input" id="setup-nickname" maxlength="20" placeholder="Pick a fun nickname — not your real name" value="${nickname().replace(/"/g, "&quot;")}">
+      </div>
+    </div>
+    <div class="lb-card">
+      <h2>➕ Create a group</h2>
+      <p>Start a new family group. You get a code to share — only people with the code can join.</p>
+      <div class="lb-row">
+        <input class="lb-input" id="group-name" maxlength="30" placeholder="Group name (optional — e.g. Pyakurel Family)">
+        <button type="button" class="quiz-next" id="create-group">Create group</button>
+      </div>
+      <div id="created" hidden>
+        <p style="margin:12px 0 4px">Share this code with your family:</p>
+        <div class="lb-code" id="created-code"></div>
+        <p style="text-align:center;margin:0"><button type="button" class="quiz-next" id="enter-created">Enter my group →</button></p>
+      </div>
+    </div>
+    <div class="lb-card">
+      <h2>🔑 Join a group</h2>
+      <p>Got a code from your family? Type it in.</p>
+      <div class="lb-row">
+        <input class="lb-input" id="join-code" maxlength="16" placeholder="e.g. TIGER-42" style="text-transform:uppercase">
+        <button type="button" class="quiz-next" id="join-group">Join group</button>
+      </div>
+    </div>`;
+  document.getElementById("create-group").addEventListener("click", createGroup);
+  document.getElementById("join-group").addEventListener("click", joinGroup);
+  const createdBtn = document.getElementById("enter-created");
+  if (createdBtn) createdBtn.addEventListener("click", enterBoard);
+}
+
+async function createGroup() {
+  const nick = (document.getElementById("setup-nickname").value || "").trim();
+  if (!nick) { showError("Pick a nickname first — something fun, not your real name."); return; }
+  localStorage.setItem(NICK_KEY, nick);
+  const name = (document.getElementById("group-name").value || "").trim();
+  try {
+    const r = await fetch(LB_API + "/group", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    if (!r.ok) throw new Error("Could not create the group. Check your connection and try again.");
+    const d = await r.json();
+    localStorage.setItem(CODE_KEY, d.code);
+    localStorage.setItem(NAME_KEY, d.name || "");
+    document.getElementById("created").hidden = false;
+    document.getElementById("created-code").textContent = d.code;
+  } catch (e) {
+    showError(e.message || "Could not create the group.");
+  }
+}
+
+async function joinGroup() {
+  const nick = (document.getElementById("setup-nickname").value || "").trim();
+  if (!nick) { showError("Pick a nickname first — something fun, not your real name."); return; }
+  const c = (document.getElementById("join-code").value || "").trim().toUpperCase();
+  if (!c) { showError("Type in the group code first."); return; }
+  try {
+    const r = await fetch(LB_API + "/" + encodeURIComponent(c));
+    if (r.status === 404) { showError("That group code was not found. Check the code and try again."); return; }
+    if (!r.ok) throw new Error("Could not join the group. Check your connection and try again.");
+    const d = await r.json();
+    localStorage.setItem(NICK_KEY, nick);
+    localStorage.setItem(CODE_KEY, d.code);
+    localStorage.setItem(NAME_KEY, d.name || "");
+    enterBoard();
+  } catch (e) {
+    showError(e.message || "Could not join the group.");
+  }
+}
+
+function enterBoard() {
+  document.getElementById("setup").innerHTML = "";
+  document.getElementById("board").hidden = false;
+  groupName = localStorage.getItem(NAME_KEY) || "";
+  document.getElementById("group-title").textContent = groupName ? "🏆 " + groupName : "🏆 Your group";
+  document.getElementById("group-code").textContent = code();
+  document.getElementById("nickname").value = nickname();
+  loadBoard();
+}
+
+async function loadBoard() {
+  const c = code();
+  if (!c) return;
+  try {
+    const r = await fetch(LB_API + "/" + encodeURIComponent(c));
+    if (r.status === 404) {
+      showError("This group no longer exists (groups disappear after 30 days with no activity).");
+      localStorage.removeItem(CODE_KEY);
+      localStorage.removeItem(NAME_KEY);
+      document.getElementById("board").hidden = true;
+      renderSetup();
+      return;
+    }
+    if (!r.ok) throw new Error("Could not load the board.");
+    const d = await r.json();
+    players = d.players || [];
+    groupName = d.name || "";
+    if (groupName) {
+      localStorage.setItem(NAME_KEY, groupName);
+      document.getElementById("group-title").textContent = "🏆 " + groupName;
+    }
+    renderPlayers();
+  } catch (e) {
+    showError(e.message || "Could not load the board.");
+  }
+}
+
+function renderPlayers() {
+  const b = BOARDS[board];
+  document.getElementById("board-title").textContent = b.title;
+  document.querySelectorAll(".lb-tab").forEach(t => t.classList.toggle("active", t.dataset.board === board));
+  const sorted = [...players].sort((a, c) => (c[board] || 0) - (a[board] || 0));
+  const ul = document.getElementById("players");
+  const me = nickname();
+  if (sorted.length === 0) {
+    ul.innerHTML = `<li class="lb-empty" style="display:block">Nobody has shared a score yet.<br>Tap “Share my score” to put yours on the board.</li>`;
+  } else {
+    ul.innerHTML = "";
+    sorted.forEach((p, i) => {
+      const li = document.createElement("li");
+      if (me && p.nickname === me) li.className = "me";
+      const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : (i + 1);
+      li.innerHTML = `<span class="lb-rank">${medal}</span><span class="lb-name"></span><span class="lb-stat">${p[board] || 0}${b.label ? " " + b.label : ""}</span>`;
+      li.querySelector(".lb-name").textContent = p.nickname + (me && p.nickname === me ? " (you)" : "");
+      ul.appendChild(li);
+    });
+  }
+  const mine = sorted.find(p => p.nickname === me);
+  document.getElementById("board-note").textContent = mine
+    ? `You are #${sorted.indexOf(mine) + 1} of ${sorted.length} on this board.`
+    : "Your score is not on this board yet — tap “Share my score”.";
+}
+
+async function shareScore() {
+  const c = code();
+  const nick = nickname();
+  if (!c || !nick) { showError("Pick a nickname and join a group first."); return; }
+  const stats = myStats();
+  try {
+    const r = await fetch(LB_API + "/score", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ group_code: c, nickname: nick, ...stats }),
+    });
+    if (r.status === 404) { showError("That group no longer exists."); return; }
+    if (!r.ok) throw new Error("Could not share your score.");
+    await loadBoard();
+  } catch (e) {
+    showError(e.message || "Could not share your score.");
+  }
+}
+
+async function deleteScore() {
+  const c = code();
+  const nick = nickname();
+  if (!c || !nick) return;
+  if (!confirm("Delete your score from this group?")) return;
+  try {
+    const r = await fetch(LB_API + "/" + encodeURIComponent(c) + "/score?nickname=" + encodeURIComponent(nick), { method: "DELETE" });
+    if (!r.ok && r.status !== 404) throw new Error("Could not delete your score.");
+    await loadBoard();
+  } catch (e) {
+    showError(e.message || "Could not delete your score.");
+  }
+}
+
+document.getElementById("tabs").addEventListener("click", (e) => {
+  const t = e.target.closest(".lb-tab");
+  if (!t) return;
+  board = t.dataset.board;
+  renderPlayers();
+});
+document.getElementById("share-score").addEventListener("click", shareScore);
+document.getElementById("delete-score").addEventListener("click", deleteScore);
+document.getElementById("leave-group").addEventListener("click", () => {
+  if (!confirm("Leave this group? Your score stays on the board unless you delete it.")) return;
+  localStorage.removeItem(CODE_KEY);
+  localStorage.removeItem(NAME_KEY);
+  document.getElementById("board").hidden = true;
+  renderSetup();
+});
+document.getElementById("save-nickname").addEventListener("click", () => {
+  const nick = (document.getElementById("nickname").value || "").trim();
+  if (!nick) { showError("Pick a nickname first — something fun, not your real name."); return; }
+  localStorage.setItem(NICK_KEY, nick);
+  renderPlayers();
+});
+
+if (code()) enterBoard(); else renderSetup();
+</script>
+</body>
+</html>

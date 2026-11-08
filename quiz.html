@@ -29,8 +29,16 @@ function asset(u) {
 const FREE_LIMIT = 5;
 let xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
 let freeUsed = parseInt(localStorage.getItem("ghar.quiz.freeUsed") || "0", 10);
+let quizCorrect = parseInt(localStorage.getItem("ghar.quiz.correctTotal") || "0", 10);
+let quizStreak = parseInt(localStorage.getItem("ghar.quiz.streak") || "0", 10);
+let quizStreakBest = parseInt(localStorage.getItem("ghar.quiz.streakBest") || "0", 10);
 function saveXP() { localStorage.setItem("ghar.xp.total", String(xp)); }
 function saveFree() { localStorage.setItem("ghar.quiz.freeUsed", String(freeUsed)); }
+function saveQuizStats() {
+  localStorage.setItem("ghar.quiz.correctTotal", String(quizCorrect));
+  localStorage.setItem("ghar.quiz.streak", String(quizStreak));
+  localStorage.setItem("ghar.quiz.streakBest", String(quizStreakBest));
+}
 const player = new Audio();
 let audioCtx = null;
 function getAudioCtx() {
@@ -213,6 +221,10 @@ function answer(i, btn) {
     const earned = wrongIDs.size === 0 ? 5 : 2;
     xp += earned;
     saveXP();
+    quizCorrect++;
+    quizStreak++;
+    if (quizStreak > quizStreakBest) quizStreakBest = quizStreak;
+    saveQuizStats();
     GharAuth.pushTotals().catch(() => {});
     playDing();
     btn.classList.add("correct");
@@ -225,6 +237,8 @@ function answer(i, btn) {
     document.getElementById("next-word").hidden = false;
   } else {
     wrongIDs.add(opt.id);
+    quizStreak = 0;
+    saveQuizStats();
     playWrongFeedback(section.tier === "teen");
     btn.classList.add("wrong");
     btn.disabled = true;
