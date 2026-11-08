@@ -4,13 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ghar — Learn Nepali</title>
-<link rel="stylesheet" href="style.css?v=9">
+<link rel="stylesheet" href="style.css?v=10">
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <h1>🏠 Ghar</h1>
-    <p>Learn Nepali, have fun.</p>
+  <header class="site-header">
+    <div class="brand">
+      <h1>🏠 Ghar</h1>
+      <p>Learn Nepali, have fun.</p>
+    </div>
+    <a class="signin-btn" id="signin-btn" href="signin.html">👤 Sign in</a>
   </header>
   <nav class="subnav">
     <a href="#lessons">📚 Lessons</a>
@@ -20,7 +23,8 @@
     <a href="#quiz">🎮 Quiz</a>
     <a href="#games">🎈 Games</a>
     <a href="#myghar">🏠 My Ghar</a>
-    <a href="signin.html">👤 Sign in</a>
+    <a href="#missions">🎯 Missions</a>
+    <a href="#leaderboard">🏆 Leaderboard</a>
   </nav>
   <p class="testmode" id="testmode" hidden>🧪 Test mode — all decks unlocked. <a href="index.html?test=off">Turn off</a></p>
 
@@ -99,19 +103,32 @@
   </section>
   <section class="home-section" id="myghar">
     <h2>🏠 My Ghar</h2>
-    <p class="section-sub">Your house, your dog Bhunte, and real-life missions.</p>
+    <p class="section-sub">Your house, your dog Bhunte, and your room to decorate.</p>
     <div class="home-media">
       <a class="home-media-card home-link" href="myghar.html">
         <h3>🏠 My Ghar</h3>
         <p>Visit Bhunte, arrange your room, watch him grow</p>
       </a>
-      <a class="home-media-card home-link" href="missions.html">
-        <h3>🎯 Missions</h3>
-        <p>Do Nepali in real life · 10 missions · +10 XP, or +25 XP proved</p>
-      </a>
 <a class="deck-card" href="shop.html"><div class="deck-cover">🛍️</div><div class="deck-title">Shop</div><div class="deck-meta">Buy things for your room with XP</div></a>
-      <a class="deck-card" href="leaderboard.html"><div class="deck-cover">🏆</div><div class="deck-title">Leaderboard</div><div class="deck-meta">Family groups — see who's ahead</div></a>
     </div>
+  </section>
+  <section class="home-section" id="missions">
+    <h2>🎯 Missions</h2>
+    <p class="section-sub">Do Nepali in real life — then prove it.</p>
+    <a class="quiz-cta" href="missions.html">
+      <span class="quiz-cta-icon">🎯</span>
+      <span><strong>Missions</strong><br>10 missions · +10 XP, or +25 XP proved</span>
+      <span class="quiz-cta-arrow">→</span>
+    </a>
+  </section>
+  <section class="home-section" id="leaderboard">
+    <h2>🏆 Leaderboard</h2>
+    <p class="section-sub">Family groups — see who's ahead.</p>
+    <a class="quiz-cta" href="leaderboard.html">
+      <span class="quiz-cta-icon">🏆</span>
+      <span><strong>Leaderboard</strong><br>Make a group, invite family, climb the board</span>
+      <span class="quiz-cta-arrow">→</span>
+    </a>
   </section>
 </div>
 <div id="toast"></div>
@@ -193,7 +210,11 @@ function toggleHomeAudio(url, btn) {
   homePlayingBtn = btn;
   homePlayer.onended = () => { btn.textContent = "▶️ Play"; homePlayingBtn = null; };
 }
-GharAuth.pull().catch(() => {}).then(() => fetch("data/nepal-v1.json"))
+GharAuth.pull().catch(() => {}).then(() => {
+  const btn = document.getElementById("signin-btn");
+  if (GharAuth.signedIn()) { btn.textContent = "👤 My account"; btn.href = "dashboard.html"; }
+  return fetch("data/nepal-v1.json");
+})
   .then(r => { if (!r.ok) throw new Error("load failed"); return r.json(); })
   .then(pack => {
     const wrap = document.getElementById("decks");
