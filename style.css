@@ -543,3 +543,62 @@ EOF'
 .spirit-row { display: flex; align-items: center; justify-content: center; gap: 18px; margin: 10px 0 0; color: #6b5d4f; font-size: 15px; }
 .spirit-row .spirit-item { display: inline-flex; align-items: center; gap: 6px; }
 .spirit-row img.danfe { width: 54px; height: 36px; object-fit: contain; }
+
+/* ---- Learning path (home page): the guided journey through the decks ----
+   A winding dashed road down the middle; each deck is a stepping stone.
+   Done = green + check, Up next = gold + pulse + Bhunte, Locked = grey. */
+.wrap.home { max-width: 1440px; }
+/* Dhaka-inspired side weave: a subtle diamond lattice that fills the wide
+   side margins on very wide screens, so they read as designed, not empty. */
+.side-weave { position: fixed; top: 0; bottom: 0; width: 150px; z-index: 1; pointer-events: none;
+  background-image:
+    repeating-linear-gradient(45deg, rgba(180,120,40,.09) 0 2px, transparent 2px 18px),
+    repeating-linear-gradient(-45deg, rgba(180,120,40,.09) 0 2px, transparent 2px 18px);
+}
+.side-weave.left { left: 48px; }
+.side-weave.right { right: 48px; }
+@media (max-width: 1700px) { .side-weave { display: none; } }
+.path { position: relative; padding: 8px 0 4px; }
+.path::before { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; transform: translateX(-50%); border-left: 4px dashed #d4a017; opacity: .55; }
+.path-tier { position: relative; z-index: 1; text-align: center; margin: 28px 0 4px; }
+.path-tier span { display: inline-block; background: #fff; border: 2px solid #d4a017; color: #6b4e00; font-weight: 800; border-radius: 999px; padding: 8px 20px; box-shadow: 0 2px 6px rgba(0,0,0,.08); }
+.path-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 0 14px; margin: 24px 0; text-decoration: none; color: inherit; position: relative; z-index: 1; }
+.path-card { background: #fff; border-radius: 14px; padding: 12px 16px; box-shadow: 0 2px 8px rgba(0,0,0,.08); max-width: 340px; }
+.path-card.left { grid-column: 1; justify-self: end; text-align: right; }
+.path-card.right { grid-column: 3; justify-self: start; text-align: left; }
+.path-card h3 { margin: 0 0 2px; font-size: 18px; }
+.path-card p { margin: 0; color: #6b5d4f; font-size: 14px; }
+.path-card .upnext { display: inline-block; background: #d4a017; color: #fff; font-size: 12px; font-weight: 800; border-radius: 999px; padding: 2px 8px; margin-bottom: 4px; }
+.path-stone { grid-column: 2; width: 88px; height: 88px; border-radius: 50%; overflow: hidden; border: 4px solid #ccc; background: #fff; display: block; position: relative; flex: none; }
+.path-stone img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.path-stone .stone-fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 34px; font-weight: 800; color: #8a7a63; background: #f5efe2; }
+.path-stone .stone-strip { width: 100%; height: 100%; display: flex; }
+.path-stone .stone-strip span { flex: 1; }
+.path-badge { position: absolute; right: -2px; bottom: -2px; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; color: #fff; border: 2px solid #fff; }
+.path-row.done .path-stone { border-color: #2e7d32; }
+.path-row.done .path-badge { background: #2e7d32; }
+.path-row.current .path-stone { border-color: #d4a017; animation: path-pulse 1.6s infinite; }
+.path-row.current .path-badge { background: #d4a017; }
+@keyframes path-pulse { 0%, 100% { box-shadow: 0 0 0 4px rgba(212,160,23,.28); } 50% { box-shadow: 0 0 0 11px rgba(212,160,23,.10); } }
+.path-row.locked .path-stone { border-color: #bdbdbd; }
+.path-row.locked .path-stone img { filter: grayscale(1); opacity: .55; }
+.path-row.locked .path-badge { background: #9e9e9e; }
+.path-guide { width: 64px; height: 64px; object-fit: contain; }
+.path-guide.left { grid-column: 1; justify-self: end; }
+.path-guide.right { grid-column: 3; justify-self: start; }
+.path-end { position: relative; z-index: 1; text-align: center; margin: 30px 0 6px; }
+.path-end .path-end-card { display: inline-block; background: #fff; border: 2px solid #d4a017; border-radius: 16px; padding: 16px 24px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+.path-end h3 { margin: 0 0 4px; }
+.path-end p { margin: 0; color: #6b5d4f; }
+@media (max-width: 640px) {
+  .path::before { left: 44px; transform: none; }
+  .path-row { grid-template-columns: 88px 1fr; gap: 0 12px; margin: 18px 0; }
+  .path-stone { grid-column: 1; grid-row: 1; }
+  .path-card.left, .path-card.right { grid-column: 2; justify-self: start; text-align: left; }
+  .path-guide { display: none; }
+  .path-tier { text-align: left; padding-left: 96px; }
+  .path-end { text-align: left; padding-left: 96px; }
+}
+/* A locked deck that is also the next step keeps the gold "up next" ring
+   (it is the next step) while the grey lock badge + greyed image say Premium. */
+.path-row.current.locked .path-stone { border-color: #d4a017; }

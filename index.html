@@ -4,13 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ghar — Learn Nepali</title>
-<link rel="stylesheet" href="style.css?v=13">
+<link rel="stylesheet" href="style.css?v=15">
 </head>
 <body>
 <div class="prayer-bunting" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span></div></div>
 <div class="prayer-side left" aria-hidden="true"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span></div>
 <div class="prayer-side right" aria-hidden="true"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span></div>
-<div class="wrap">
+<div class="wrap home">
+  <div class="side-weave left" aria-hidden="true"></div>
+  <div class="side-weave right" aria-hidden="true"></div>
   <header>
     <h1><svg class="nepal-flag" viewBox="-3 -3 66 81" width="32" height="40" role="img" aria-label="Flag of Nepal"><path d="M0,0 L60,0 L0,30 L45,45 L0,75 Z" fill="#DC143C" stroke="#003893" stroke-width="4" stroke-linejoin="round"/><circle cx="17" cy="15" r="7" fill="#fff"/><circle cx="21" cy="12" r="6" fill="#DC143C"/><g stroke="#fff" stroke-width="2" stroke-linecap="round"><line x1="15" y1="42" x2="15" y2="48"/><line x1="15" y1="58" x2="15" y2="64"/><line x1="5" y1="53" x2="11" y2="53"/><line x1="19" y1="53" x2="25" y2="53"/><line x1="8" y1="46" x2="12" y2="50"/><line x1="18" y1="56" x2="22" y2="60"/><line x1="22" y1="46" x2="18" y2="50"/><line x1="12" y1="56" x2="8" y2="60"/></g><circle cx="15" cy="53" r="5" fill="#fff"/></svg>🏠 Ghar</h1>
     <p>Learn Nepali, have fun.</p>
@@ -36,7 +38,7 @@
 
   <section class="home-section" id="lessons">
     <h2>📚 Lessons</h2>
-    <p class="section-sub">Work through the decks in order — finishing one opens the next.</p>
+    <p class="section-sub">Follow the path — finish each lesson to walk to the next one. Bhunte waits at your next step.</p>
     <div class="motivation" id="motivation">
       <img class="motivation-dog" id="bhunte-dog" src="assets/images/bhunte.svg" alt="Bhunte the dog" title="Tap me to hear me talk!">
       <div class="motivation-body">
@@ -223,41 +225,66 @@ GharAuth.pull().catch(() => {}).then(() => {
 })
   .then(r => { if (!r.ok) throw new Error("load failed"); return r.json(); })
   .then(pack => {
+    // Learning path: the 22 decks in tier order, as a winding road down the
+    // page. Done = green + check, Up next = gold + pulse + Bhunte waiting,
+    // Locked = grey (Premium). Tapping a stone opens that deck.
     const wrap = document.getElementById("decks");
-    TIER_ORDER.forEach(tier => {
-      const decks = pack.decks.filter(d => d.difficulty === tier);
-      if (!decks.length) return;
-      const h = document.createElement("h3");
-      h.className = "tier-head";
-      h.textContent = TIERS[tier];
-      wrap.appendChild(h);
-      const grid = document.createElement("div");
-      grid.className = "grid";
-      decks.forEach(deck => {
-        const free = FREE.has(deck.id);
-        const open = free || TEST;
-        const a = document.createElement("a");
-        a.className = "card" + (open ? "" : " locked");
-        a.href = open ? `deck.html?deck=${deck.id}` : "#";
-        let cover = "";
-        if (deck.id === "colors") {
-          cover = `<div class="color-strip">${deck.words.map(w => `<span style="background:${BRIGHT[w.id] || w.color_hex || "#ccc"}"></span>`).join("")}</div>`;
-        } else {
-          const coverUrl = COVER_OVERRIDES[deck.id] || deck.cover_image;
-          if (coverUrl) cover = `<img src="${asset(coverUrl)}" alt="${deck.title}" onerror="this.remove()">`;
-        }
-        a.innerHTML = `
-          <div class="cover"><div class="cover-fallback">${deck.title.charAt(0)}</div>${cover}</div>
-          <div class="card-body">
-            <h2>${deck.title}</h2>
-            <p>${deck.words.length} words</p>
-            <span class="badge ${free ? "free" : "locked"}">${free ? "FREE" : (TEST ? "TEST" : "🔒 Locked")}</span>
-          </div>`;
-        if (!open) a.addEventListener("click", e => { e.preventDefault(); toast("🔒 This deck unlocks with Ghar Premium"); });
-        grid.appendChild(a);
-      });
-      wrap.appendChild(grid);
+    const path = document.createElement("div");
+    path.className = "path";
+    wrap.appendChild(path);
+    const ordered = [];
+    TIER_ORDER.forEach(tier => pack.decks.filter(d => d.difficulty === tier).forEach(d => ordered.push({ deck: d, tier })));
+    const states = ordered.map(({ deck }) => {
+      const heard = JSON.parse(localStorage.getItem(`ghar.heard.${deck.id}`) || "[]");
+      return { done: heard.length >= deck.words.length, open: FREE.has(deck.id) || TEST };
     });
+    const currentIdx = states.findIndex(st => !st.done);
+    let side = "left";
+    let currentTier = null;
+    ordered.forEach(({ deck, tier }, idx) => {
+      if (tier !== currentTier) {
+        currentTier = tier;
+        const tb = document.createElement("div");
+        tb.className = "path-tier";
+        tb.innerHTML = `<span>${TIERS[tier]}</span>`;
+        path.appendChild(tb);
+      }
+      const st = states[idx];
+      const isCurrent = idx === currentIdx;
+      const row = document.createElement(st.open ? "a" : "div");
+      row.className = "path-row" + (st.done ? " done" : isCurrent ? " current" : "") + (st.open ? "" : " locked");
+      if (st.open) row.href = `deck.html?deck=${deck.id}`;
+      let stoneInner = "";
+      if (deck.id === "colors") {
+        stoneInner = `<span class="stone-strip">${deck.words.map(w => `<span style="background:${BRIGHT[w.id] || w.color_hex || "#ccc"}"></span>`).join("")}</span>`;
+      } else {
+        const coverUrl = COVER_OVERRIDES[deck.id] || deck.cover_image;
+        stoneInner = coverUrl
+          ? `<img src="${asset(coverUrl)}" alt="" onerror="this.remove()">`
+          : `<span class="stone-fallback">${deck.title.charAt(0)}</span>`;
+      }
+      const badge = st.done ? "✓" : !st.open ? "🔒" : isCurrent ? "▶" : "";
+      const meta = st.done ? `${deck.words.length} words · ✓ Done`
+        : isCurrent ? `${deck.words.length} words · Up next`
+        : st.open ? `${deck.words.length} words`
+        : `${deck.words.length} words · 🔒 Premium`;
+      const card = `<span class="path-card ${side}">${isCurrent ? `<span class="upnext">▶ UP NEXT</span>` : ""}<h3>${deck.title}</h3><p>${meta}</p></span>`;
+      const stone = `<span class="path-stone">${stoneInner}${badge ? `<span class="path-badge">${badge}</span>` : ""}</span>`;
+      const guide = isCurrent
+        ? `<img class="path-guide ${side === "left" ? "right" : "left"}" src="assets/images/bhunte.svg" alt="Bhunte waits here">`
+        : `<span></span>`;
+      row.innerHTML = side === "left" ? card + stone + guide : guide + stone + card;
+      if (!st.open) row.addEventListener("click", e => { e.preventDefault(); toast("🔒 This deck unlocks with Ghar Premium"); });
+      path.appendChild(row);
+      side = side === "left" ? "right" : "left";
+    });
+    const doneCount = states.filter(st => st.done).length;
+    const end = document.createElement("div");
+    end.className = "path-end";
+    end.innerHTML = doneCount >= ordered.length
+      ? `<div class="path-end-card"><h3>🏆 Certificate earned!</h3><p>You finished all ${ordered.length} lessons.</p><p><a href="certificate.html">View your certificate →</a></p></div>`
+      : `<div class="path-end-card"><h3>🏆 Certificate</h3><p>Finish all ${ordered.length} lessons to earn it — ${doneCount} of ${ordered.length} done.</p></div>`;
+    path.appendChild(end);
     const xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
     document.getElementById("xp-total").textContent = xp;
     let done = 0;
