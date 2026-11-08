@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bagh-Chal 🐯 — Ghar</title>
+<link rel="stylesheet" href="style.css?v=9">
+</head>
+<body>
+<div class="wrap">
+  <p><a href="index.html#games">← Back to Games</a></p>
+  <h1>Bagh-Chal 🐯</h1>
+
+  <!-- Ready screen -->
+  <div id="ready" class="bagh-ready">
+    <div class="bagh-ready-emoji">🐯</div>
+    <p class="bagh-ready-title" id="ready-title">Trap the tigers!</p>
+    <div class="bagh-rules">
+      <p>① <span id="rule-1">You are the goats 🐐 — place all 20, then move them</span></p>
+      <p>② Surround every tiger so it can't move</p>
+      <p>③ Tigers jump over goats to catch them — 5 caught and the goats lose!</p>
+    </div>
+    <div class="bagh-modes">
+      <button class="bagh-mode" id="mode-phone" type="button">
+        <span class="bagh-mode-icon">🧠</span>
+        <span class="bagh-mode-title">vs Phone</span>
+        <span class="bagh-mode-sub">You play the goats</span>
+      </button>
+      <button class="bagh-mode" id="mode-2p" type="button">
+        <span class="bagh-mode-icon">👥</span>
+        <span class="bagh-mode-title">2 Players</span>
+        <span class="bagh-mode-sub">Pass &amp; play</span>
+      </button>
+    </div>
+    <button class="quiz-next" id="start-btn">Start!</button>
+    <p class="bagh-xp-note" id="xp-note">Win +10 XP · finish +2 (max 3 paid games/day)</p>
+  </div>
+
+  <!-- Game screen -->
+  <div id="game" style="display:none">
+    <div class="bagh-turn" id="turn-banner" style="display:none"></div>
+    <div class="bagh-status">
+      <span id="status-text">🐐 Your move</span>
+      <span id="status-caught">Caught: 0/5</span>
+    </div>
+    <div id="board-wrap" class="bagh-board-wrap">
+      <svg id="board" viewBox="0 0 500 500" role="img" aria-label="Bagh-Chal board"></svg>
+      <div id="pass-notice" class="bagh-pass" style="display:none">No goat moves — the tigers push through!</div>
+    </div>
+    <p id="music-status" class="bagh-music-status"></p>
+    <div class="bagh-actions">
+      <button class="quiz-next bagh-btn" id="hint-btn" type="button">💡 Hint (3)</button>
+      <span id="xp-display" class="bagh-xp">⭐ 0 XP</span>
+      <button class="quiz-next bagh-btn" id="restart-btn" type="button">Restart</button>
+      <button class="quiz-next bagh-btn" id="music-btn" type="button">🔊 Music</button>
+    </div>
+  </div>
+
+  <!-- Done overlay -->
+  <div id="done" class="bagh-done" style="display:none">
+    <div class="bagh-done-emoji" id="done-emoji">🎉</div>
+    <p class="bagh-done-title" id="done-title">You trapped the tigers!</p>
+    <p class="bagh-done-xp" id="done-xp"></p>
+    <p>
+      <button class="quiz-next" id="again-btn">Play again</button>
+      <button class="quiz-next" id="done-btn">Done</button>
+    </p>
+  </div>
+</div>
+
+<script src="auth.js?v=6"></script>
+<script>
+// Bagh-Chal — the classic Nepali tiger-and-goats game, ported from the
+// app's BaghChalView.swift (which mirrors ~/workspace/baghchal/baghchal.py).
+// The kid is the goats; the phone is the tigers. Placement, then movement.
+// Tigers win by capturing 5 goats. Goats win by leaving every tiger with
+// no legal move. 300 half-moves with no result = a draw.
+function asset(u) {
+  if (!u) return "";
+  return u.replace(/^\/images\/nepal-v1\//, "assets/images/")
+          .replace(/^\/audio\/nepal-v1\//, "assets/audio/nepal-v1/");
+}
+let xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
+function saveXP() { localStorage.setItem("ghar.xp.total", String(xp)); }
+function todayString() {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+
+// ---- Engine (pure logic, exact port) ----
+const CORNERS = [[0,0],[0,4],[4,0],[4,4]];
+function key(r, c) { return r + "," + c; }
+function neighbors(r, c) {
+  const out = [];
+  [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr, dc]) => {
+    const nr = r + dr, nc = c + dc;
+    if (nr >= 0 && nr < 5 && nc >= 0 && nc < 5) out.push([nr, nc]);
+  });
+  if ((r + c) % 2 === 0) {
+    [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([dr, dc]) => {
+      const nr = r + dr, nc = c + dc;
+      if (nr >= 0 && nr < 5 && nc >= 0 && nc < 5) out.push([nr, nc]);
+    });
+  }
+  return out;
+}
+function segments() {
+  const segs = [];
+  for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) {
+    neighbors(r, c).forEach(([qr, qc]) => {
+      if (qr > r || (qr === r && qc > c)) segs.push([[r, c], [qr, qc]]);
+    });
+  }
+  return segs;
+}
+function newEngine() {
+  const board = {};
+  for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) board[key(r, c)] = "empty";
+  CORNERS.forEach(([r, c]) => { board[key(r, c)] = "tiger"; });
+  return { board, goatsInHand: 20, captured: 0, goatTurn: true, plies: 0 };
+}
+function tigerMoves(e) {
+  const moves = [];
+  for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) {
+    if (e.board[key(r, c)] !== "tiger") continue;
+    neighbors(r, c).forEach(([qr, qc]) => {
+      const q = e.board[key(qr, qc)];
+      if (q === "empty") {
+        moves.push({ src: [r, c], dst: [qr, qc], captured: null });
+      } else if (q === "goat") {
+        const lr = qr + (qr - r), lc = qc + (qc - c);
+        if (lr >= 0 && lr < 5 && lc >= 0 && lc < 5 && e.board[key(lr, lc)] === "empty") {
+          moves.push({ src: [r, c], dst: [lr, lc], captured: [qr, qc] });
+        }
+      }
+    });
+  }
+  return moves;
+}
+function goatMoves(e) {
+  const moves = [];
+  for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) {
+    if (e.board[key(r, c)] !== "goat") continue;
+    neighbors(r, c).forEach(([qr, qc]) => {
+      if (e.board[key(qr, qc)] === "empty") moves.push({ src: [r, c], dst: [qr, qc] });
+    });
+  }
+  return moves;
+}
+function placements(e) {
+  const out = [];
+  for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) {
+    if (e.board[key(r, c)] === "empty") out.push([r, c]);
+  }
+  return out;
+}
+function placeGoat(e, r, c) {
+  e.board[key(r, c)] = "goat";
+  e.goatsInHand -= 1;
+  e.goatTurn = false;
+  e.plies += 1;
+}
+function moveGoat(e, m) {
+  e.board[key(m.src[0], m.src[1])] = "empty";
+  e.board[key(m.dst[0], m.dst[1])] = "goat";
+  e.goatTurn = false;
+  e.plies += 1;
+}
+function moveTiger(e, m) {
+  e.board[key(m.src[0], m.src[1])] = "empty";
+  e.board[key(m.dst[0], m.dst[1])] = "tiger";
+  if (m.captured) {
+    e.board[key(m.captured[0], m.captured[1])] = "empty";
+    e.captured += 1;
+  }
+  e.goatTurn = true;
+  e.plies += 1;
+}
+function passGoats(e) { e.goatTurn = false; e.plies += 1; }
+function outcome(e) {
+  if (e.captured >= 5) return "tigersWin";
+  if (tigerMoves(e).length === 0) return "goatsWin";
+  if (e.plies >= 300) return "draw";
+  return "playing";
+}
+function cloneEngine(e) {
+  return { board: Object.assign({}, e.board), goatsInHand: e.goatsInHand, captured: e.captured, goatTurn: e.goatTurn, plies: e.plies };
+}
+
+// ---- Tiger AI (greedy 1-ply + 25% blunder, exact port) ----
+function tigerAIMove(e) {
+  const moves = tigerMoves(e);
+  if (!moves.length) return null;
+  if (Math.random() < 0.25) return moves[Math.floor(Math.random() * moves.length)];
+  const goats = [];
+  for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) {
+    if (e.board[key(r, c)] === "goat") goats.push([r, c]);
+  }
+  const dist = (a, b) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
+  let best = null, bestScore = -Infinity;
+  moves.forEach(m => {
+    let s = 0;
+    if (m.captured) s += 100;
+    const mob = neighbors(m.dst[0], m.dst[1]).filter(([qr, qc]) =>
+      e.board[key(qr, qc)] === "empty" || (qr === m.src[0] && qc === m.src[1])).length;
+    s += 3 * mob;
+    if (goats.length) {
+      const nearest = Math.min(...goats.map(g => dist(m.dst, g)));
+      s += Math.max(0, 8 - nearest) * 1.5;
+    }
+    s += Math.random();
+    if (s > bestScore) { bestScore = s; best = m; }
+  });
+  return best;
+}
+
+// ---- Goat hint (same evaluator the sims used) ----
+function goatHint(e) {
+  const dist = (a, b) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
+  let best = null, bestKey = null;
+  const less = (a, b) => {
+    if (a[0] !== b[0]) return a[0] < b[0];
+    if (a[1] !== b[1]) return a[1] < b[1];
+    if (a[2] !== b[2]) return a[2] < b[2];
+    return a[3] < b[3];
+  };
+  const consider = (hint, newPos) => {
+    const sim = cloneEngine(e);
+    sim.goatTurn = true;
+    if (hint.kind === "place") placeGoat(sim, hint.p[0], hint.p[1]);
+    else moveGoat(sim, { src: hint.s, dst: hint.d });
+    sim.goatTurn = false;
+    const tm = tigerMoves(sim);
+    const caps = tm.filter(m => m.captured).length;
+    const mob = tm.length;
+    const others = [];
+    for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) {
+      if (sim.board[key(r, c)] === "goat" && !(r === newPos[0] && c === newPos[1])) others.push([r, c]);
+    }
+    const cluster = others.length ? Math.min(...others.map(g => dist(newPos, g))) : 4;
+    const k = [caps, mob, cluster, Math.random() * 2];
+    if (!bestKey || less(k, bestKey)) { bestKey = k; best = hint; }
+  };
+  if (e.goatsInHand > 0) {
+    placements(e).forEach(p => consider({ kind: "place", p }, p));
+  } else {
+    goatMoves(e).forEach(m => consider({ kind: "move", s: m.src, d: m.dst }, m.dst));
+  }
+  return best;
+}
+</script>
+<script>
+// ---- Board UI + game flow ----
+const PAD = 34, STEP = 108; // viewBox 0 0 500 500; point (r,c) -> (PAD + c*STEP, PAD + r*STEP)
+function xy(r, c) { return [PAD + c * STEP, PAD + r * STEP]; }
+const boardSvg = document.getElementById("board");
+let engine = newEngine();
+let phase = "ready";           // ready | playing | done
+let twoPlayer = false;
+let selected = null;           // [r,c] of the selected goat/tiger
+let dests = [];                // legal destinations for the selection
+let tigerThinking = false;
+let hint = null;
+let hintsLeft = 3;
+let result = "playing";
+let xpEarned = 0;
+const MAX_PAID_PER_DAY = 3;
+
+function el(tag, attrs) {
+  const n = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  return n;
+}
+function renderBoard() {
+  boardSvg.innerHTML = "";
+  // Board lines (each segment once).
+  segments().forEach(([[r1, c1], [r2, c2]]) => {
+    const [x1, y1] = xy(r1, c1), [x2, y2] = xy(r2, c2);
+    boardSvg.appendChild(el("line", { x1, y1, x2, y2, stroke: "rgba(121,85,45,.7)", "stroke-width": 2 }));
+  });
+  // Intersection points.
+  for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) {
+    const [x, y] = xy(r, c);
+    boardSvg.appendChild(el("circle", { cx: x, cy: y, r: 3.5, fill: "rgba(121,85,45,.9)" }));
+  }
+  // Placement-phase targets: faint dots on empty points.
+  if (engine.goatsInHand > 0 && phase === "playing") {
+    placements(engine).forEach(([r, c]) => {
+      const [x, y] = xy(r, c);
+      boardSvg.appendChild(el("circle", { cx: x, cy: y, r: STEP * 0.25, fill: "rgba(46,125,50,.25)" }));
+    });
+  }
+  // Legal destinations for the selection.
+  dests.forEach(([r, c]) => {
+    const [x, y] = xy(r, c);
+    boardSvg.appendChild(el("circle", { cx: x, cy: y, r: STEP * 0.21, fill: "rgba(46,125,50,.55)" }));
+  });
+  // Hint highlight.
+  if (hint) {
+    if (hint.kind === "place") {
+      const [x, y] = xy(hint.p[0], hint.p[1]);
+      boardSvg.appendChild(el("circle", { cx: x, cy: y, r: STEP * 0.36, fill: "none", stroke: "#1565c0", "stroke-width": 4 }));
+    } else {
+      const [x1, y1] = xy(hint.s[0], hint.s[1]), [x2, y2] = xy(hint.d[0], hint.d[1]);
+      boardSvg.appendChild(el("circle", { cx: x1, cy: y1, r: STEP * 0.36, fill: "none", stroke: "#1565c0", "stroke-width": 4 }));
+      boardSvg.appendChild(el("circle", { cx: x2, cy: y2, r: STEP * 0.25, fill: "rgba(21,101,192,.6)" }));
+    }
+  }
+  // Pieces.
+  for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) {
+    const piece = engine.board[key(r, c)];
+    if (piece === "empty") continue;
+    const [x, y] = xy(r, c);
+    const g = el("g", {});
+    const isTiger = piece === "tiger";
+    g.appendChild(el("circle", {
+      cx: x, cy: y, r: STEP * 0.33,
+      fill: isTiger ? "#fb8c00" : "#ffffff",
+      stroke: isTiger ? "rgba(251,140,0,.6)" : "rgba(0,0,0,.35)", "stroke-width": 2,
+    }));
+    const t = el("text", { x, y: y + 11, "text-anchor": "middle", "font-size": 30 });
+    t.textContent = isTiger ? "🐯" : "🐐";
+    g.appendChild(t);
+    if (selected && selected[0] === r && selected[1] === c) {
+      g.appendChild(el("circle", { cx: x, cy: y, r: STEP * 0.38, fill: "none", stroke: "#1565c0", "stroke-width": 4 }));
+    }
+    boardSvg.appendChild(g);
+  }
+}
+function statusText() {
+  if (tigerThinking) return "🐯 Thinking…";
+  if (engine.goatTurn) {
+    if (engine.goatsInHand > 0) {
+      return twoPlayer
+        ? `🐐 Goats: place one (${engine.goatsInHand} left)`
+        : `🐐 Your move: place a goat (${engine.goatsInHand} left)`;
+    }
+    return twoPlayer ? "🐐 Goats to move" : "🐐 Your move";
+  }
+  return twoPlayer ? "🐯 Tigers: move a tiger" : "🐯 Tigers' move";
+}
+function renderStatus() {
+  document.getElementById("status-text").textContent = statusText();
+  const caught = document.getElementById("status-caught");
+  caught.textContent = `Caught: ${engine.captured}/5`;
+  caught.style.color = engine.captured >= 3 ? "#e53935" : "";
+  const banner = document.getElementById("turn-banner");
+  if (twoPlayer && phase === "playing") {
+    banner.style.display = "";
+    banner.textContent = engine.goatTurn ? "🐐 GOATS' TURN" : "🐯 TIGERS' TURN";
+    banner.style.background = engine.goatTurn ? "rgba(46,125,50,.25)" : "rgba(251,140,0,.35)";
+  } else {
+    banner.style.display = "none";
+  }
+  document.getElementById("xp-display").textContent = `⭐ ${xp} XP`;
+  const hb = document.getElementById("hint-btn");
+  hb.style.display = twoPlayer ? "none" : "";
+  hb.textContent = hintsLeft > 0 ? `💡 Hint (${hintsLeft})` : "💡 Hint · 5 XP";
+  hb.disabled = !engine.goatTurn || tigerThinking || phase !== "playing";
+}
+function renderAll() { renderBoard(); renderStatus(); Music.setLevel(currentLevel()); }
+
+// Music intensity follows the danger: calm while placing, drums and
+// speed as the tigers close in, endgame when the trap is nearly shut.
+function currentLevel() {
+  if (engine.captured >= 3) return 3;
+  if (engine.goatsInHand === 0 && tigerMoves(engine).length <= 4) return 3;
+  if (engine.captured >= 2 || engine.plies > 80) return 2;
+  if (engine.goatsInHand === 0) return 1;
+  return 0;
+}
+
+function startGame() {
+  engine = newEngine();
+  selected = null; dests = []; hint = null; result = "playing";
+  xpEarned = 0; tigerThinking = false; hintsLeft = 3;
+  document.getElementById("pass-notice").style.display = "none";
+  document.getElementById("ready").style.display = "none";
+  document.getElementById("done").style.display = "none";
+  document.getElementById("game").style.display = "";
+  document.getElementById("xp-note").textContent = twoPlayer
+    ? "Just for fun — no XP in 2-player 🤝"
+    : "Win +10 XP · finish +2 (max 3 paid games/day)";
+  phase = "playing";
+  renderAll();
+  Music.start(0);
+}
+function checkDone() {
+  const o = outcome(engine);
+  if (o === "playing") return false;
+  result = o;
+  phase = "done";
+  Music.playStinger(o === "goatsWin");
+  // XP: win 10, finish 2 — max 3 paid games a day. 2-player is just
+  // for fun: no XP, so nobody farms the board with a friend.
+  if (!twoPlayer) {
+    const today = todayString();
+    const paidDay = localStorage.getItem("ghar.baghchal.day") || "";
+    let paidCount = parseInt(localStorage.getItem("ghar.baghchal.paid") || "0", 10);
+    if (paidDay !== today) { localStorage.setItem("ghar.baghchal.day", today); paidCount = 0; }
+    if (paidCount < MAX_PAID_PER_DAY) {
+      paidCount += 1;
+      localStorage.setItem("ghar.baghchal.paid", String(paidCount));
+      xpEarned = (o === "goatsWin") ? 10 : 2;
+      xp += xpEarned;
+      saveXP();
+      GharAuth.pushTotals().catch(() => {});
+      if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
+    }
+  }
+  document.getElementById("game").style.display = "none";
+  document.getElementById("done").style.display = "";
+  const emoji = document.getElementById("done-emoji");
+  const title = document.getElementById("done-title");
+  if (o === "goatsWin") {
+    emoji.textContent = "🎉";
+    title.textContent = twoPlayer ? "Goats win!" : "You trapped the tigers!";
+  } else if (o === "tigersWin") {
+    emoji.textContent = "🐯";
+    title.textContent = twoPlayer ? "Tigers win!" : "The tigers caught 5 goats!";
+  } else {
+    emoji.textContent = "🤝";
+    title.textContent = "Nobody wins — great game!";
+  }
+  document.getElementById("done-xp").textContent = twoPlayer
+    ? "Just for fun — no XP in 2-player 🤝"
+    : (xpEarned > 0 ? `+${xpEarned} XP` : "Daily game rewards used up — still counts for glory!");
+  Music.stop();
+  return true;
+}
+function afterGoatTurn() {
+  renderAll();
+  if (checkDone()) return;
+  if (twoPlayer) return;
+  tigerThinking = true;
+  renderStatus();
+  setTimeout(() => {
+    const m = tigerAIMove(engine);
+    if (!m) { tigerThinking = false; checkDone(); return; }
+    moveTiger(engine, m);
+    tigerThinking = false;
+    renderAll();
+    if (checkDone()) return;
+    // Goats squeezed with no move: they pass, tigers go again.
+    if (engine.goatsInHand === 0 && goatMoves(engine).length === 0) {
+      const notice = document.getElementById("pass-notice");
+      notice.style.display = "";
+      setTimeout(() => {
+        notice.style.display = "none";
+        passGoats(engine);
+        if (!checkDone()) afterGoatTurn();
+      }, 1000);
+    }
+  }, 700);
+}
+function afterTigerTurn() {
+  if (!twoPlayer) return;
+  if (engine.goatsInHand === 0 && goatMoves(engine).length === 0 && result === "playing") {
+    const notice = document.getElementById("pass-notice");
+    notice.style.display = "";
+    setTimeout(() => {
+      notice.style.display = "none";
+      passGoats(engine);
+      checkDone();
+      renderAll();
+    }, 1000);
+  }
+}
+function tapPoint(r, c) {
+  if (phase !== "playing" || tigerThinking || result !== "playing") return;
+  if (engine.goatTurn) {
+    if (engine.goatsInHand > 0) {
+      if (engine.board[key(r, c)] !== "empty") return;
+      hint = null;
+      placeGoat(engine, r, c);
+      afterGoatTurn();
+      return;
+    }
+    if (selected) {
+      if (r === selected[0] && c === selected[1]) { selected = null; dests = []; renderAll(); return; }
+      if (dests.some(([dr, dc]) => dr === r && dc === c)) {
+        hint = null;
+        moveGoat(engine, { src: selected, dst: [r, c] });
+        selected = null; dests = [];
+        afterGoatTurn();
+        return;
+      }
+    }
+    if (engine.board[key(r, c)] === "goat") {
+      selected = [r, c];
+      dests = goatMoves(engine).filter(m => m.src[0] === r && m.src[1] === c).map(m => m.dst);
+    } else {
+      selected = null; dests = [];
+    }
+    renderAll();
+  } else if (twoPlayer) {
+    if (selected) {
+      const m = tigerMoves(engine).find(m => m.src[0] === selected[0] && m.src[1] === selected[1] && m.dst[0] === r && m.dst[1] === c);
+      if (m) {
+        hint = null;
+        moveTiger(engine, m);
+        selected = null; dests = [];
+        renderAll();
+        if (checkDone()) return;
+        afterTigerTurn();
+        return;
+      }
+    }
+    if (engine.board[key(r, c)] === "tiger") {
+      selected = [r, c];
+      dests = tigerMoves(engine).filter(m => m.src[0] === r && m.src[1] === c).map(m => m.dst);
+      hint = null;
+    } else {
+      selected = null; dests = [];
+    }
+    renderAll();
+  }
+}
+// Tap the board: nearest point within half a step.
+boardSvg.addEventListener("click", (ev) => {
+  const rect = boardSvg.getBoundingClientRect();
+  const x = (ev.clientX - rect.left) / rect.width * 500;
+  const y = (ev.clientY - rect.top) / rect.height * 500;
+  let bestP = null, bestD = STEP * 0.55;
+  for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) {
+    const [px, py] = xy(r, c);
+    const d = Math.hypot(x - px, y - py);
+    if (d < bestD) { bestD = d; bestP = [r, c]; }
+  }
+  if (bestP) tapPoint(bestP[0], bestP[1]);
+});
+
+// ---- Controls ----
+function setMode(tp) {
+  twoPlayer = tp;
+  document.getElementById("mode-phone").classList.toggle("bagh-mode-selected", !tp);
+  document.getElementById("mode-2p").classList.toggle("bagh-mode-selected", tp);
+  document.getElementById("ready-title").textContent = tp ? "Goats vs Tigers!" : "Trap the tigers!";
+  document.getElementById("rule-1").textContent = tp
+    ? "One player is the 🐐 goats, one is the 🐯 tigers — pass the phone each turn!"
+    : "You are the goats 🐐 — place all 20, then move them";
+  document.getElementById("start-btn").textContent = tp ? "Start 2-player game!" : "Start!";
+  document.getElementById("xp-note").textContent = tp
+    ? "Just for fun — no XP in 2-player 🤝"
+    : "Win +10 XP · finish +2 (max 3 paid games/day)";
+}
+document.getElementById("mode-phone").addEventListener("click", () => setMode(false));
+document.getElementById("mode-2p").addEventListener("click", () => setMode(true));
+document.getElementById("start-btn").addEventListener("click", startGame);
+document.getElementById("again-btn").addEventListener("click", startGame);
+document.getElementById("done-btn").addEventListener("click", () => { location.href = "index.html#games"; });
+document.getElementById("restart-btn").addEventListener("click", startGame);
+document.getElementById("hint-btn").addEventListener("click", () => {
+  if (twoPlayer || !engine.goatTurn || tigerThinking || phase !== "playing") return;
+  if (hintsLeft > 0) {
+    hint = goatHint(engine);
+    hintsLeft -= 1;
+  } else if (xp >= 5) {
+    xp -= 5;
+    saveXP();
+    hint = goatHint(engine);
+  } else {
+    const hb = document.getElementById("hint-btn");
+    hb.textContent = "Need 5 XP ⭐";
+    setTimeout(renderStatus, 1600);
+    return;
+  }
+  renderAll();
+});
+document.getElementById("music-btn").addEventListener("click", () => {
+  const muted = Music.toggleMute();
+  document.getElementById("music-btn").textContent = muted ? "🔇 Unmute" : "🔊 Music";
+});
+
+// ---- Adaptive music (simplified Web Audio port of BaghChalMusic) ----
+// A soft drone plus folk-scale plucks (Sa Re Ga tivra-Ma Pa Dha over C),
+// composed live. Four intensity levels follow the danger: tempo, note
+// density, and drums all follow. No audio files.
+const Music = (() => {
+  const SCALE = [0, 2, 4, 6, 7, 9, 12]; // semitones above C4 (261.63 Hz)
+  const ROOT = 261.63;
+  let actx = null, master = null, droneOsc = null, droneGain = null;
+  let timer = null, level = 0, muted = false, beat = 0;
+  function ensure() {
+    if (actx) return true;
+    try {
+      actx = new (window.AudioContext || window.webkitAudioContext)();
+      master = actx.createGain();
+      master.gain.value = 0.9;
+      master.connect(actx.destination);
+      droneOsc = actx.createOscillator();
+      droneOsc.type = "sine";
+      droneOsc.frequency.value = ROOT / 2;
+      droneGain = actx.createGain();
+      droneGain.gain.value = 0.05;
+      droneOsc.connect(droneGain).connect(master);
+      droneOsc.start();
+      return true;
+    } catch (e) { return false; }
+  }
+  function note(semi, dur, vol) {
+    if (!actx || muted) return;
+    const t = actx.currentTime;
+    const osc = actx.createOscillator();
+    const g = actx.createGain();
+    osc.type = "triangle";
+    osc.frequency.value = ROOT * Math.pow(2, semi / 12);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.connect(g).connect(master);
+    osc.start(t);
+    osc.stop(t + dur + 0.05);
+  }
+  function drum() {
+    if (!actx || muted) return;
+    const t = actx.currentTime;
+    const osc = actx.createOscillator();
+    const g = actx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(140, t);
+    osc.frequency.exponentialRampToValueAtTime(55, t + 0.12);
+    g.gain.setValueAtTime(0.25, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.15);
+    osc.connect(g).connect(master);
+    osc.start(t);
+    osc.stop(t + 0.2);
+  }
+  // Per level: [beat ms, note probability, drum every N beats (0 = none)].
+  const LEVELS = [[600, 0.25, 0], [480, 0.4, 0], [380, 0.55, 4], [300, 0.7, 2]];
+  function step() {
+    if (!actx) return;
+    const [ms, prob, drumEvery] = LEVELS[level];
+    if (Math.random() < prob) {
+      const deg = SCALE[Math.floor(Math.random() * SCALE.length)];
+      note(deg, 0.5, 0.16);
+    }
+    if (drumEvery && beat % drumEvery === 0) drum();
+    beat += 1;
+    timer = setTimeout(step, ms);
+  }
+  return {
+    start(lv) {
+      if (!ensure()) return;
+      if (actx.state === "suspended") actx.resume().catch(() => {});
+      this.setLevel(lv, true);
+    },
+    setLevel(lv, force) {
+      if (!actx) return;
+      if (!force && lv === level) return;
+      level = lv;
+      clearTimeout(timer);
+      beat = 0;
+      if (phase === "playing") timer = setTimeout(step, LEVELS[level][0]);
+    },
+    stop() { clearTimeout(timer); timer = null; },
+    toggleMute() {
+      muted = !muted;
+      if (master) master.gain.value = muted ? 0 : 0.9;
+      return muted;
+    },
+    playStinger(win) {
+      if (!ensure()) return;
+      if (actx.state === "suspended") actx.resume().catch(() => {});
+      const seq = win ? [0, 4, 7, 12] : [7, 4, 0, -5];
+      seq.forEach((semi, i) => setTimeout(() => note(semi, 0.4, 0.22), i * 130));
+    },
+  };
+})();
+
+// Boot: pull server progress, then show the ready screen.
+GharAuth.pull().catch(() => {}).then(() => {
+  document.getElementById("xp-display").textContent = `⭐ ${xp} XP`;
+  setMode(false);
+  renderBoard();
+});
+</script>
+</body>
+</html>
