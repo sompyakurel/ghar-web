@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ghar — Missions</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
 <div class="wrap">
@@ -12,7 +12,34 @@
   <h1>🎯 Missions</h1>
   <p class="myghar-sub">Do these in real life! "Done it" is +10 XP. "Prove it" — record yourself, a grown-up confirms it — is +25 XP.</p>
   <p class="error" id="error" hidden>Couldn't load the missions. Check your connection and refresh.</p>
+  <div class="mission-card" id="daily-card">
+    <div class="mission-head">
+      <div><span class="mission-title-en">🔥 Streak Challenge</span></div>
+      <span class="mission-badge" id="streak-badge">🔥 0 days</span>
+    </div>
+    <p class="mission-prompt" id="daily-title"></p>
+    <p class="mission-prompt-ne" id="daily-prompt"></p>
+    <div class="mission-actions" id="daily-actions"></div>
+  </div>
+  <div class="mission-card" id="dog-teaser" hidden>
+    <div class="mission-head">
+      <div><span class="mission-title-en">🐶 Unlock Bhunte!</span></div>
+      <span class="mission-badge" id="dog-teaser-badge"></span>
+    </div>
+    <p class="mission-prompt">Finish ALL 10 missions to unlock your dog Bhunte for My Ghar.</p>
+    <div class="mission-actions"><a class="quiz-next" href="myghar.html" style="text-decoration:none;">🏠 See My Ghar</a></div>
+  </div>
+  <div class="mission-card" id="teen-rewards-card">
+    <div class="mission-head">
+      <div><span class="mission-title-en">🎁 Teen Rewards</span></div>
+      <span class="mission-badge" id="teen-progress-badge"></span>
+    </div>
+    <p class="mission-prompt" id="teen-rewards-text"></p>
+  </div>
   <div id="missions"></div>
+  <h2 style="margin-top:28px;">🔥 Teen Missions</h2>
+  <p class="myghar-sub">For teens — no grown-up needed. Press and hold the button for 2.5 seconds to confirm you did it, and you earn the full +25 XP.</p>
+  <div id="teen-missions"></div>
   <div class="mission-record" id="record-panel" hidden>
     <h2 id="record-title"></h2>
     <p id="record-prompt"></p>
@@ -27,12 +54,42 @@
     <button class="back" id="record-close" style="margin-top:12px;">Close</button>
   </div>
 </div>
-<script src="auth.js?v=2"></script>
+<script src="auth.js?v=3"></script>
 <script>
 let pack = null;
 let completed = new Set();
 let verified = new Set();
 let xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
+// The 8 teen missions (in code in the app, not in the pack JSON). Each is
+// self-serve: press and hold 2.5s to confirm, full +25 XP, filed in BOTH
+// the done and verified sets (so the card shows the star).
+const TEEN_MISSIONS = [
+  { id: "teen-text-it", titleEn: "Text It For Real", titleNe: "साँच्चै मेसेज गर", promptEn: "Send a real text or DM to a family member using a Nepali phrase from the Texting deck — try 'ke chha?' (how are you?) or 'sanchai chhu' (I'm good).", promptNe: "परिवारलाई नेपालीमा मेसेज पठाऊ!", audioUrl: "/audio/nepal-v1/teen-text-it.m4a", xp: 10, verifiedXp: 25, hasAudio: true, difficulty: "teen" },
+  { id: "teen-teach-slang", titleEn: "Teach the Slang", titleNe: "स्ल्याङ सिकाऊ", promptEn: "Teach a friend one Nepali slang word from the Slang deck — and use it in a real sentence.", promptNe: "साथीलाई एउटा नेपाली स्ल्याङ शब्द सिकाऊ!", audioUrl: "/audio/nepal-v1/teen-teach-slang.m4a", xp: 10, verifiedXp: 25, hasAudio: true, difficulty: "teen" },
+  { id: "teen-caption", titleEn: "Caption That", titleNe: "क्याप्सन लेख", promptEn: "Write a Nepali caption for a real photo of yours — post it or send it to family.", promptNe: "आफ्नो फोटोको लागि नेपाली क्याप्सन लेख!", audioUrl: "/audio/nepal-v1/teen-caption.m4a", xp: 10, verifiedXp: 25, hasAudio: true, difficulty: "teen" },
+  { id: "teen-comeback", titleEn: "Comeback Ready", titleNe: "जवाफ दिन सिक", promptEn: "Learn one comeback from the Comebacks deck and say it out loud to someone at home.", promptNe: "एउटा जवाफ सिकेर घरमा भन!", audioUrl: "/audio/nepal-v1/teen-comeback.m4a", xp: 10, verifiedXp: 25, hasAudio: true, difficulty: "teen" },
+  { id: "teen-lyrics", titleEn: "Lyrics Check", titleNe: "गीतको अर्थ", promptEn: "Pick one line from the Lyrics deck, learn what it really means, and explain it to someone.", promptNe: "गीतको एउटा लाइनको अर्थ सिकेर बुझाऊ!", audioUrl: "/audio/nepal-v1/teen-lyrics.m4a", xp: 10, verifiedXp: 25, hasAudio: true, difficulty: "teen" },
+  { id: "teen-order", titleEn: "Order in Nepali", titleNe: "नेपालीमा अर्डर", promptEn: "Use Nepali to order or ask for food — numbers and food words count!", promptNe: "नेपालीमा खाना अर्डर गर!", audioUrl: "/audio/nepal-v1/teen-order.m4a", xp: 10, verifiedXp: 25, hasAudio: true, difficulty: "teen" },
+  { id: "teen-call-home", titleEn: "Call Home", titleNe: "घरमा फोन", promptEn: "Greet a grandparent or relative in Nepali on a call — a full sentence, not just 'hi'.", promptNe: "फोनमा नेपालीमा अभिवादन गर!", audioUrl: "/audio/nepal-v1/teen-call-home.m4a", xp: 10, verifiedXp: 25, hasAudio: true, difficulty: "teen" },
+  { id: "teen-teach-back", titleEn: "Teach It Back", titleNe: "सिकाएर देखाऊ", promptEn: "Teach someone at home one Nepali word — say it, have them repeat it back.", promptNe: "घरमा कसैलाई एउटा नेपाली शब्द सिकाऊ!", audioUrl: "/audio/nepal-v1/teen-teach-back.m4a", xp: 10, verifiedXp: 25, hasAudio: true, difficulty: "teen" },
+];
+// Teen mystery pool: one random draw at 4 teen missions (matches the app).
+const TEEN_PRIZES = [
+  { id: "sneakers", ne: "जुत्ता", en: "Sneakers", emoji: "👟" },
+  { id: "basketball", ne: "बास्केटबल", en: "Basketball", emoji: "🏀" },
+  { id: "controller", ne: "भिडियो गेम", en: "Game Controller", emoji: "🎮" },
+];
+const TEEN_MYSTERY_KEY = "ghar.teenmystery.claimed";
+function teenDoneCount() { return TEEN_MISSIONS.filter(m => completed.has(m.id)).length; }
+// After ANY mission is completed: keep the streak alive, and if today is
+// a Mission day, claim the +15 XP daily challenge bonus. Returns the bonus
+// XP earned (0 or 15) so the caller can add it.
+function recordStreakAndDaily() {
+  if (!window.GharStreak) return 0;
+  GharStreak.recordMissionDone();
+  if (GharStreak.claimIfMissionDay()) return 15;
+  return 0;
+}
 function loadSets() {
   try { completed = new Set(JSON.parse(localStorage.getItem("ghar.missions.completed") || "[]")); } catch (e) { completed = new Set(); }
   try { verified = new Set(JSON.parse(localStorage.getItem("ghar.missions.verified") || "[]")); } catch (e) { verified = new Set(); }
@@ -95,6 +152,7 @@ function render() {
     if (doneBtn) doneBtn.addEventListener("click", () => {
       completed.add(m.id);
       xp += (m.xp || 10);
+      xp += recordStreakAndDaily();
       saveSets(); saveXP();
       if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
       pushMission(m.id, "done");
@@ -104,6 +162,152 @@ function render() {
     if (proveBtn) proveBtn.addEventListener("click", () => openRecord(m));
     wrap.appendChild(card);
   });
+  renderDaily();
+  renderDogTeaser();
+  renderTeenRewards();
+  renderTeen();
+}
+// --- Daily challenge card (Streak Challenge) ---
+function renderDaily() {
+  if (!window.GharStreak) return;
+  const c = GharStreak.todayChallenge();
+  const done = GharStreak.dailyDoneToday();
+  const n = GharStreak.count();
+  document.getElementById("streak-badge").textContent = `🔥 ${n} day${n === 1 ? "" : "s"}`;
+  document.getElementById("daily-title").textContent = `${c.icon} ${c.title}`;
+  document.getElementById("daily-prompt").textContent = done ? "✅ Done today! Come back tomorrow for a new challenge." : c.prompt;
+  const actions = document.getElementById("daily-actions");
+  actions.innerHTML = "";
+  if (done) return;
+  if (c.format === "teachBack") {
+    const b = document.createElement("button");
+    b.className = "quiz-next";
+    b.textContent = "🎤 I taught them! (+15 XP)";
+    b.addEventListener("click", () => {
+      if (!GharStreak.claimDaily()) return;
+      xp += 15;
+      saveXP();
+      if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
+      GharAuth.pushTotals().catch(() => {});
+      renderDaily();
+    });
+    actions.appendChild(b);
+  } else if (c.format === "quizBlitz") {
+    const a = document.createElement("a");
+    a.className = "quiz-next";
+    a.href = "quiz.html";
+    a.style.textDecoration = "none";
+    a.textContent = `⚡ Go to the Quiz (${GharStreak.quizTodayCount()}/5 today)`;
+    actions.appendChild(a);
+  } else {
+    const p = document.createElement("span");
+    p.className = "auth-note";
+    p.textContent = "Complete any mission below to finish today's challenge (+15 XP).";
+    actions.appendChild(p);
+  }
+}
+// --- Dog teaser: finish ALL 10 pack missions to unlock Bhunte ---
+function renderDogTeaser() {
+  const done = pack ? pack.missions.filter(m => completed.has(m.id)).length : 0;
+  const total = pack ? pack.missions.length : 10;
+  const el = document.getElementById("dog-teaser");
+  if (done >= total) { el.hidden = true; return; }
+  el.hidden = false;
+  document.getElementById("dog-teaser-badge").textContent = `${done} of ${total} missions`;
+}
+// --- Teen rewards card: mystery prize at 4, soccer ball at all 8 ---
+function renderTeenRewards() {
+  const n = teenDoneCount();
+  const total = TEEN_MISSIONS.length;
+  document.getElementById("teen-progress-badge").textContent = `${n} of ${total} done`;
+  const claimed = localStorage.getItem(TEEN_MYSTERY_KEY) || "";
+  const prize = TEEN_PRIZES.find(p => p.id === claimed);
+  let text = "";
+  if (n >= total) text = "⚽ Golden soccer ball unlocked! It is waiting in My Ghar.";
+  else if (n >= 4) text = prize
+    ? `🎁 Mystery prize: ${prize.emoji} ${prize.en}! Finish all ${total} teen missions to win a golden soccer ball for My Ghar.`
+    : `🎁 A mystery prize waits at 4 teen missions (${n}/4).`;
+  else text = `A mystery prize waits at 4 teen missions (${n}/4). Finish all ${total} teen missions to win a golden soccer ball for My Ghar.`;
+  document.getElementById("teen-rewards-text").textContent = text;
+  // Auto-draw the mystery prize the moment the 4th teen mission lands.
+  if (n >= 4 && !claimed) {
+    const pick = TEEN_PRIZES[Math.floor(Math.random() * TEEN_PRIZES.length)];
+    localStorage.setItem(TEEN_MYSTERY_KEY, pick.id);
+    renderTeenRewards();
+  }
+}
+// --- Teen missions: press and hold 2.5s to confirm (full +25 XP) ---
+function renderTeen() {
+  const wrap = document.getElementById("teen-missions");
+  wrap.innerHTML = "";
+  TEEN_MISSIONS.forEach(m => {
+    const isVerified = verified.has(m.id);
+    const isDone = completed.has(m.id) || isVerified;
+    const card = document.createElement("div");
+    card.className = "mission-card" + (isVerified ? " verified" : isDone ? " done" : "");
+    card.innerHTML = `
+      <div class="mission-head">
+        <div>
+          <span class="mission-title-ne">${m.titleNe}</span>
+          <span class="mission-title-en">${m.titleEn}</span>
+        </div>
+        <span class="mission-badge">${isVerified ? "⭐ Verified" : isDone ? "✅ Done" : "teen"}</span>
+      </div>
+      <p class="mission-prompt">${m.promptEn}</p>
+      <p class="mission-prompt-ne">${m.promptNe}</p>
+      <div class="mission-actions">
+        <button class="quiz-next mission-play">▶️ Hear it</button>
+        ${isDone ? "" : `<button class="quiz-next teen-hold">✋ Press &amp; hold to confirm (+25 XP)</button>`}
+      </div>
+      <div class="teen-hold-bar" hidden><div class="teen-hold-fill"></div></div>`;
+    card.querySelector(".mission-play").addEventListener("click", () => {
+      if (m.hasAudio && m.audioUrl) play(asset(m.audioUrl));
+    });
+    const holdBtn = card.querySelector(".teen-hold");
+    if (holdBtn) {
+      const bar = card.querySelector(".teen-hold-bar");
+      const fill = card.querySelector(".teen-hold-fill");
+      let timer = null, progress = 0;
+      const HOLD_MS = 2500;
+      function cancel(reset) {
+        if (timer) { clearInterval(timer); timer = null; }
+        if (reset) { progress = 0; fill.style.width = "0%"; bar.hidden = true; }
+      }
+      function start(e) {
+        e.preventDefault();
+        if (timer) return;
+        bar.hidden = false;
+        const t0 = Date.now();
+        timer = setInterval(() => {
+          progress = Math.min(1, (Date.now() - t0) / HOLD_MS);
+          fill.style.width = (progress * 100) + "%";
+          if (progress >= 1) {
+            cancel(false);
+            markTeenDone(m);
+          }
+        }, 50);
+      }
+      holdBtn.addEventListener("pointerdown", start);
+      holdBtn.addEventListener("pointerup", () => cancel(true));
+      holdBtn.addEventListener("pointerleave", () => cancel(true));
+      holdBtn.addEventListener("contextmenu", e => e.preventDefault());
+    }
+    wrap.appendChild(card);
+  });
+}
+// Teen completion: full +25 XP in one go, filed in BOTH sets (star), plus
+// the streak and the daily challenge credit — same as the app.
+function markTeenDone(m) {
+  if (completed.has(m.id)) return;
+  completed.add(m.id);
+  verified.add(m.id);
+  xp += (m.verifiedXp || 25);
+  xp += recordStreakAndDaily();
+  saveSets(); saveXP();
+  if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
+  pushMission(m.id, "verified");
+  play("assets/audio/nepal-v1/myghar_diyo_np.m4a");
+  render();
 }
 // --- Prove it: record, grown-up listens and confirms ---
 let recorder = null, chunks = [], recordMission = null, recordBlob = null;
@@ -160,6 +364,7 @@ document.getElementById("confirm-btn").addEventListener("click", () => {
   verified.add(recordMission.id);
   completed.add(recordMission.id);
   xp += (recordMission.verified_xp || 25);
+  xp += recordStreakAndDaily();
   saveSets(); saveXP();
   if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
   pushMission(recordMission.id, "verified");

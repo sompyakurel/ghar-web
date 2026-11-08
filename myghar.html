@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ghar — My Ghar</title>
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
 <div class="wrap">
@@ -12,7 +12,7 @@
   <div class="myghar-head">
     <div>
       <h1>🏠 <span id="house-name-label">My Ghar</span></h1>
-      <p class="myghar-sub"><span id="dog-name-label">Bhunte</span> · <span id="dog-stage-label">Puppy</span> · ⭐ <span id="xp-label">0</span> XP</p>
+      <p class="myghar-sub"><span id="dog-name-label">Bhunte</span> · <span id="dog-stage-label">Puppy</span> · ⭐ <span id="xp-label">0</span> XP · 🔥 <span id="streak-label">0</span> days</p>
     </div>
     <a class="quiz-next shop-btn" href="shop.html">🛍️ Shop</a>
     <button class="quiz-next" id="mystery-btn">🎁 Mystery Box</button>
@@ -26,12 +26,23 @@
     <div class="myghar-weather" id="weather">…</div>
     <div id="shop-items"></div>
     <img class="myghar-dog" id="dog" src="assets/images/bhunte.svg" alt="Bhunte the dog">
+    <div class="myghar-dog-locked" id="dog-locked" hidden></div>
   </div>
   <p class="myghar-hint" id="hint">Tap Bhunte and he'll bark! 🐶</p>
-  <div class="myghar-earn" id="earn-box">
-    <h3>🎁 Earn decorations for your room</h3>
-    <p class="myghar-earn-sub">Your room starts empty. Every decoration here is earned by learning — nothing is just given.</p>
-    <ul id="earn-list"></ul>
+  <div class="myghar-shelf" id="trophy-shelf">
+    <h3>🏆 Trophies</h3>
+    <p class="myghar-shelf-sub">Earned by learning — nothing is just given. Tap one you earned to hear its name.</p>
+    <div class="shelf-row" id="trophy-row"></div>
+  </div>
+  <div class="myghar-shelf" id="teen-shelf">
+    <h3>🎁 Teen Rewards</h3>
+    <p class="myghar-shelf-sub">Lesson prizes, the mystery prize, and the golden soccer ball — earned on the teen missions.</p>
+    <div class="shelf-row" id="teen-row"></div>
+  </div>
+  <div class="myghar-shelf" id="mystery-shelf">
+    <h3>🔮 Mystery Treasures</h3>
+    <p class="myghar-shelf-sub">Found in Mystery Boxes — one box for every 3 decks, plus one when you finish all 22 lessons.</p>
+    <div class="shelf-row" id="mystery-row"></div>
   </div>
   <div class="myghar-names">
     <label>House name <input class="auth-input" id="house-name" type="text" placeholder="My Ghar" maxlength="30"></label>
@@ -47,7 +58,7 @@
     </div>
   </div>
 </div>
-<script src="auth.js"></script>
+<script src="auth.js?v=3"></script>
 <script src="shop-data.js"></script>
 <script>
 // My Ghar -- ONE ROOM PICTURE (v8).
@@ -73,16 +84,45 @@
 // Nothing is just given. Every room item -- trophy, shop piece, treasure,
 // Suga -- uses the SAME placement: left/top as % (its CENTER) plus
 // translate(-50%,-50%). No more right/bottom pinning.
+// Room trophies: the 3 mission trophies, earned by VERIFIED missions
+// (matches the app): Golden Diyo at 1, Star Badge at 3, Mukut at 5.
+// They sit on the cabinet shelves in the room picture.
 const EARNED = [
   { id: "goldenDiyo", shelf: 0, cell: 0,
-    label: "🪔 Golden Diyo — complete all 10 missions",
-    earned: s => s.missionsDone >= 10 },
+    label: "🪔 Golden Diyo — 1 verified mission",
+    earned: s => s.missionsVerified >= 1 },
   { id: "starBadge", shelf: 1, cell: 0,
-    label: "⭐ Star Badge — earn 100 XP",
-    earned: s => s.xp >= 100 },
+    label: "⭐ Star Badge — 3 verified missions",
+    earned: s => s.missionsVerified >= 3 },
   { id: "mukut", shelf: 2, cell: 0,
-    label: "👑 Mukut (crown) — complete all 22 lessons",
-    earned: s => s.decksDone >= 22 },
+    label: "👑 Mukut (crown) — 5 verified missions",
+    earned: s => s.missionsVerified >= 5 },
+];
+// All 9 trophies (the room's 3 + streak + quiz stickers), for the shelf
+// below the room. Matches the app's exclusiveItems + trophyHint exactly.
+const TROPHIES = [
+  { id: "goldenDiyo", ne: "सुनौलो दियो", en: "Golden Diyo", emoji: "🪔", hint: "1 verified mission", earned: s => s.missionsVerified >= 1, img: true },
+  { id: "starBadge", ne: "तारा", en: "Star Badge", emoji: "⭐", hint: "3 verified missions", earned: s => s.missionsVerified >= 3, img: true },
+  { id: "mukut", ne: "मुकुट", en: "Mukut Crown", emoji: "👑", hint: "5 verified missions", earned: s => s.missionsVerified >= 5, img: true },
+  { id: "flameDiyo", ne: "ज्वाला दियो", en: "Flame Diyo", emoji: "🔥", hint: "7-day streak", earned: s => s.streak >= 7, img: true },
+  { id: "streakCrown", ne: "लगातार मुकुट", en: "Streak Crown", emoji: "👑", hint: "15-day streak", earned: s => s.streak >= 15, img: true },
+  { id: "quiz50", ne: "झिलिमिली", en: "Jhilimili Sticker", emoji: "✨", hint: "50 quiz answers right", earned: s => s.quizCorrect >= 50, img: false },
+  { id: "quiz100", ne: "सूर्य", en: "Surya Sticker", emoji: "☀️", hint: "100 quiz answers right", earned: s => s.quizCorrect >= 100, img: false },
+  { id: "quiz250", ne: "हिमाल", en: "Himal Sticker", emoji: "🏔️", hint: "250 quiz answers right", earned: s => s.quizCorrect >= 250, img: false },
+  { id: "quiz500", ne: "सगरमाथा", en: "Sagarmatha Sticker", emoji: "🗻", hint: "500 quiz answers right", earned: s => s.quizCorrect >= 500, img: false },
+];
+// Teen rewards (the app's teenShowcaseItems, display order): the golden
+// ball, the 5 lesson prizes, and the 3 mystery-pool prizes.
+const TEEN_REWARDS = [
+  { id: "goldsoccerball", ne: "सुनको फुटबल", en: "Golden Soccer Ball", emoji: "⚽", hint: "Finish all 8 teen missions", earned: s => s.teenDone >= 8 },
+  { id: "headphones", ne: "हेडफोन", en: "Headphones", emoji: "🎧", hint: "Finish the Texting deck", earned: s => s.decksDoneIds.includes("texting") },
+  { id: "skateboard", ne: "स्केटबोर्ड", en: "Skateboard", emoji: "🛹", hint: "Finish the Slang deck", earned: s => s.decksDoneIds.includes("slang") },
+  { id: "sunglasses", ne: "चश्मा", en: "Sunglasses", emoji: "🕶️", hint: "Finish the Comebacks deck", earned: s => s.decksDoneIds.includes("comebacks") },
+  { id: "camera", ne: "क्यामेरा", en: "Camera", emoji: "📷", hint: "Finish the Captions deck", earned: s => s.decksDoneIds.includes("captions") },
+  { id: "guitar", ne: "गितार", en: "Guitar", emoji: "🎸", hint: "Finish the Lyrics deck", earned: s => s.decksDoneIds.includes("lyrics") },
+  { id: "sneakers", ne: "जुत्ता", en: "Sneakers", emoji: "👟", hint: "Teen mystery prize", earned: s => s.teenMystery === "sneakers" },
+  { id: "basketball", ne: "बास्केटबल", en: "Basketball", emoji: "🏀", hint: "Teen mystery prize", earned: s => s.teenMystery === "basketball" },
+  { id: "controller", ne: "भिडियो गेम", en: "Game Controller", emoji: "🎮", hint: "Teen mystery prize", earned: s => s.teenMystery === "controller" },
 ];
 // Trophy cell centers: 2 cells per shelf (fractions of the ROOM picture).
 const CELL_X = [0.10, 0.26];
@@ -130,25 +170,35 @@ document.getElementById("celebration").addEventListener("click", () => {
 function dogStageFor(xp) { return xp >= 150 ? 2 : xp >= 50 ? 1 : 0; }
 function readState() {
   const xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
-  let missionsDone = 0;
+  let missionsDone = 0, missionsVerified = 0, teenDone = 0;
   try {
     const c = JSON.parse(localStorage.getItem("ghar.missions.completed") || "[]");
     const v = JSON.parse(localStorage.getItem("ghar.missions.verified") || "[]");
     missionsDone = new Set([...c, ...v]).size;
-  } catch (e) { missionsDone = 0; }
+    missionsVerified = v.length;
+    const TEEN_IDS = ["teen-text-it", "teen-teach-slang", "teen-caption", "teen-comeback", "teen-lyrics", "teen-order", "teen-call-home", "teen-teach-back"];
+    teenDone = TEEN_IDS.filter(id => c.includes(id) || v.includes(id)).length;
+  } catch (e) { missionsDone = 0; missionsVerified = 0; teenDone = 0; }
   let decksDone = 0;
+  const decksDoneIds = [];
   try {
     const pack = JSON.parse(localStorage.getItem("ghar.pack.cache") || "null");
     if (pack && pack.decks) {
-      decksDone = pack.decks.filter(d => {
+      pack.decks.forEach(d => {
         try {
           const heard = JSON.parse(localStorage.getItem("ghar.heard." + d.id) || "[]");
-          return heard.length >= (d.words || []).length && (d.words || []).length > 0;
-        } catch (e) { return false; }
-      }).length;
+          if (heard.length >= (d.words || []).length && (d.words || []).length > 0) {
+            decksDone += 1;
+            decksDoneIds.push(d.id);
+          }
+        } catch (e) { /* not done */ }
+      });
     }
   } catch (e) { decksDone = 0; }
-  return { xp, missionsDone, decksDone };
+  const streak = window.GharStreak ? GharStreak.count() : (parseInt(localStorage.getItem("ghar.streak.count") || "0", 10) || 0);
+  const quizCorrect = parseInt(localStorage.getItem("ghar.quiz.correctTotal") || "0", 10) || 0;
+  const teenMystery = localStorage.getItem("ghar.teenmystery.claimed") || "";
+  return { xp, missionsDone, missionsVerified, teenDone, decksDone, decksDoneIds, streak, quizCorrect, teenMystery };
 }
 function renderTrophies(state) {
   const wrap = document.getElementById("trophies");
@@ -177,14 +227,64 @@ function renderTrophies(state) {
   document.getElementById("hint").textContent = (shown === 0 && ownedCount === 0)
     ? "Your room is empty — earn XP by learning, then buy things for it in the 🛍️ Shop! Tap Bhunte and he'll bark! 🐶"
     : "Tap a trophy or decoration to hear it. Tap Bhunte and he'll bark! 🐶";
-  const list = document.getElementById("earn-list");
-  list.innerHTML = "";
-  EARNED.forEach(d => {
-    const li = document.createElement("li");
-    li.textContent = (d.earned(state) ? "✅ " : "⬜ ") + d.label;
-    list.appendChild(li);
+}
+// The three labeled shelves below the room (matches the app's trophy shelf
+// + teen rewards shelf): every item shows its name in Nepali and English,
+// "Earned! 🌟" when owned, or the hint for how to earn it. Unearned items
+// are greyed out. Tapping an earned one plays its name clip.
+function shelfItemHTML(item, earned, imgSrc) {
+  const visual = imgSrc
+    ? `<img src="${imgSrc}" alt="${item.en}">`
+    : `<span class="shelf-emoji">${item.emoji}</span>`;
+  return `${visual}
+    <span class="shelf-name-ne">${item.ne}</span>
+    <span class="shelf-name-en">${item.en}</span>
+    <span class="shelf-status">${earned ? "Earned! 🌟" : item.hint}</span>`;
+}
+function renderShelves(state) {
+  // Trophies (all 9).
+  const tRow = document.getElementById("trophy-row");
+  tRow.innerHTML = "";
+  TROPHIES.forEach(t => {
+    const earned = t.earned(state);
+    const cell = document.createElement("div");
+    cell.className = "shelf-item" + (earned ? " earned" : "");
+    cell.innerHTML = shelfItemHTML(t, earned, t.img ? `assets/images/myghar/${t.id}.png` : null);
+    if (earned) cell.addEventListener("click", () => {
+      cell.classList.remove("pop"); void cell.offsetWidth; cell.classList.add("pop");
+      play(`assets/audio/nepal-v1/myghar_${t.id}_np.m4a`);
+    });
+    tRow.appendChild(cell);
   });
-  document.getElementById("earn-box").style.display = shown >= EARNED.length ? "none" : "";
+  // Teen rewards (9). Earned ones play their Prakash name clip.
+  const teenRow = document.getElementById("teen-row");
+  teenRow.innerHTML = "";
+  TEEN_REWARDS.forEach(t => {
+    const earned = t.earned(state);
+    const cell = document.createElement("div");
+    cell.className = "shelf-item" + (earned ? " earned" : "");
+    cell.innerHTML = shelfItemHTML(t, earned, `assets/images/myghar/${t.id}.png`);
+    if (earned) cell.addEventListener("click", () => {
+      cell.classList.remove("pop"); void cell.offsetWidth; cell.classList.add("pop");
+      play(`assets/audio/nepal-v1/teenprize_${t.id}_np.m4a`);
+    });
+    teenRow.appendChild(cell);
+  });
+  // Mystery treasures (6). Earned ones play their name clip.
+  const mRow = document.getElementById("mystery-row");
+  mRow.innerHTML = "";
+  const owned = mysteryOwned();
+  MYSTERY.forEach(t => {
+    const earned = owned.includes(t.id);
+    const cell = document.createElement("div");
+    cell.className = "shelf-item" + (earned ? " earned" : "");
+    cell.innerHTML = shelfItemHTML({ ne: t.ne, en: t.en, emoji: t.emoji, hint: "Find it in a Mystery Box" }, earned, `assets/images/myghar/${t.img}`);
+    if (earned) cell.addEventListener("click", () => {
+      cell.classList.remove("pop"); void cell.offsetWidth; cell.classList.add("pop");
+      if (t.audio) play(`assets/audio/nepal-v1/myghar_${t.audio}_np.m4a`);
+    });
+    mRow.appendChild(cell);
+  });
 }
 // Shop items the kid owns, rendered in the room at their home position
 // (SHOP catalog x/y) plus any Arrange drag delta. Suga is a shop pet: he
@@ -246,11 +346,16 @@ function renderMysteryItems() {
     wrap.appendChild(el);
   });
 }
-// Mystery Boxes: one earned for every 3 decks completed. Opening a box
-// reveals a random treasure the kid does not own yet.
+// Mystery Boxes: one earned for every 3 decks completed, PLUS one bonus
+// box when all 22 lessons are finished. Writing sections earn boxes too
+// (ghar.mystery.writingBoxes, incremented by the writing pages when they
+// land — the hook is here so the count flows in with no other change).
+// Opening a box reveals a random treasure the kid does not own yet.
 function mysteryBoxesAvailable(state) {
-  const earned = Math.floor(state.decksDone / MYSTERY_DECKS_PER_BOX);
-  return Math.max(0, earned - mysteryOwned().length);
+  const fromDecks = Math.floor(state.decksDone / MYSTERY_DECKS_PER_BOX);
+  const allLessonsBonus = state.decksDone >= 22 ? 1 : 0;
+  const fromWriting = parseInt(localStorage.getItem("ghar.mystery.writingBoxes") || "0", 10) || 0;
+  return Math.max(0, fromDecks + allLessonsBonus + fromWriting - mysteryOwned().length);
 }
 function renderMysteryButton(state) {
   const btn = document.getElementById("mystery-btn");
@@ -307,12 +412,23 @@ function makeDraggable(el, d, container, homeX, homeY) {
     window.addEventListener("pointerup", onUp);
   });
 }
-function renderDog(xp) {
-  const stage = dogStageFor(xp);
+// Bhunte is locked until ALL 10 pack missions are done (matches the
+// app). Until then the stage shows a locked placeholder with progress.
+function renderDog(xp, state) {
   const dog = document.getElementById("dog");
+  const locked = (state ? state.missionsDone : 0) < 10;
+  const lockEl = document.getElementById("dog-locked");
+  dog.style.display = locked ? "none" : "";
+  document.getElementById("sign-name").style.display = locked ? "none" : "";
+  if (lockEl) {
+    lockEl.hidden = !locked;
+    if (locked) lockEl.textContent = `🔒 Bhunte is waiting! Finish all 10 missions to unlock your dog. (${state ? state.missionsDone : 0} of 10 done)`;
+  }
+  const stage = dogStageFor(xp);
   dog.style.width = STAGE_WIDTH[stage] + "%";
-  document.getElementById("dog-stage-label").textContent = STAGE_NAMES[stage];
+  document.getElementById("dog-stage-label").textContent = locked ? "Locked" : STAGE_NAMES[stage];
   document.getElementById("xp-label").textContent = xp;
+  document.getElementById("streak-label").textContent = (state && state.streak) || 0;
   const prev = parseInt(localStorage.getItem(DOG_STAGE_KEY) || "0", 10);
   if (stage > prev) {
     localStorage.setItem(DOG_STAGE_KEY, String(stage));
@@ -352,6 +468,7 @@ async function renderWeather() {
 }
 const SUGA_CLIPS = ["assets/audio/nepal-v1/myghar_sugaMitho_np.m4a", "assets/audio/nepal-v1/myghar_sugaGreeting_np.m4a"];
 document.getElementById("dog").addEventListener("click", () => {
+  if (document.getElementById("dog").style.display === "none") return;
   const xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
   const stage = dogStageFor(xp);
   const dog = document.getElementById("dog");
@@ -405,10 +522,11 @@ GharAuth.pull().catch(() => {}).then(async () => {
   } catch (e) { /* deck count stays 0 */ }
   const state = readState();
   renderTrophies(state);
+  renderShelves(state);
   renderShopItems();
   renderMysteryItems();
   renderMysteryButton(state);
-  renderDog(state.xp);
+  renderDog(state.xp, state);
   renderNames();
   renderDayNight();
   renderWeather();

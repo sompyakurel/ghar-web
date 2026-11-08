@@ -395,3 +395,23 @@ EOF'
 .shop-see { font-size: 14px; color: #2e7d32; text-decoration: none; margin-top: 6px; }
 .shop-owned { text-align: center; color: #666; font-size: 14px; margin: 12px 0 24px; }
 
+
+/* Labeled shelves below the My Ghar room (trophies, teen rewards, mystery
+   treasures). Earned items are full colour; unearned are greyed out. */
+.myghar-shelf { background: #fff; border-radius: 18px; padding: 16px 18px; box-shadow: 0 2px 8px rgba(0,0,0,.06); margin-bottom: 20px; }
+.myghar-shelf h3 { margin: 0 0 4px; font-size: 20px; }
+.myghar-shelf-sub { color: #666; font-size: 14px; margin: 0 0 12px; }
+.shelf-row { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 4px; }
+.shelf-item { flex: 0 0 auto; width: 112px; background: #faf7f2; border: 1px solid #e5e0d8; border-radius: 12px; padding: 10px 8px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 2px; filter: grayscale(1); opacity: 0.45; }
+.shelf-item.earned { filter: none; opacity: 1; background: #fff; border-color: #d4a017; cursor: pointer; }
+.shelf-item img { width: 54px; height: 54px; object-fit: contain; }
+.shelf-emoji { font-size: 32px; line-height: 54px; }
+.shelf-name-ne { font-size: 15px; font-weight: 700; }
+.shelf-name-en { font-size: 13px; color: #666; }
+.shelf-status { font-size: 12px; color: #2e7d32; font-weight: 700; }
+.shelf-item:not(.earned) .shelf-status { color: #888; font-weight: 400; }
+/* Locked-dog placeholder in the My Ghar stage (until all 10 missions). */
+.myghar-dog-locked { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); background: rgba(255,255,255,.92); border-radius: 12px; padding: 14px 18px; font-size: 15px; font-weight: 600; text-align: center; max-width: 80%; box-shadow: 0 2px 8px rgba(0,0,0,.12); }
+/* Teen hold-to-confirm progress bar. */
+.teen-hold-bar { height: 8px; background: #e5e0d8; border-radius: 999px; margin-top: 10px; overflow: hidden; }
+.teen-hold-fill { height: 100%; width: 0%; background: #2e7d32; border-radius: 999px; }

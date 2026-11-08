@@ -119,3 +119,102 @@ const GharAuth = {
     return true;
   },
 };
+
+// Daily streak + daily challenge — mirrors the app (Streak + DailyChallenge
+// + DailyQuiz). All localStorage, on-device, COPPA-safe, no backend.
+// Streak = consecutive days with at least one mission done. Flame Diyo at
+// 7 days, Streak Crown at 15. The daily challenge is one featured task a
+// day (rotating formats), worth +15 XP, and finishing it keeps the streak
+// alive. Quiz Blitz = 5 quiz questions solved correctly in one day.
+const GharStreak = {
+  // Local date as yyyy-MM-dd (the streak counts calendar days).
+  todayString() {
+    const d = new Date();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return d.getFullYear() + "-" + m + "-" + day;
+  },
+  yesterdayString() {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return d.getFullYear() + "-" + m + "-" + day;
+  },
+  // Day-of-year (1-based), for the challenge rotation.
+  dayOfYear() {
+    const d = new Date();
+    const start = new Date(d.getFullYear(), 0, 0);
+    return Math.floor((d - start) / 86400000);
+  },
+  count() { return parseInt(localStorage.getItem("ghar.streak.count") || "0", 10) || 0; },
+  // Call when a mission is completed (done or verified). Grows the streak
+  // if yesterday was the last active day, resets to 1 if the chain broke,
+  // no-ops if already counted today.
+  recordMissionDone() {
+    const today = this.todayString();
+    const lastDay = localStorage.getItem("ghar.streak.lastDay") || "";
+    if (lastDay === today) return this.count();
+    const newCount = (lastDay === this.yesterdayString()) ? this.count() + 1 : 1;
+    localStorage.setItem("ghar.streak.count", String(newCount));
+    localStorage.setItem("ghar.streak.lastDay", today);
+    return newCount;
+  },
+  dailyDoneToday() { return (localStorage.getItem("ghar.daily.done") || "") === this.todayString(); },
+  markDailyDone() { localStorage.setItem("ghar.daily.done", this.todayString()); },
+  // 9 rotating challenges (3 per format), picked by day-of-year % 9.
+  // Matches the app's DailyChallenge.today() exactly.
+  CHALLENGES: [
+    { format: "mission", icon: "🚩", title: "Mission of the Day", prompt: "Do the Tihar Greeting mission today — say it to someone you love.", refIDs: ["tihar-greeting"] },
+    { format: "teachBack", icon: "🎤", title: "Teach-Back", prompt: "Teach someone the word 'momo' today. Say it, they repeat!", refIDs: ["momo"] },
+    { format: "quizBlitz", icon: "⚡", title: "Quiz Blitz", prompt: "Answer 5 quiz questions as fast as you can. Beat your best!", refIDs: [] },
+    { format: "mission", icon: "🚩", title: "Mission of the Day", prompt: "Count to 5 in Nepali for a family member today.", refIDs: ["count-to-five"] },
+    { format: "teachBack", icon: "🎤", title: "Teach-Back", prompt: "Teach someone 3 Nepali greetings today: namaste, dhanyabad, pheri bhetaula!", refIDs: ["convo_namaste", "convo_dhanyabad", "convo_pharkera"] },
+    { format: "quizBlitz", icon: "⚡", title: "Quiz Blitz", prompt: "5 questions, no wrong answers. Can you go perfect?", refIDs: [] },
+    { format: "mission", icon: "🚩", title: "Mission of the Day", prompt: "Say the Tihar greeting to someone at dinner tonight.", refIDs: ["tihar-greeting"] },
+    { format: "teachBack", icon: "🎤", title: "Teach-Back", prompt: "Teach someone to count to 3 in Nepali: ek, dui, tin!", refIDs: ["num_ek", "num_dui", "num_tin"] },
+    { format: "quizBlitz", icon: "⚡", title: "Quiz Blitz", prompt: "Quiz time! 5 questions — how fast can you finish?", refIDs: [] },
+  ],
+  todayChallenge() { return this.CHALLENGES[this.dayOfYear() % 9]; },
+  // Daily quiz solves (for Quiz Blitz). Resets each day.
+  quizTodayCount() {
+    if ((localStorage.getItem("ghar.daily.quizDate") || "") !== this.todayString()) return 0;
+    return parseInt(localStorage.getItem("ghar.daily.quizCount") || "0", 10) || 0;
+  },
+  recordQuizSolve() {
+    const today = this.todayString();
+    if ((localStorage.getItem("ghar.daily.quizDate") || "") !== today) {
+      localStorage.setItem("ghar.daily.quizDate", today);
+      localStorage.setItem("ghar.daily.quizCount", "0");
+    }
+    const n = this.quizTodayCount() + 1;
+    localStorage.setItem("ghar.daily.quizCount", String(n));
+    return n;
+  },
+  // True if this solve just finished today's Quiz Blitz. Marks it done
+  // and records the streak day (the caller adds the +15 XP).
+  checkBlitzComplete() {
+    if (this.todayChallenge().format !== "quizBlitz") return false;
+    if (this.dailyDoneToday()) return false;
+    if (this.quizTodayCount() < 5) return false;
+    this.markDailyDone();
+    this.recordMissionDone();
+    return true;
+  },
+  // Claim the daily challenge after a qualifying action. For a Mission
+  // day, completing any mission qualifies. Returns true if the bonus was
+  // just claimed (the caller adds +15 XP).
+  claimIfMissionDay() {
+    if (this.todayChallenge().format !== "mission") return false;
+    if (this.dailyDoneToday()) return false;
+    this.markDailyDone();
+    return true;
+  },
+  // Claim the daily challenge directly (Teach-Back confirm button).
+  claimDaily() {
+    if (this.dailyDoneToday()) return false;
+    this.markDailyDone();
+    this.recordMissionDone();
+    return true;
+  },
+};
