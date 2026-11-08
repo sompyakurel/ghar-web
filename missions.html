@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ghar — Missions</title>
-<link rel="stylesheet" href="style.css?v=7">
+<link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
 <div class="wrap">
@@ -54,7 +54,7 @@
     <button class="back" id="record-close" style="margin-top:12px;">Close</button>
   </div>
 </div>
-<script src="auth.js?v=4"></script>
+<script src="auth.js?v=5"></script>
 <script>
 let pack = null;
 let completed = new Set();
@@ -378,6 +378,9 @@ GharAuth.pull().catch(() => {}).then(async () => {
   if (!r.ok) throw new Error("load failed");
   pack = await r.json();
   loadSets();
+  // Missions finished before the streak existed still count: grant one
+  // streak day if the streak was never recorded (one-time backfill).
+  if (typeof GharStreak !== "undefined") GharStreak.syncFromMissions(new Set([...completed, ...verified]).size);
   render();
 }).catch(() => { document.getElementById("error").hidden = false; });
 </script>

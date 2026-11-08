@@ -217,6 +217,16 @@ const GharStreak = {
     this.recordMissionDone();
     return true;
   },
+  // Backfill: grant a streak day for missions completed before the streak
+  // existed. Call with the number of missions already done (completed ∪
+  // verified). Only fires once — when the streak was never recorded — so it
+  // can never double-count. After this, the app's incremental rules run.
+  syncFromMissions(completedCount) {
+    if (!completedCount || completedCount <= 0) return;
+    if (this.count() > 0) return;
+    if (localStorage.getItem("ghar.streak.lastDay")) return;
+    this.recordMissionDone();
+  },
 };
 // Top-level const does NOT attach to window, so expose it explicitly — the
 // pages' guards read window.GharStreak.

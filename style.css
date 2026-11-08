@@ -426,3 +426,11 @@ EOF'
 /* Suga's feeding treat: pops up at his beak, then fades away. */
 .suga-treat { position: absolute; left: 88%; top: 52%; transform: translate(-50%, -50%); font-size: 30px; z-index: 6; animation: suga-treat-pop 1.2s ease forwards; pointer-events: none; }
 @keyframes suga-treat-pop { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.4); } 25% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); } 70% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -70%) scale(1); } }
+
+/* Suga's dialog: opens when you tap him in the room. All his controls
+   (talk, feed, teach, mimic) live here, next to him. */
+.suga-dialog { border: none; border-radius: 18px; padding: 22px 22px 18px; max-width: min(560px, calc(100vw - 32px)); box-shadow: 0 8px 32px rgba(0,0,0,.25); }
+.suga-dialog::backdrop { background: rgba(0,0,0,.45); }
+.suga-dialog h3 { margin: 0 0 6px; font-size: 22px; }
+.suga-dialog-close { position: absolute; top: 10px; right: 12px; border: none; background: none; font-size: 20px; cursor: pointer; color: #666; line-height: 1; padding: 4px 8px; }
+.suga-dialog .suga-teach { margin: 12px 0; }

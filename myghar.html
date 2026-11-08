@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ghar — My Ghar</title>
-<link rel="stylesheet" href="style.css?v=7">
+<link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
 <div class="wrap">
@@ -44,26 +44,6 @@
     <p class="myghar-shelf-sub">Found in Mystery Boxes — one box for every 3 decks, plus one when you finish all 22 lessons.</p>
     <div class="shelf-row" id="mystery-row"></div>
   </div>
-  <div class="myghar-shelf" id="suga-panel" hidden>
-    <h3>🦜 Suga the Parrot</h3>
-    <p class="myghar-shelf-sub" id="suga-knows"></p>
-    <p class="myghar-shelf-sub">Teach Suga a word and he'll squawk it back in his parrot voice. Tap Suga in the room to hear him talk!</p>
-    <div class="suga-teach">
-      <select class="auth-input" id="suga-word-picker" aria-label="Pick a word to teach Suga"></select>
-      <button class="quiz-next" id="suga-teach-btn">🎓 Teach Suga (10 XP)</button>
-    </div>
-    <div class="suga-teach">
-      <button class="quiz-next" id="suga-feed-btn">🍌 Feed Suga (5 XP)</button>
-      <button class="quiz-next" id="suga-mimic-btn">🎤 Mimic me! (20 XP)</button>
-      <span class="auth-note" id="suga-fed-count"></span>
-    </div>
-    <div class="suga-teach" id="suga-mimic-row" hidden>
-      <button class="quiz-next" id="suga-mimic-rec">🔴 Start recording</button>
-      <button class="quiz-next" id="suga-mimic-play" hidden>🔊 Hear Suga squawk it back</button>
-      <span class="auth-note" id="suga-mimic-status"></span>
-    </div>
-    <p class="auth-note" id="suga-teach-status"></p>
-  </div>
   <div class="myghar-names">
     <label>House name <input class="auth-input" id="house-name" type="text" placeholder="My Ghar" maxlength="30"></label>
     <label>Dog's name <input class="auth-input" id="dog-name" type="text" placeholder="Bhunte" maxlength="20"></label>
@@ -78,7 +58,28 @@
     </div>
   </div>
 </div>
-<script src="auth.js?v=4"></script>
+<dialog class="suga-dialog" id="suga-dialog">
+  <button class="suga-dialog-close" id="suga-dialog-close" aria-label="Close">✕</button>
+  <h3>🦜 Suga the Parrot</h3>
+  <p class="myghar-shelf-sub" id="suga-knows"></p>
+  <p class="myghar-shelf-sub" id="suga-fed-line"></p>
+  <div class="suga-teach">
+    <button class="quiz-next" id="suga-talk-btn">💬 Hear Suga talk</button>
+    <button class="quiz-next" id="suga-feed-btn">🍌 Feed Suga (5 XP)</button>
+    <button class="quiz-next" id="suga-mimic-btn">🎤 Mimic me! (20 XP)</button>
+  </div>
+  <div class="suga-teach">
+    <select class="auth-input" id="suga-word-picker" aria-label="Pick a word to teach Suga"></select>
+    <button class="quiz-next" id="suga-teach-btn">🎓 Teach Suga (10 XP)</button>
+  </div>
+  <div class="suga-teach" id="suga-mimic-row" hidden>
+    <button class="quiz-next" id="suga-mimic-rec">🔴 Start recording</button>
+    <button class="quiz-next" id="suga-mimic-play" hidden>🔊 Hear Suga squawk it back</button>
+    <span class="auth-note" id="suga-mimic-status"></span>
+  </div>
+  <p class="auth-note" id="suga-teach-status"></p>
+</dialog>
+<script src="auth.js?v=5"></script>
 <script src="shop-data.js"></script>
 <script>
 // My Ghar -- ONE ROOM PICTURE (v8).
@@ -195,6 +196,8 @@ function readState() {
     const c = JSON.parse(localStorage.getItem("ghar.missions.completed") || "[]");
     const v = JSON.parse(localStorage.getItem("ghar.missions.verified") || "[]");
     missionsDone = new Set([...c, ...v]).size;
+    // Missions finished before the streak existed still count (one-time).
+    if (typeof GharStreak !== "undefined") GharStreak.syncFromMissions(missionsDone);
     missionsVerified = v.length;
     const TEEN_IDS = ["teen-text-it", "teen-teach-slang", "teen-caption", "teen-comeback", "teen-lyrics", "teen-order", "teen-call-home", "teen-teach-back"];
     teenDone = TEEN_IDS.filter(id => c.includes(id) || v.includes(id)).length;
@@ -344,6 +347,7 @@ function renderShopItems() {
       el.classList.add("pop");
       if (item.id === "suga") setTimeout(() => el.classList.remove("pop"), 400);
       if (item.audio === "suga") {
+        openSugaDialog();
         sugaTalk();
       } else if (item.audio) {
         play(`assets/audio/nepal-v1/myghar_${item.audio}_np.m4a`);
@@ -568,13 +572,11 @@ document.getElementById("house-name").addEventListener("input", e => {
 // Suga's corner: teach him a word (10 XP). The picker lists every pack
 // word that has audio, grouped by deck. Taught words live in localStorage
 // (ghar.suga.taught) and Suga squawks them back pitch-shifted.
-function renderSugaPanel() {
-  const owned = shopOwned().includes("suga");
-  const panel = document.getElementById("suga-panel");
-  panel.hidden = !owned;
-  if (!owned) return;
+// Tapping Suga in the room opens his dialog (feed / teach / mimic all
+// live here, next to him — not buried at the bottom of the page).
+function openSugaDialog() {
   const taught = sugaTaught();
-  document.getElementById("suga-knows").textContent = `Suga knows ${taught.length + 2} phrases. Tap him in the room to hear him talk!`;
+  document.getElementById("suga-knows").textContent = `Suga knows ${taught.length + 2} phrases.`;
   const picker = document.getElementById("suga-word-picker");
   picker.innerHTML = "";
   PACK_DECKS.forEach(d => {
@@ -593,7 +595,17 @@ function renderSugaPanel() {
   const xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
   btn.disabled = picker.options.length === 0 || xp < 10;
   btn.textContent = picker.options.length === 0 ? "🎓 Suga knows every word!" : "🎓 Teach Suga (10 XP)";
+  document.getElementById("suga-mimic-btn").disabled = xp < 20;
+  document.getElementById("suga-feed-btn").disabled = xp < 5;
+  document.getElementById("suga-dialog").showModal();
 }
+document.getElementById("suga-talk-btn").addEventListener("click", () => { sugaTalk(); });
+document.getElementById("suga-dialog-close").addEventListener("click", () => {
+  document.getElementById("suga-dialog").close();
+});
+document.getElementById("suga-dialog").addEventListener("click", (e) => {
+  if (e.target === document.getElementById("suga-dialog")) document.getElementById("suga-dialog").close();
+});
 document.getElementById("suga-teach-btn").addEventListener("click", () => {
   const picker = document.getElementById("suga-word-picker");
   const id = picker.value;
@@ -611,7 +623,7 @@ document.getElementById("suga-teach-btn").addEventListener("click", () => {
   if (window.GharAuth && GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
   document.getElementById("suga-teach-status").textContent = `🎉 Suga learned "${w.devanagari}"!`;
   document.getElementById("xp-label").textContent = xp;
-  renderSugaPanel();
+  openSugaDialog();
   // Suga squawks the new word back in his parrot voice.
   sugaPlayer.pause();
   sugaPlayer.playbackRate = 1.5;
@@ -625,7 +637,7 @@ const SUGA_TREATS = ["🍎", "🍌", "🌽", "🍇"];
 function sugaFedCount() { return parseInt(localStorage.getItem(SUGA_FED_KEY) || "0", 10) || 0; }
 function renderSugaFed() {
   const n = sugaFedCount();
-  document.getElementById("suga-fed-count").textContent = n > 0 ? `Fed ${n} time${n === 1 ? "" : "s"} 🍌` : "";
+  document.getElementById("suga-fed-line").textContent = n > 0 ? `Fed ${n} time${n === 1 ? "" : "s"} 🍌` : "";
 }
 document.getElementById("suga-feed-btn").addEventListener("click", () => {
   let xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
@@ -738,7 +750,6 @@ GharAuth.pull().catch(() => {}).then(async () => {
   const state = readState();
   renderTrophies(state);
   renderShelves(state);
-  renderSugaPanel();
   renderShopItems();
   renderMysteryItems();
   renderMysteryButton(state);
