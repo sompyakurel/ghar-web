@@ -191,9 +191,9 @@ header p { color: #6b5d4f; margin: 0; font-size: 17px; }
 .quiz-cta-icon { font-size: 36px; }
 .quiz-cta strong { font-size: 18px; }
 .quiz-cta-arrow { margin-left: auto; font-size: 24px; color: #2e7d32; }
-.motivation { display: flex; gap: 16px; align-items: flex-start; background: #fff; border-radius: 18px; padding: 16px 18px; box-shadow: 0 1px 4px rgba(0,0,0,.08); margin-bottom: 20px; }
+.motivation { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; background: #fff; border-radius: 18px; padding: 20px 18px; box-shadow: 0 1px 4px rgba(0,0,0,.08); margin-bottom: 20px; }
 .motivation-dog { width: 110px; height: 110px; flex-shrink: 0; }
-.motivation-body { flex: 1; min-width: 0; }
+.motivation-body { width: 100%; }
 .motivation-bubble { background: #fff8ee; border: 1px solid #f0e8dc; border-radius: 14px; padding: 10px 14px; font-size: 16px; font-weight: 600; margin: 0 0 10px; }
 .motivation-xp { font-size: 17px; font-weight: 700; margin: 0 0 4px; }
 .motivation-cert { font-size: 15px; font-weight: 600; margin: 0 0 6px; }
@@ -219,9 +219,9 @@ header p { color: #6b5d4f; margin: 0; font-size: 17px; }
 .quiz-cta-icon { font-size: 36px; }
 .quiz-cta strong { font-size: 18px; }
 .quiz-cta-arrow { margin-left: auto; font-size: 24px; color: #2e7d32; }
-.motivation { display: flex; gap: 16px; align-items: flex-start; background: #fff; border-radius: 18px; padding: 16px 18px; box-shadow: 0 1px 4px rgba(0,0,0,.08); margin-bottom: 20px; }
+.motivation { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; background: #fff; border-radius: 18px; padding: 20px 18px; box-shadow: 0 1px 4px rgba(0,0,0,.08); margin-bottom: 20px; }
 .motivation-dog { width: 110px; height: 110px; flex-shrink: 0; cursor: pointer; }
-.motivation-body { flex: 1; min-width: 0; }
+.motivation-body { width: 100%; }
 .motivation-bubble { background: #fff8ee; border: 1px solid #f0e8dc; border-radius: 14px; padding: 10px 14px; font-size: 16px; font-weight: 600; margin: 0 0 6px; }
 .motivation-hint { font-size: 13px; color: #6b5d4f; margin: 0 0 10px; }
 .motivation-xp { font-size: 17px; font-weight: 700; margin: 0 0 4px; }
