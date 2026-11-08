@@ -79,7 +79,7 @@
   </div>
   <p class="auth-note" id="suga-teach-status"></p>
 </dialog>
-<script src="auth.js?v=5"></script>
+<script src="auth.js?v=6"></script>
 <script src="shop-data.js"></script>
 <script>
 // My Ghar -- ONE ROOM PICTURE (v8).
@@ -515,6 +515,17 @@ const SUGA_STAPLES = [
 ];
 const SUGA_TAUGHT_KEY = "ghar.suga.taught";
 const sugaPlayer = new Audio();
+// Play a clip in Suga's parrot voice. src MUST be set before playbackRate:
+// setting src resets playbackRate to defaultPlaybackRate (1.0), which is
+// why taught words and mimic playbacks came out in the exact same voice.
+function playSuga(url, rate) {
+  sugaPlayer.pause();
+  sugaPlayer.src = url;
+  sugaPlayer.playbackRate = rate;
+  sugaPlayer.defaultPlaybackRate = rate;
+  const p = sugaPlayer.play();
+  if (p) p.then(() => { sugaPlayer.playbackRate = rate; }).catch(() => {});
+}
 function sugaTaught() {
   try { return JSON.parse(localStorage.getItem(SUGA_TAUGHT_KEY) || "[]"); }
   catch (e) { return []; }
@@ -529,10 +540,7 @@ function sugaTalk() {
   });
   if (!options.length) return;
   const pick = options[Math.floor(Math.random() * options.length)];
-  sugaPlayer.pause();
-  sugaPlayer.playbackRate = pick.rate;
-  sugaPlayer.src = pick.url;
-  sugaPlayer.play().catch(() => {});
+  playSuga(pick.url, pick.rate);
   document.getElementById("hint").textContent = `🦜 Suga says: ${pick.ne} (${pick.en})`;
 }
 // All pack words by id (for the teach picker + Suga's taught words),
@@ -625,10 +633,7 @@ document.getElementById("suga-teach-btn").addEventListener("click", () => {
   document.getElementById("xp-label").textContent = xp;
   openSugaDialog();
   // Suga squawks the new word back in his parrot voice.
-  sugaPlayer.pause();
-  sugaPlayer.playbackRate = 1.5;
-  sugaPlayer.src = asset(w.audio_url);
-  sugaPlayer.play().catch(() => {});
+  playSuga(asset(w.audio_url), 1.5);
 });
 // --- Feed Suga (matches the app): 5 XP. A treat pops up at his beak, he
 // hops and eats it, and says "mitho chha!" in his parrot voice.
@@ -661,10 +666,7 @@ document.getElementById("suga-feed-btn").addEventListener("click", () => {
   // Suga hops.
   const sugaEl = document.querySelector('[data-id="suga"]');
   if (sugaEl) { sugaEl.classList.remove("pop"); void sugaEl.offsetWidth; sugaEl.classList.add("pop"); setTimeout(() => sugaEl.classList.remove("pop"), 400); }
-  sugaPlayer.pause();
-  sugaPlayer.playbackRate = 1;
-  sugaPlayer.src = "assets/audio/nepal-v1/suga_mitho_np.m4a";
-  sugaPlayer.play().catch(() => {});
+  playSuga("assets/audio/nepal-v1/suga_mitho_np.m4a", 1);
 });
 // --- Mimic mode (matches the app): 20 XP. The kid records a clip and Suga
 // squawks it back pitched-up like a parrot. The recording stays in the
@@ -702,10 +704,7 @@ document.getElementById("suga-mimic-rec").addEventListener("click", async () => 
       document.getElementById("suga-mimic-play").hidden = false;
       document.getElementById("suga-mimic-status").textContent = "Got it! Tap to hear Suga squawk it back.";
       // Play it back right away, pitched up like a parrot.
-      sugaPlayer.pause();
-      sugaPlayer.playbackRate = 1.5;
-      sugaPlayer.src = mimicURL;
-      sugaPlayer.play().catch(() => {});
+      playSuga(mimicURL, 1.5);
     };
     mimicRec.start();
     recBtn.textContent = "⏹ Stop recording";
@@ -716,10 +715,7 @@ document.getElementById("suga-mimic-rec").addEventListener("click", async () => 
 });
 document.getElementById("suga-mimic-play").addEventListener("click", () => {
   if (!mimicURL) return;
-  sugaPlayer.pause();
-  sugaPlayer.playbackRate = 1.5;
-  sugaPlayer.src = mimicURL;
-  sugaPlayer.play().catch(() => {});
+  playSuga(mimicURL, 1.5);
 });
 GharAuth.pull().catch(() => {}).then(async () => {
   try {

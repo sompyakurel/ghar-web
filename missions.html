@@ -54,7 +54,7 @@
     <button class="back" id="record-close" style="margin-top:12px;">Close</button>
   </div>
 </div>
-<script src="auth.js?v=5"></script>
+<script src="auth.js?v=6"></script>
 <script>
 let pack = null;
 let completed = new Set();
@@ -171,11 +171,14 @@ function render() {
 function renderDaily() {
   if (typeof GharStreak === "undefined") return;
   const c = GharStreak.todayChallenge();
-  const done = GharStreak.dailyDoneToday();
+  // Done if the flag was set, OR (mission day) a mission was already done
+  // today — the flag is only set when a mission completes after the feature
+  // exists, so work done earlier today still counts.
+  const done = GharStreak.dailyDoneToday() || (c.format === "mission" && GharStreak.missionDoneToday());
   const n = GharStreak.count();
   document.getElementById("streak-badge").textContent = `🔥 ${n} day${n === 1 ? "" : "s"}`;
-  document.getElementById("daily-title").textContent = `${c.icon} ${c.title}`;
-  document.getElementById("daily-prompt").textContent = done ? "✅ Done today! Come back tomorrow for a new challenge." : c.prompt;
+  document.getElementById("daily-title").textContent = done ? `✅ ${c.title} — Completed!` : `${c.icon} ${c.title}`;
+  document.getElementById("daily-prompt").textContent = done ? "✅ Completed! Come back tomorrow for a new challenge." : c.prompt;
   const actions = document.getElementById("daily-actions");
   actions.innerHTML = "";
   if (done) return;
@@ -381,6 +384,15 @@ GharAuth.pull().catch(() => {}).then(async () => {
   // Missions finished before the streak existed still count: grant one
   // streak day if the streak was never recorded (one-time backfill).
   if (typeof GharStreak !== "undefined") GharStreak.syncFromMissions(new Set([...completed, ...verified]).size);
+  // If a mission was already done today on a mission day, the daily
+  // challenge is complete — mark it done and pay the +15 XP once.
+  if (typeof GharStreak !== "undefined" && GharStreak.todayChallenge().format === "mission" && GharStreak.missionDoneToday() && !GharStreak.dailyDoneToday()) {
+    GharStreak.markDailyDone();
+    xp += 15;
+    saveXP();
+    if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
+    GharAuth.pushTotals().catch(() => {});
+  }
   render();
 }).catch(() => { document.getElementById("error").hidden = false; });
 </script>

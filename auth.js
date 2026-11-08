@@ -161,6 +161,11 @@ const GharStreak = {
     return newCount;
   },
   dailyDoneToday() { return (localStorage.getItem("ghar.daily.done") || "") === this.todayString(); },
+  // True if a mission was done today (per the streak's lastDay), even if
+  // the daily.done flag was never set — e.g. the mission was finished
+  // before the daily challenge existed. Used so the challenge shows
+  // completed for work already done today.
+  missionDoneToday() { return (localStorage.getItem("ghar.streak.lastDay") || "") === this.todayString(); },
   markDailyDone() { localStorage.setItem("ghar.daily.done", this.todayString()); },
   // 9 rotating challenges (3 per format), picked by day-of-year % 9.
   // Matches the app's DailyChallenge.today() exactly.
