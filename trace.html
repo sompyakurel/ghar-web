@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>✍️ Trace the letters — Ghar</title>
+<link rel="stylesheet" href="style.css?v=16">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;700&display=swap" rel="stylesheet">
+<script src="auth.js?v=6"></script>
+</head>
+<body>
+<div class="prayer-bunting" aria-hidden="true"><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span></div>
+<div class="prayer-side left" aria-hidden="true"><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span></div>
+<div class="prayer-side right" aria-hidden="true"><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span></div>
+
+<div class="wrap">
+  <p><a href="index.html">← Home</a></p>
+  <h1>✍️ Trace the letters</h1>
+  <p class="trace-sub">Trace with your finger — practice, no XP yet. Follow the dots down the middle of each letter. Finish a whole section to earn a Mystery Box 🎁</p>
+
+  <div id="trace-picker"></div>
+
+  <div id="trace-board" class="trace-board" hidden>
+    <div class="trace-head">
+      <div>
+        <div id="trace-dev" class="trace-dev">अ</div>
+        <div id="trace-meta" class="trace-meta">a · the vowel 'a'</div>
+      </div>
+      <button id="trace-hear" class="trace-hear" type="button">🔊 Hear it</button>
+    </div>
+
+    <div class="trace-canvas-wrap">
+      <canvas id="trace-canvas" width="600" height="600"></canvas>
+      <div id="trace-celebrate" class="trace-celebrate" hidden>
+        <div class="trace-celebrate-card">
+          <div class="trace-sparkles">✨ ✨ ✨</div>
+          <div class="trace-syabas">स्याबास!</div>
+          <div id="trace-celebrate-dev" class="trace-celebrate-dev">अ</div>
+          <div id="trace-celebrate-line" class="trace-celebrate-line">You traced a!</div>
+          <div id="trace-box-note" class="trace-box-note" hidden>🎁 You finished the whole section — a Mystery Box is waiting in My Ghar!</div>
+          <div class="trace-celebrate-btns">
+            <button id="trace-again" type="button">Again</button>
+            <button id="trace-next" type="button" class="trace-next-btn">Next →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="trace-progress">
+      <div class="trace-progress-bar"><div id="trace-progress-fill"></div></div>
+      <span id="trace-progress-pct">0%</span>
+    </div>
+    <p class="trace-hint-line">Trace with your finger — practice, no XP yet</p>
+    <p id="trace-hint" class="trace-hint" hidden>Too much ink off the line — tap ↺ and follow the dots ✏️</p>
+
+    <div class="trace-controls">
+      <button id="trace-watch" type="button">👀 Watch</button>
+      <button id="trace-clear" type="button">↺ Clear</button>
+      <button id="trace-back" type="button">← All letters</button>
+    </div>
+  </div>
+</div>
+
+<div class="prayer-bunting bottom" aria-hidden="true"><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span></div>
+
+<script>
+/* Trace the letters — a port of the app's writing view, Trace mode.
+   Locked grading (app-exact, do not retune):
+   - dotFraction >= 0.75  (75% of skeleton dots lit)
+   - onLineFraction >= 0.55 (55% of ink within 14 units of a dot)
+   Judged when the finger lifts. Trace is practice — no XP.
+   A finished letter is marked traced (star on the picker) and heard
+   (counts toward the Alphabet deck). Finishing a whole section
+   (Vowels or Consonants) earns a Mystery Box via ghar.mystery.writingBoxes.
+   Dots come from data/writing-dots.json, precomputed from the same
+   Noto Sans Devanagari font the page renders the letter in. */
+(function () {
+  'use strict';
+  var BOX = 300;            // the app's WritingMetrics.canvas
+  var HIT_RADIUS = 17;      // hitTestSegment radius, 300-box units
+  var LINE_RADIUS = 14;     // onLineFraction radius, 300-box units
+  var STEP = 5;             // sampling step along a segment, 300-box units
+  var DOT_FRAC = 0.75, LINE_FRAC = 0.55;
+  var FONT_FAMILY = '"Noto Sans Devanagari", sans-serif';
+
+  var $ = function (id) { return document.getElementById(id); };
+  function asset(u) {
+    if (!u) return '';
+    return u.replace(/^\/images\/nepal-v1\//, 'assets/images/')
+            .replace(/^\/audio\/nepal-v1\//, 'assets/audio/nepal-v1/')
+            .replace(/^\/images\//, 'assets/images/')
+            .replace(/^\/audio\//, 'assets/audio/');
+  }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function tracedSet() {
+    var raw = localStorage.getItem('ghar.writing.traced') || '';
+    return new Set(raw.split(',').filter(Boolean));
+  }
+  function saveTraced(set) {
+    localStorage.setItem('ghar.writing.traced', Array.from(set).sort().join(','));
+  }
+  function heardSet(deckId) {
+    var raw = localStorage.getItem('ghar.heard.' + deckId) || '';
+    return new Set(raw.split(',').filter(Boolean));
+  }
+  function boxGrantedSet() {
+    var raw = localStorage.getItem('ghar.writing.boxGranted') || '';
+    return new Set(raw.split(',').filter(Boolean));
+  }
+
+  var letters = {};         // id -> {dev,en,roman,section,audio,dots,path}
+  var order = [];           // word ids in pack order
+  var vowels = [], consonants = [];
+  var currentId = null, currentSection = null;
+  var checkpoints = [];     // [x,y] in the 300-box
+  var dotHits = new Set();
+  var strokes = [];         // finished strokes, each [[x,y],...] in 300-box
+  var cur = [];             // current stroke
+  var celebrated = false;
+  var audio = new Audio();
+  var template = null;      // {scale, tx, ty} to draw the letter aligned to the dots
+  var watching = false, watchRaf = 0, watchStart = 0, watchDur = 5000;
+  var canvas = $('trace-canvas'), ctx = canvas.getContext('2d');
+
+  function ding() {
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      var ac = new AC();
+      var o = ac.createOscillator(), g = ac.createGain();
+      o.type = 'sine'; o.frequency.value = 880;
+      g.gain.setValueAtTime(0.0001, ac.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.25, ac.currentTime + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 0.5);
+      o.connect(g); g.connect(ac.destination);
+      o.start(); o.stop(ac.currentTime + 0.55);
+      o.onended = function () { ac.close(); };
+    } catch (e) { /* audio is a nicety */ }
+  }
+  function fanfare() {
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      var ac = new AC();
+      [523, 659, 784].forEach(function (f, i) {
+        var o = ac.createOscillator(), g = ac.createGain();
+        o.type = 'sine'; o.frequency.value = f;
+        var t = ac.currentTime + i * 0.14;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.22, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.5);
+        o.connect(g); g.connect(ac.destination);
+        o.start(t); o.stop(t + 0.55);
+      });
+      setTimeout(function () { try { ac.close(); } catch (e) {} }, 1200);
+    } catch (e) { /* audio is a nicety */ }
+  }
+  function hearLetter() {
+    var L = letters[currentId];
+    if (!L) return;
+    var url = asset(L.audio);
+    if (url) {
+      try { audio.pause(); audio.src = url; audio.play().catch(function () {}); } catch (e) {}
+    }
+  }
+
+  /* Measure the rendered glyph (browser shaping, web font) and compute the
+     transform that maps it onto the 300-box the same way the dots were
+     computed: scale the ink bbox to 240, centered. */
+  function computeTemplate(dev) {
+    var m = document.createElement('canvas').getContext('2d');
+    m.font = '220px ' + FONT_FAMILY;
+    var t = m.measureText(dev);
+    var left = t.actualBoundingBoxLeft || 0, right = t.actualBoundingBoxRight || 0;
+    var asc = t.actualBoundingBoxAscent || 0, des = t.actualBoundingBoxDescent || 0;
+    var w = left + right, h = asc + des;
+    if (w < 1 || h < 1) return null;
+    var s = 240 / Math.max(w, h);
+    // draw at font size 220: glyph ink spans x in [-left, right], y in [-asc, des]
+    // in text coords. Map to the 300-box: scale by s, then center.
+    var tx = (300 - w * s) / 2 + left * s;
+    var ty = (300 - h * s) / 2 + asc * s;
+    return { size: 220, s: s, tx: tx, ty: ty };
+  }
+
+  function toBox(ev) {
+    var r = canvas.getBoundingClientRect();
+    var x = (ev.clientX - r.left) / r.width * BOX;
+    var y = (ev.clientY - r.top) / r.height * BOX;
+    return [Math.max(0, Math.min(BOX, x)), Math.max(0, Math.min(BOX, y))];
+  }
+
+  function draw() {
+    var W = canvas.width, H = canvas.height, k = W / BOX;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, W, H);
+    // faint template of the letter (app: outline stroked at 0.13)
+    if (template && letters[currentId]) {
+      ctx.save();
+      ctx.scale(k, k);
+      ctx.translate(template.tx, template.ty);
+      ctx.scale(template.s, template.s);
+      ctx.font = template.size + 'px ' + FONT_FAMILY;
+      ctx.lineWidth = 3 / template.s;
+      ctx.strokeStyle = 'rgba(0,0,0,0.13)';
+      ctx.strokeText(letters[currentId].dev, 0, 0);
+      ctx.restore();
+    }
+    // ink
+    ctx.save();
+    ctx.scale(k, k);
+    ctx.strokeStyle = '#f57c00';
+    ctx.lineWidth = 14; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    function paintStroke(st) {
+      if (!st.length) return;
+      if (st.length === 1) {
+        ctx.fillStyle = '#f57c00';
+        ctx.beginPath(); ctx.arc(st[0][0], st[0][1], 7, 0, Math.PI * 2); ctx.fill();
+        return;
+      }
+      ctx.beginPath();
+      ctx.moveTo(st[0][0], st[0][1]);
+      for (var i = 1; i < st.length; i++) ctx.lineTo(st[i][0], st[i][1]);
+      ctx.stroke();
+    }
+    strokes.forEach(paintStroke);
+    paintStroke(cur);
+    // dots last, so their state reads over the ink
+    for (var i = 0; i < checkpoints.length; i++) {
+      var p = checkpoints[i];
+      ctx.beginPath(); ctx.arc(p[0], p[1], 5.5, 0, Math.PI * 2);
+      if (dotHits.has(i)) { ctx.fillStyle = '#43a047'; ctx.fill(); }
+      else {
+        ctx.fillStyle = 'rgba(128,128,128,0.35)'; ctx.fill();
+        ctx.strokeStyle = 'rgba(128,128,128,0.6)'; ctx.lineWidth = 1; ctx.stroke();
+      }
+    }
+    ctx.restore();
+    // progress
+    var frac = checkpoints.length ? dotHits.size / checkpoints.length : 0;
+    $('trace-progress-fill').style.width = Math.round(frac * 100) + '%';
+    $('trace-progress-pct').textContent = Math.round(frac * 100) + '%';
+  }
+
+  function hitTestSegment(a, b) {
+    if (celebrated) return;
+    var dist = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    var steps = Math.max(1, Math.floor(dist / STEP));
+    for (var s = 0; s <= steps; s++) {
+      var t = s / steps;
+      var p = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
+      for (var i = 0; i < checkpoints.length; i++) {
+        if (dotHits.has(i)) continue;
+        var c = checkpoints[i];
+        if (Math.hypot(c[0] - p[0], c[1] - p[1]) <= HIT_RADIUS) dotHits.add(i);
+      }
+    }
+  }
+  function dotFraction() {
+    return checkpoints.length ? dotHits.size / checkpoints.length : 0;
+  }
+  function onLineFraction() {
+    if (!checkpoints.length) return 0;
+    var total = 0, onLine = 0;
+    strokes.forEach(function (st) {
+      var prev = null;
+      st.forEach(function (p) {
+        if (prev) {
+          var d = Math.hypot(p[0] - prev[0], p[1] - prev[1]);
+          var steps = Math.max(1, Math.floor(d / STEP));
+          for (var i = 1; i <= steps; i++) {
+            var t = i / steps;
+            var q = [prev[0] + (p[0] - prev[0]) * t, prev[1] + (p[1] - prev[1]) * t];
+            total++;
+            for (var j = 0; j < checkpoints.length; j++) {
+              if (Math.hypot(checkpoints[j][0] - q[0], checkpoints[j][1] - q[1]) <= LINE_RADIUS) { onLine++; break; }
+            }
+          }
+        }
+        prev = p;
+      });
+    });
+    return total > 0 ? onLine / total : 0;
+  }
+  function checkTraceDone() {
+    if (celebrated) return;
+    if (dotFraction() < DOT_FRAC) return;
+    if (onLineFraction() >= LINE_FRAC) celebrateCompletion();
+    else $('trace-hint').hidden = false;
+  }
+
+  function celebrateCompletion() {
+    celebrated = true;
+    var L = letters[currentId];
+    // mark traced (no XP — trace is practice) + heard (counts to the deck)
+    var traced = tracedSet();
+    var isNew = !traced.has(currentId);
+    if (isNew) { traced.add(currentId); saveTraced(traced); }
+    var heard = heardSet('alphabet');
+    if (!heard.has(currentId)) {
+      heard.add(currentId);
+      localStorage.setItem('ghar.heard.alphabet', Array.from(heard).sort().join(','));
+      if (window.GharAuth && GharAuth.signedIn()) GharAuth.push('alphabet');
+      if (window.GharAuth) { GharAuth.pushTotals(); GharAuth.shareLeaderboard(); }
+    }
+    // whole section traced? earn a Mystery Box (once per section)
+    var sectionIds = currentSection === 'vowels' ? vowels : consonants;
+    var sectionKey = currentSection === 'vowels' ? 'vowels' : 'consonants';
+    var granted = boxGrantedSet();
+    var boxEarned = false;
+    if (sectionIds.length && sectionIds.every(function (id) { return traced.has(id); }) && !granted.has(sectionKey)) {
+      granted.add(sectionKey);
+      localStorage.setItem('ghar.writing.boxGranted', Array.from(granted).sort().join(','));
+      var boxes = parseInt(localStorage.getItem('ghar.mystery.writingBoxes') || '0', 10) || 0;
+      localStorage.setItem('ghar.mystery.writingBoxes', String(boxes + 1));
+      boxEarned = true;
+    }
+    $('trace-celebrate-dev').textContent = L.dev;
+    $('trace-celebrate-line').textContent = 'You traced ' + L.roman + '!';
+    $('trace-box-note').hidden = !boxEarned;
+    var nextId = nextLetterId();
+    $('trace-next').style.display = nextId ? '' : 'none';
+    $('trace-celebrate').hidden = false;
+    fanfare();
+    setTimeout(hearLetter, 350);
+    renderPicker();
+  }
+
+  function nextLetterId() {
+    var list = currentSection === 'vowels' ? vowels : consonants;
+    var i = list.indexOf(currentId);
+    return (i >= 0 && i + 1 < list.length) ? list[i + 1] : null;
+  }
+
+  function resetBoard() {
+    strokes = []; cur = []; dotHits = new Set();
+    celebrated = false;
+    $('trace-hint').hidden = true;
+    $('trace-celebrate').hidden = true;
+    stopWatch();
+    draw();
+  }
+
+  function openLetter(id) {
+    var L = letters[id];
+    if (!L) return;
+    currentId = id;
+    currentSection = (L.section || '').indexOf('Vowels') === 0 ? 'vowels' : 'consonants';
+    checkpoints = L.dots || [];
+    $('trace-dev').textContent = L.dev;
+    $('trace-meta').textContent = L.roman + ' · ' + L.en;
+    $('trace-picker').hidden = true;
+    $('trace-board').hidden = false;
+    template = computeTemplate(L.dev);
+    // the web font may still be loading: re-measure once it lands, so the
+    // faint template sits exactly on the dots (the dots themselves are
+    // precomputed and always correct).
+    if (document.fonts && document.fonts.load) {
+      document.fonts.load('220px "Noto Sans Devanagari"', L.dev).then(function () {
+        if (currentId === id) { template = computeTemplate(L.dev); draw(); }
+      }).catch(function () {});
+    }
+    watchDur = Math.max(5000, 3500 * L.dev.length);
+    resetBoard();
+    hearLetter();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function renderPicker() {
+    var traced = tracedSet();
+    function sectionHtml(title, ids, key) {
+      var got = ids.filter(function (id) { return traced.has(id); }).length;
+      var done = ids.length && got === ids.length;
+      var html = '<div class="trace-section"><h2>' + esc(title) + ' <span class="trace-count">' + got + '/' + ids.length + '</span>' +
+        (done ? ' <span class="trace-section-done">🎁 Box earned!</span>' : '') + '</h2><div class="trace-grid">';
+      ids.forEach(function (id) {
+        var L = letters[id];
+        html += '<button type="button" class="trace-letter' + (traced.has(id) ? ' traced' : '') + '" data-id="' + esc(id) + '">' +
+          '<span class="trace-letter-dev">' + esc(L.dev) + '</span>' +
+          '<span class="trace-letter-roman">' + esc(L.roman) + '</span>' +
+          (traced.has(id) ? '<span class="trace-star">⭐</span>' : '') + '</button>';
+      });
+      return html + '</div></div>';
+    }
+    $('trace-picker').innerHTML =
+      sectionHtml('Vowels · स्वर', vowels, 'vowels') +
+      sectionHtml('Consonants · व्यञ्जन', consonants, 'consonants');
+    $('trace-picker').querySelectorAll('.trace-letter').forEach(function (btn) {
+      btn.addEventListener('click', function () { openLetter(btn.getAttribute('data-id')); });
+    });
+  }
+
+  /* Watch: animate a pen dot along the skeleton's ordered path, revealing
+     the stroke the way the app's Watch does. */
+  function startWatch() {
+    if (watching) return;
+    var L = letters[currentId];
+    if (!L || !L.path || !L.path.length) return;
+    stopWatch();
+    watching = true;
+    resetBoard();
+    watchStart = performance.now();
+    var path = L.path;
+    function frame(now) {
+      if (!watching) return;
+      var t = Math.min((now - watchStart) / watchDur, 1);
+      var n = Math.max(1, Math.floor(t * path.length));
+      cur = path.slice(0, n);
+      draw();
+      // pen dot at the head
+      var W = canvas.width, k = W / BOX;
+      var head = path[n - 1];
+      ctx.save(); ctx.scale(k, k);
+      ctx.fillStyle = '#1e88e5';
+      ctx.beginPath(); ctx.arc(head[0], head[1], 9, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+      if (t < 1) watchRaf = requestAnimationFrame(frame);
+      else { watching = false; resetBoard(); }
+    }
+    watchRaf = requestAnimationFrame(frame);
+  }
+  function stopWatch() {
+    watching = false;
+    if (watchRaf) cancelAnimationFrame(watchRaf);
+    watchRaf = 0;
+  }
+
+  /* pointer drawing */
+  var drawing = false, lastPt = null;
+  canvas.addEventListener('pointerdown', function (ev) {
+    if (celebrated || watching) return;
+    ev.preventDefault();
+    drawing = true;
+    canvas.setPointerCapture(ev.pointerId);
+    var p = toBox(ev);
+    cur = [p]; lastPt = p;
+    if (cur.length) $('trace-hint').hidden = true;
+    draw();
+  });
+  canvas.addEventListener('pointermove', function (ev) {
+    if (!drawing || celebrated || watching) return;
+    ev.preventDefault();
+    var p = toBox(ev);
+    cur.push(p);
+    if (lastPt) hitTestSegment(lastPt, p);
+    lastPt = p;
+    draw();
+  });
+  function endStroke(ev) {
+    if (!drawing) return;
+    drawing = false;
+    if (cur.length) { strokes.push(cur); cur = []; }
+    lastPt = null;
+    draw();
+    checkTraceDone();
+  }
+  canvas.addEventListener('pointerup', endStroke);
+  canvas.addEventListener('pointercancel', endStroke);
+
+  $('trace-hear').addEventListener('click', hearLetter);
+  $('trace-clear').addEventListener('click', resetBoard);
+  $('trace-watch').addEventListener('click', startWatch);
+  $('trace-back').addEventListener('click', function () {
+    stopWatch();
+    $('trace-board').hidden = true;
+    $('trace-picker').hidden = false;
+    renderPicker();
+  });
+  $('trace-again').addEventListener('click', resetBoard);
+  $('trace-next').addEventListener('click', function () {
+    var n = nextLetterId();
+    if (n) openLetter(n);
+  });
+
+  /* boot */
+  fetch('data/writing-dots.json').then(function (r) { return r.json(); }).then(function (data) {
+    letters = data;
+    order = Object.keys(data);
+    vowels = order.filter(function (id) { return (data[id].section || '').indexOf('Vowels') === 0; });
+    consonants = order.filter(function (id) { return (data[id].section || '').indexOf('Consonants') === 0; });
+    // keep pack order within each section (object key order = insertion order)
+    renderPicker();
+    if (window.GharAuth) GharAuth.pull();
+  }).catch(function () {
+    $('trace-picker').innerHTML = '<p>Could not load the tracing dots. Check your connection and reload.</p>';
+  });
+  // the web font must be in before we measure a glyph; wait for it on open
+  if (document.fonts && document.fonts.load) {
+    document.fonts.load('220px "Noto Sans Devanagari"', 'अ').catch(function () {});
+  }
+})();
+</script>
+</body>
+</html>
