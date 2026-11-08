@@ -68929,593 +68929,593 @@
         }
       ]
     },
-      {
-        "id": "slang",
-        "title": "Slang",
-        "kind": "texting",
-        "difficulty": "teen",
-        "theme": "How Nepali teens actually talk",
-        "cover_image": "/images/nepal-v1/cover_slang.jpg",
-        "min_age_band": "explorer",
-        "words": [
-          {
-            "id": "slang_khatra",
-            "devanagari": "खत्रा!",
-            "romanized": "Khatra!",
-            "english": "Awesome! / That's sick!",
-            "section": "Slang",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/slang_khatra_np.m4a",
-            "has_audio": true,
-            "image": "/images/nepal-v1/slang_khatra.jpg"
-          },
-          {
-            "id": "slang_dami",
-            "devanagari": "दामी छ!",
-            "romanized": "Dami chha!",
-            "english": "That's great!",
-            "section": "Slang",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/slang_dami_np.m4a",
-            "has_audio": true,
-            "image": "/images/nepal-v1/slang_dami.jpg"
-          },
-          {
-            "id": "slang_jhakkas",
-            "devanagari": "झक्कास!",
-            "romanized": "Jhakkas!",
-            "english": "Awesome!",
-            "section": "Slang",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/slang_jhakkas_np.m4a",
-            "has_audio": true,
-            "image": "/images/nepal-v1/slang_jhakkas.jpg"
-          },
-          {
-            "id": "slang_maja",
-            "devanagari": "मजा आयो!",
-            "romanized": "Maja aayo!",
-            "english": "That was fun!",
-            "section": "Slang",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/slang_maja_np.m4a",
-            "has_audio": true,
-            "image": "/images/nepal-v1/slang_maja.jpg"
-          },
-          {
-            "id": "slang_scene",
-            "devanagari": "क्या सिन छ?",
-            "romanized": "Kya scene chha?",
-            "english": "What's the scene? / What's up?",
-            "section": "Slang",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/slang_scene_np.m4a",
-            "has_audio": true,
-            "image": "/images/nepal-v1/slang_scene.jpg"
-          },
-          {
-            "id": "slang_hait",
-            "devanagari": "हाइट!",
-            "romanized": "Haittt!",
-            "english": "Damn! (exclamation)",
-            "section": "Slang",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/slang_hait_np.m4a",
-            "has_audio": true,
-            "image": "/images/nepal-v1/slang_hait.jpg"
-          },
-          {
-            "id": "slang_hyaa",
-            "devanagari": "ह्या!",
-            "romanized": "Hyaa!",
-            "english": "Yeah right (dismissive)",
-            "section": "Slang",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/slang_hyaa_np.m4a",
-            "has_audio": true,
-            "image": "/images/nepal-v1/slang_hyaa.jpg"
-          },
-          {
-            "id": "slang_lutyo",
-            "devanagari": "पैसा सब लुट्यो!",
-            "romanized": "Paisa sab lutyo!",
-            "english": "Took all my money! / Got ripped off",
-            "section": "Slang",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/slang_lutyo_np.m4a",
-            "has_audio": true,
-            "image": "/images/nepal-v1/slang_lutyo.jpg"
-          },
-          {
-            "id": "slang_timepass",
-            "devanagari": "टाइमपास!",
-            "romanized": "Timepass!",
-            "english": "Just killing time",
-            "section": "Slang",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/slang_timepass_np.m4a",
-            "has_audio": true,
-            "image": "/images/nepal-v1/slang_timepass.jpg"
-          },
-          {
-            "id": "slang_pakka",
-            "devanagari": "पक्का!",
-            "romanized": "Pakka!",
-            "english": "For sure! / Definitely!",
-            "section": "Slang",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/slang_pakka_np.m4a",
-            "has_audio": true,
-            "image": "/images/nepal-v1/slang_pakka.jpg"
-          },
-          {
-            "id": "slang_chill",
-            "devanagari": "चिल गर!",
-            "romanized": "Chill gara!",
-            "english": "Chill out! / Relax!",
-            "section": "Slang",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/slang_chill_np.m4a",
-            "has_audio": true,
-            "image": "/images/nepal-v1/slang_chill.jpg"
-          }
-        ]
-      },
-      {
-        "id": "comebacks",
-        "title": "Comebacks",
-        "kind": "texting",
-        "difficulty": "teen",
-        "theme": "Playful comebacks for friends",
-        "cover_image": "/images/nepal-v1/cover_comebacks.jpg",
-        "min_age_band": "explorer",
-        "words": [
-          {
-            "id": "comeback_herana",
-            "devanagari": "आफै हेर न!",
-            "romanized": "Afai hera na!",
-            "english": "Look at yourself!",
-            "section": "Comebacks",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/comeback_herana_np.m4a",
-            "has_audio": true,
-            "image": "/images/nepal-v1/comeback_herana.jpg"
-          },
-          {
-            "id": "comeback_mukh",
-            "devanagari": "तिम्रो मुख हेर!",
-            "romanized": "Timro mukh hera!",
-            "english": "Look at your face!",
-            "section": "Comebacks",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/comeback_mukh_np.m4a",
-            "has_audio": true,
-            "image": "/images/nepal-v1/comeback_mukh.jpg"
-          },
-          {
-            "id": "comeback_bolna",
-            "devanagari": "बोल्न त आउँछ!",
-            "romanized": "Bolna ta aauchha!",
-            "english": "Oh, you can talk!",
-            "section": "Comebacks",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/comeback_bolna_np.m4a",
-            "has_audio": true,
-            "image": "/images/nepal-v1/comeback_bolna.jpg"
-          },
-          {
-            "id": "comeback_hasayo",
-            "devanagari": "हसायो!",
-            "romanized": "Hasayo!",
-            "english": "That made me laugh! (dismissive)",
-            "section": "Comebacks",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/comeback_hasayo_np.m4a",
-            "has_audio": true,
-            "image": "/images/nepal-v1/comeback_hasayo.jpg"
-          },
-          {
-            "id": "comeback_kuranagara",
-            "devanagari": "कुरा नगर!",
-            "romanized": "Kura nagara!",
-            "english": "Don't even talk!",
-            "section": "Comebacks",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/comeback_kuranagara_np.m4a",
-            "has_audio": true,
-            "image": "/images/nepal-v1/comeback_kuranagara.jpg"
-          },
-          {
-            "id": "comeback_sodhyo",
-            "devanagari": "तिमीलाई कसले सोध्यो?",
-            "romanized": "Timilai kasle sodhyo?",
-            "english": "Who asked you?",
-            "section": "Comebacks",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/comeback_sodhyo_np.m4a",
-            "has_audio": true,
-            "image": "/images/nepal-v1/comeback_sodhyo.jpg"
-          },
-          {
-            "id": "comeback_chup",
-            "devanagari": "चुप लाग!",
-            "romanized": "Chup laaga!",
-            "english": "Shut up! (playful)",
-            "section": "Comebacks",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/comeback_chup_np.m4a",
-            "has_audio": true,
-            "image": "/images/nepal-v1/comeback_chup.jpg"
-          },
-          {
-            "id": "comeback_suneko",
-            "devanagari": "मैले त सुनेको थिइन!",
-            "romanized": "Maile ta suneko thina!",
-            "english": "I wasn't even listening!",
-            "section": "Comebacks",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/comeback_suneko_np.m4a",
-            "has_audio": true,
-            "image": "/images/nepal-v1/comeback_suneko.jpg"
-          }
-        ]
-      },
-      {
-        "id": "captions",
-        "title": "Captions",
-        "kind": "texting",
-        "difficulty": "teen",
-        "theme": "Nepali captions for your posts",
-        "cover_image": "/images/nepal-v1/cover_captions.jpg",
-        "min_age_band": "explorer",
-        "words": [
-          {
-            "id": "caption_din",
-            "devanagari": "राम्रो दिन!",
-            "romanized": "Ramro din!",
-            "english": "Good day!",
-            "section": "Captions",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/caption_din_np.m4a",
-            "has_audio": true,
-            "image": "/images/nepal-v1/caption_din.jpg"
-          },
-          {
-            "id": "caption_sathi",
-            "devanagari": "साथीहरू सँग!",
-            "romanized": "Sathi haru sanga!",
-            "english": "With friends!",
-            "section": "Captions",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/caption_sathi_np.m4a",
-            "has_audio": true,
-            "image": "/images/nepal-v1/caption_sathi.jpg"
-          },
-          {
-            "id": "caption_nepal",
-            "devanagari": "नेपालको माया!",
-            "romanized": "Nepal ko maya!",
-            "english": "Love for Nepal!",
-            "section": "Captions",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/caption_nepal_np.m4a",
-            "has_audio": true,
-            "image": "/images/nepal-v1/caption_nepal.jpg"
-          },
-          {
-            "id": "caption_dashain",
-            "devanagari": "दशैंको शुभकामना!",
-            "romanized": "Dashain ko shubhakamana!",
-            "english": "Happy Dashain!",
-            "section": "Captions",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/caption_dashain_np.m4a",
-            "has_audio": true,
-            "image": "/images/nepal-v1/caption_dashain.jpg"
-          },
-          {
-            "id": "caption_suruwat",
-            "devanagari": "नयाँ सुरुवात!",
-            "romanized": "Naya suruwat!",
-            "english": "New beginnings!",
-            "section": "Captions",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/caption_suruwat_np.m4a",
-            "has_audio": true,
-            "image": "/images/nepal-v1/caption_suruwat.jpg"
-          },
-          {
-            "id": "caption_khushi",
-            "devanagari": "खुशीको पल!",
-            "romanized": "Khushi ko pal!",
-            "english": "Happy moments!",
-            "section": "Captions",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/caption_khushi_np.m4a",
-            "has_audio": true,
-            "image": "/images/nepal-v1/caption_khushi.jpg"
-          },
-          {
-            "id": "caption_pariwar",
-            "devanagari": "परिवार!",
-            "romanized": "Pariwar!",
-            "english": "Family!",
-            "section": "Captions",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/caption_pariwar_np.m4a",
-            "has_audio": true,
-            "image": "/images/nepal-v1/caption_pariwar.jpg"
-          },
-          {
-            "id": "caption_yatra",
-            "devanagari": "यात्रा!",
-            "romanized": "Yatra!",
-            "english": "Journey! / Adventure!",
-            "section": "Captions",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/caption_yatra_np.m4a",
-            "has_audio": true,
-            "image": "/images/nepal-v1/caption_yatra.jpg"
-          },
-          {
-            "id": "caption_khana",
-            "devanagari": "मिठो खाना!",
-            "romanized": "Mitho khana!",
-            "english": "Delicious food!",
-            "section": "Captions",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/caption_khana_np.m4a",
-            "has_audio": true,
-            "image": "/images/nepal-v1/caption_khana.jpg"
-          },
-          {
-            "id": "caption_sanjha",
-            "devanagari": "साँझको रमाइलो!",
-            "romanized": "Sanjha ko ramailo!",
-            "english": "Evening fun!",
-            "section": "Captions",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/caption_sanjha_np.m4a",
-            "has_audio": true,
-            "image": "/images/nepal-v1/caption_sanjha.jpg"
-          }
-        ]
-      },
-      {
-        "id": "months",
-        "min_age_band": "explorer",
-        "theme": "the Bikram Sambat year",
-        "title": "Nepali Months",
-        "cover_image": "/images/nepal-v1/cover_months.jpg",
-        "difficulty": "hard",
-        "words": [
-          {
-            "id": "month_baishakh",
-            "devanagari": "बैशाख",
-            "romanized": "Baishakh",
-            "english": "April \u2013 May",
-            "audio_url": "/audio/nepal-v1/month_baishakh_np.m4a",
-            "has_audio": true,
-            "example_sentence_np": "Ahile Baishakh mahina ho.",
-            "example_sentence_en": "It is the month of Baishakh now.",
-            "image": "/images/nepal-v1/month_baishakh.jpg"
-          },
-          {
-            "id": "month_jestha",
-            "devanagari": "जेठ",
-            "romanized": "Jestha",
-            "english": "May \u2013 June",
-            "audio_url": "/audio/nepal-v1/month_jestha_np.m4a",
-            "has_audio": true,
-            "example_sentence_np": "Ahile Jestha mahina ho.",
-            "example_sentence_en": "It is the month of Jestha now.",
-            "image": "/images/nepal-v1/month_jestha.jpg"
-          },
-          {
-            "id": "month_asar",
-            "devanagari": "असार",
-            "romanized": "Asar",
-            "english": "June \u2013 July",
-            "audio_url": "/audio/nepal-v1/month_asar_np.m4a",
-            "has_audio": true,
-            "example_sentence_np": "Ahile Asar mahina ho.",
-            "example_sentence_en": "It is the month of Asar now.",
-            "image": "/images/nepal-v1/month_asar.jpg"
-          },
-          {
-            "id": "month_shrawan",
-            "devanagari": "साउन",
-            "romanized": "Shrawan",
-            "english": "July \u2013 August",
-            "audio_url": "/audio/nepal-v1/month_shrawan_np.m4a",
-            "has_audio": true,
-            "example_sentence_np": "Ahile Shrawan mahina ho.",
-            "example_sentence_en": "It is the month of Shrawan now.",
-            "image": "/images/nepal-v1/month_shrawan.jpg"
-          },
-          {
-            "id": "month_bhadra",
-            "devanagari": "भदौ",
-            "romanized": "Bhadra",
-            "english": "August \u2013 September",
-            "audio_url": "/audio/nepal-v1/month_bhadra_np.m4a",
-            "has_audio": true,
-            "example_sentence_np": "Ahile Bhadra mahina ho.",
-            "example_sentence_en": "It is the month of Bhadra now.",
-            "image": "/images/nepal-v1/month_bhadra.jpg"
-          },
-          {
-            "id": "month_ashwin",
-            "devanagari": "असोज",
-            "romanized": "Ashwin",
-            "english": "September \u2013 October",
-            "audio_url": "/audio/nepal-v1/month_ashwin_np.m4a",
-            "has_audio": true,
-            "example_sentence_np": "Ahile Ashwin mahina ho.",
-            "example_sentence_en": "It is the month of Ashwin now.",
-            "image": "/images/nepal-v1/month_ashwin.jpg"
-          },
-          {
-            "id": "month_kartik",
-            "devanagari": "कात्तिक",
-            "romanized": "Kartik",
-            "english": "October \u2013 November",
-            "audio_url": "/audio/nepal-v1/month_kartik_np.m4a",
-            "has_audio": true,
-            "example_sentence_np": "Ahile Kartik mahina ho.",
-            "example_sentence_en": "It is the month of Kartik now.",
-            "image": "/images/nepal-v1/month_kartik.jpg"
-          },
-          {
-            "id": "month_mangsir",
-            "devanagari": "मंसिर",
-            "romanized": "Mangsir",
-            "english": "November \u2013 December",
-            "audio_url": "/audio/nepal-v1/month_mangsir_np.m4a",
-            "has_audio": true,
-            "example_sentence_np": "Ahile Mangsir mahina ho.",
-            "example_sentence_en": "It is the month of Mangsir now.",
-            "image": "/images/nepal-v1/month_mangsir.jpg"
-          },
-          {
-            "id": "month_poush",
-            "devanagari": "पुस",
-            "romanized": "Poush",
-            "english": "December \u2013 January",
-            "audio_url": "/audio/nepal-v1/month_poush_np.m4a",
-            "has_audio": true,
-            "example_sentence_np": "Ahile Poush mahina ho.",
-            "example_sentence_en": "It is the month of Poush now.",
-            "image": "/images/nepal-v1/month_poush.jpg"
-          },
-          {
-            "id": "month_magh",
-            "devanagari": "माघ",
-            "romanized": "Magh",
-            "english": "January \u2013 February",
-            "audio_url": "/audio/nepal-v1/month_magh_np.m4a",
-            "has_audio": true,
-            "example_sentence_np": "Ahile Magh mahina ho.",
-            "example_sentence_en": "It is the month of Magh now.",
-            "image": "/images/nepal-v1/month_magh.jpg"
-          },
-          {
-            "id": "month_falgun",
-            "devanagari": "फागुन",
-            "romanized": "Falgun",
-            "english": "February \u2013 March",
-            "audio_url": "/audio/nepal-v1/month_falgun_np.m4a",
-            "has_audio": true,
-            "example_sentence_np": "Ahile Falgun mahina ho.",
-            "example_sentence_en": "It is the month of Falgun now.",
-            "image": "/images/nepal-v1/month_falgun.jpg"
-          },
-          {
-            "id": "month_chaitra",
-            "devanagari": "चैत",
-            "romanized": "Chaitra",
-            "english": "March \u2013 April",
-            "audio_url": "/audio/nepal-v1/month_chaitra_np.m4a",
-            "has_audio": true,
-            "example_sentence_np": "Ahile Chaitra mahina ho.",
-            "example_sentence_en": "It is the month of Chaitra now.",
-            "image": "/images/nepal-v1/month_chaitra.jpg"
-          }
-        ]
-      },
-      {
-        "id": "lyrics",
-        "title": "Lyric Breakdowns",
-        "kind": "texting",
-        "difficulty": "teen",
-        "theme": "What your favorite songs actually mean",
-        "cover_image": "/images/nepal-v1/cover_lyrics.jpg",
-        "min_age_band": "explorer",
-        "words": [
-          {
-            "id": "lyric_resham",
-            "devanagari": "रेशम फिरिरी",
-            "romanized": "Resham Firiri",
-            "english": "Traditional folk song every Nepali kid grows up hearing. 'Resham' means silk, 'firiri' is the fluttering motion — like silk dancing in the wind. Playful, upbeat, about beauty and joy. Composed by Buddhi Pariyar, collected from Pokhara villages. First recorded at Radio Nepal in 1969, sung by Sunder Shrestha and Dwarika Lal Joshi.",
-            "section": "Lyric Breakdowns",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/lyric_resham_np.m4a",
-        "quiz_short": "Silk fluttering in the wind",
-            "has_audio": true,
-            "image": "/images/nepal-v1/lyric_resham.jpg"
-          },
-          {
-            "id": "lyric_jechhau",
-            "devanagari": "जे छौ तिमी",
-            "romanized": "Je Chhau Timi",
-            "english": "Swoopna Suman × Samir Shrestha (2023). 'However you are.' Key line — 'Je chhau jaso chhau timi, tehi nai ho malai chahine' — 'no matter who you are, you're the one I need.' About loving someone exactly as they are.",
-            "section": "Lyric Breakdowns",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/lyric_jechhau_np.m4a",
-        "quiz_short": "However you are",
-            "has_audio": true,
-            "image": "/images/nepal-v1/lyric_jechhau.jpg"
-          },
-          {
-            "id": "lyric_exmaros",
-            "devanagari": "मेरो एक्स मरोस्",
-            "romanized": "Mero Ex Maros",
-            "english": "Jhapalish (2025, hip-hop). 'May my ex die' — playful, not serious. 'Maros' is slang for 'die,' used jokingly. A diss track for when you're over someone.",
-            "section": "Lyric Breakdowns",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/lyric_exmaros_np.m4a",
-        "quiz_short": "May my ex die",
-            "has_audio": true,
-            "image": "/images/nepal-v1/lyric_exmaros.jpg"
-          },
-          {
-            "id": "lyric_deuralima",
-            "devanagari": "देउरालीमा बतास चल्यो",
-            "romanized": "Deuralima Batas Chalyo",
-            "english": "Prem Dhoj Pradhan (classic, music by Natikaji). 'The wind blew at Deurali' — Deurali is a mountain pass where travelers rest. Nostalgic, about wind carrying memories through the hills. Makes Nepalis abroad homesick.",
-            "section": "Lyric Breakdowns",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/lyric_deuralima_np.m4a",
-        "quiz_short": "Wind at the mountain pass",
-            "has_audio": true,
-            "image": "/images/nepal-v1/lyric_deuralima.jpg"
-          },
-          {
-            "id": "lyric_sastomutu",
-            "devanagari": "सस्तो मुटु",
-            "romanized": "Sasto Mutu",
-            "english": "Sajjan Raj Vaidya. 'Cheap heart' — 'sasto' means cheap, 'mutu' means heart. About feeling like your love wasn't valued. Sad but beautiful.",
-            "section": "Lyric Breakdowns",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/lyric_sastomutu_np.m4a",
-        "quiz_short": "Cheap heart",
-            "has_audio": true,
-            "image": "/images/nepal-v1/lyric_sastomutu.jpg"
-          },
-          {
-            "id": "lyric_kutumakutu",
-            "devanagari": "कुटु मा कुटु",
-            "romanized": "Kutu Ma Kutu",
-            "english": "Rajan Raj Shiwakoti & Melina Rai (2017, from Dui Rupaiyan). 243M views — the most-watched Nepali video ever. 'Kutu ma kutu' is the sound of chewing something hard; 'supari dana' is areca nut. Offering supari is how you invite someone to a function in Nepali culture — they chew it to accept. Pure celebration.",
-            "section": "Lyric Breakdowns",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/lyric_kutumakutu_np.m4a",
-        "quiz_short": "The sound of chewing",
-            "has_audio": true
-          },
-          {
-            "id": "lyric_rukummaikot",
-            "devanagari": "रुकुम मैकोट",
-            "romanized": "Rukum Maikot",
-            "english": "SD Yogi & Shanti Shree Pariyar (2024, from Khusma). 193M views — fastest Nepali song to 100M. Rukum is a district in western Nepal, Maikot is a village there. A folk-pop love letter to the region.",
-            "section": "Lyric Breakdowns",
-            "formality": "timi",
-            "audio_url": "/audio/nepal-v1/lyric_rukummaikot_np.m4a",
-        "quiz_short": "Rukum and Maikot (two districts)",
-            "has_audio": true
-          }
-        ]
-      }
+    {
+      "id": "slang",
+      "title": "Slang",
+      "kind": "texting",
+      "difficulty": "teen",
+      "theme": "How Nepali teens actually talk",
+      "cover_image": "/images/nepal-v1/cover_slang.jpg",
+      "min_age_band": "explorer",
+      "words": [
+        {
+          "id": "slang_khatra",
+          "devanagari": "खत्रा!",
+          "romanized": "Khatra!",
+          "english": "Awesome! / That's sick!",
+          "section": "Slang",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/slang_khatra_np.m4a",
+          "has_audio": true,
+          "image": "/images/nepal-v1/slang_khatra.jpg"
+        },
+        {
+          "id": "slang_dami",
+          "devanagari": "दामी छ!",
+          "romanized": "Dami chha!",
+          "english": "That's great!",
+          "section": "Slang",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/slang_dami_np.m4a",
+          "has_audio": true,
+          "image": "/images/nepal-v1/slang_dami.jpg"
+        },
+        {
+          "id": "slang_jhakkas",
+          "devanagari": "झक्कास!",
+          "romanized": "Jhakkas!",
+          "english": "Awesome!",
+          "section": "Slang",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/slang_jhakkas_np.m4a",
+          "has_audio": true,
+          "image": "/images/nepal-v1/slang_jhakkas.jpg"
+        },
+        {
+          "id": "slang_maja",
+          "devanagari": "मजा आयो!",
+          "romanized": "Maja aayo!",
+          "english": "That was fun!",
+          "section": "Slang",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/slang_maja_np.m4a",
+          "has_audio": true,
+          "image": "/images/nepal-v1/slang_maja.jpg"
+        },
+        {
+          "id": "slang_scene",
+          "devanagari": "क्या सिन छ?",
+          "romanized": "Kya scene chha?",
+          "english": "What's the scene? / What's up?",
+          "section": "Slang",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/slang_scene_np.m4a",
+          "has_audio": true,
+          "image": "/images/nepal-v1/slang_scene.jpg"
+        },
+        {
+          "id": "slang_hait",
+          "devanagari": "हाइट!",
+          "romanized": "Haittt!",
+          "english": "Damn! (exclamation)",
+          "section": "Slang",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/slang_hait_np.m4a",
+          "has_audio": true,
+          "image": "/images/nepal-v1/slang_hait.jpg"
+        },
+        {
+          "id": "slang_hyaa",
+          "devanagari": "ह्या!",
+          "romanized": "Hyaa!",
+          "english": "Yeah right (dismissive)",
+          "section": "Slang",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/slang_hyaa_np.m4a",
+          "has_audio": true,
+          "image": "/images/nepal-v1/slang_hyaa.jpg"
+        },
+        {
+          "id": "slang_lutyo",
+          "devanagari": "पैसा सब लुट्यो!",
+          "romanized": "Paisa sab lutyo!",
+          "english": "Took all my money! / Got ripped off",
+          "section": "Slang",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/slang_lutyo_np.m4a",
+          "has_audio": true,
+          "image": "/images/nepal-v1/slang_lutyo.jpg"
+        },
+        {
+          "id": "slang_timepass",
+          "devanagari": "टाइमपास!",
+          "romanized": "Timepass!",
+          "english": "Just killing time",
+          "section": "Slang",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/slang_timepass_np.m4a",
+          "has_audio": true,
+          "image": "/images/nepal-v1/slang_timepass.jpg"
+        },
+        {
+          "id": "slang_pakka",
+          "devanagari": "पक्का!",
+          "romanized": "Pakka!",
+          "english": "For sure! / Definitely!",
+          "section": "Slang",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/slang_pakka_np.m4a",
+          "has_audio": true,
+          "image": "/images/nepal-v1/slang_pakka.jpg"
+        },
+        {
+          "id": "slang_chill",
+          "devanagari": "चिल गर!",
+          "romanized": "Chill gara!",
+          "english": "Chill out! / Relax!",
+          "section": "Slang",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/slang_chill_np.m4a",
+          "has_audio": true,
+          "image": "/images/nepal-v1/slang_chill.jpg"
+        }
+      ]
+    },
+    {
+      "id": "comebacks",
+      "title": "Comebacks",
+      "kind": "texting",
+      "difficulty": "teen",
+      "theme": "Playful comebacks for friends",
+      "cover_image": "/images/nepal-v1/cover_comebacks.jpg",
+      "min_age_band": "explorer",
+      "words": [
+        {
+          "id": "comeback_herana",
+          "devanagari": "आफै हेर न!",
+          "romanized": "Afai hera na!",
+          "english": "Look at yourself!",
+          "section": "Comebacks",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/comeback_herana_np.m4a",
+          "has_audio": true,
+          "image": "/images/nepal-v1/comeback_herana.jpg"
+        },
+        {
+          "id": "comeback_mukh",
+          "devanagari": "तिम्रो मुख हेर!",
+          "romanized": "Timro mukh hera!",
+          "english": "Look at your face!",
+          "section": "Comebacks",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/comeback_mukh_np.m4a",
+          "has_audio": true,
+          "image": "/images/nepal-v1/comeback_mukh.jpg"
+        },
+        {
+          "id": "comeback_bolna",
+          "devanagari": "बोल्न त आउँछ!",
+          "romanized": "Bolna ta aauchha!",
+          "english": "Oh, you can talk!",
+          "section": "Comebacks",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/comeback_bolna_np.m4a",
+          "has_audio": true,
+          "image": "/images/nepal-v1/comeback_bolna.jpg"
+        },
+        {
+          "id": "comeback_hasayo",
+          "devanagari": "हसायो!",
+          "romanized": "Hasayo!",
+          "english": "That made me laugh! (dismissive)",
+          "section": "Comebacks",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/comeback_hasayo_np.m4a",
+          "has_audio": true,
+          "image": "/images/nepal-v1/comeback_hasayo.jpg"
+        },
+        {
+          "id": "comeback_kuranagara",
+          "devanagari": "कुरा नगर!",
+          "romanized": "Kura nagara!",
+          "english": "Don't even talk!",
+          "section": "Comebacks",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/comeback_kuranagara_np.m4a",
+          "has_audio": true,
+          "image": "/images/nepal-v1/comeback_kuranagara.jpg"
+        },
+        {
+          "id": "comeback_sodhyo",
+          "devanagari": "तिमीलाई कसले सोध्यो?",
+          "romanized": "Timilai kasle sodhyo?",
+          "english": "Who asked you?",
+          "section": "Comebacks",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/comeback_sodhyo_np.m4a",
+          "has_audio": true,
+          "image": "/images/nepal-v1/comeback_sodhyo.jpg"
+        },
+        {
+          "id": "comeback_chup",
+          "devanagari": "चुप लाग!",
+          "romanized": "Chup laaga!",
+          "english": "Shut up! (playful)",
+          "section": "Comebacks",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/comeback_chup_np.m4a",
+          "has_audio": true,
+          "image": "/images/nepal-v1/comeback_chup.jpg"
+        },
+        {
+          "id": "comeback_suneko",
+          "devanagari": "मैले त सुनेको थिइन!",
+          "romanized": "Maile ta suneko thina!",
+          "english": "I wasn't even listening!",
+          "section": "Comebacks",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/comeback_suneko_np.m4a",
+          "has_audio": true,
+          "image": "/images/nepal-v1/comeback_suneko.jpg"
+        }
+      ]
+    },
+    {
+      "id": "captions",
+      "title": "Captions",
+      "kind": "texting",
+      "difficulty": "teen",
+      "theme": "Nepali captions for your posts",
+      "cover_image": "/images/nepal-v1/cover_captions.jpg",
+      "min_age_band": "explorer",
+      "words": [
+        {
+          "id": "caption_din",
+          "devanagari": "राम्रो दिन!",
+          "romanized": "Ramro din!",
+          "english": "Good day!",
+          "section": "Captions",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/caption_din_np.m4a",
+          "has_audio": true,
+          "image": "/images/nepal-v1/caption_din.jpg"
+        },
+        {
+          "id": "caption_sathi",
+          "devanagari": "साथीहरू सँग!",
+          "romanized": "Sathi haru sanga!",
+          "english": "With friends!",
+          "section": "Captions",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/caption_sathi_np.m4a",
+          "has_audio": true,
+          "image": "/images/nepal-v1/caption_sathi.jpg"
+        },
+        {
+          "id": "caption_nepal",
+          "devanagari": "नेपालको माया!",
+          "romanized": "Nepal ko maya!",
+          "english": "Love for Nepal!",
+          "section": "Captions",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/caption_nepal_np.m4a",
+          "has_audio": true,
+          "image": "/images/nepal-v1/caption_nepal.jpg"
+        },
+        {
+          "id": "caption_dashain",
+          "devanagari": "दशैंको शुभकामना!",
+          "romanized": "Dashain ko shubhakamana!",
+          "english": "Happy Dashain!",
+          "section": "Captions",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/caption_dashain_np.m4a",
+          "has_audio": true,
+          "image": "/images/nepal-v1/caption_dashain.jpg"
+        },
+        {
+          "id": "caption_suruwat",
+          "devanagari": "नयाँ सुरुवात!",
+          "romanized": "Naya suruwat!",
+          "english": "New beginnings!",
+          "section": "Captions",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/caption_suruwat_np.m4a",
+          "has_audio": true,
+          "image": "/images/nepal-v1/caption_suruwat.jpg"
+        },
+        {
+          "id": "caption_khushi",
+          "devanagari": "खुशीको पल!",
+          "romanized": "Khushi ko pal!",
+          "english": "Happy moments!",
+          "section": "Captions",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/caption_khushi_np.m4a",
+          "has_audio": true,
+          "image": "/images/nepal-v1/caption_khushi.jpg"
+        },
+        {
+          "id": "caption_pariwar",
+          "devanagari": "परिवार!",
+          "romanized": "Pariwar!",
+          "english": "Family!",
+          "section": "Captions",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/caption_pariwar_np.m4a",
+          "has_audio": true,
+          "image": "/images/nepal-v1/caption_pariwar.jpg"
+        },
+        {
+          "id": "caption_yatra",
+          "devanagari": "यात्रा!",
+          "romanized": "Yatra!",
+          "english": "Journey! / Adventure!",
+          "section": "Captions",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/caption_yatra_np.m4a",
+          "has_audio": true,
+          "image": "/images/nepal-v1/caption_yatra.jpg"
+        },
+        {
+          "id": "caption_khana",
+          "devanagari": "मिठो खाना!",
+          "romanized": "Mitho khana!",
+          "english": "Delicious food!",
+          "section": "Captions",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/caption_khana_np.m4a",
+          "has_audio": true,
+          "image": "/images/nepal-v1/caption_khana.jpg"
+        },
+        {
+          "id": "caption_sanjha",
+          "devanagari": "साँझको रमाइलो!",
+          "romanized": "Sanjha ko ramailo!",
+          "english": "Evening fun!",
+          "section": "Captions",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/caption_sanjha_np.m4a",
+          "has_audio": true,
+          "image": "/images/nepal-v1/caption_sanjha.jpg"
+        }
+      ]
+    },
+    {
+      "id": "months",
+      "min_age_band": "explorer",
+      "theme": "the Bikram Sambat year",
+      "title": "Nepali Months",
+      "cover_image": "/images/nepal-v1/cover_months.jpg",
+      "difficulty": "hard",
+      "words": [
+        {
+          "id": "month_baishakh",
+          "devanagari": "बैशाख",
+          "romanized": "Baishakh",
+          "english": "April – May",
+          "audio_url": "/audio/nepal-v1/month_baishakh_np.m4a",
+          "has_audio": true,
+          "example_sentence_np": "Ahile Baishakh mahina ho.",
+          "example_sentence_en": "It is the month of Baishakh now.",
+          "image": "/images/nepal-v1/month_baishakh.jpg"
+        },
+        {
+          "id": "month_jestha",
+          "devanagari": "जेठ",
+          "romanized": "Jestha",
+          "english": "May – June",
+          "audio_url": "/audio/nepal-v1/month_jestha_np.m4a",
+          "has_audio": true,
+          "example_sentence_np": "Ahile Jestha mahina ho.",
+          "example_sentence_en": "It is the month of Jestha now.",
+          "image": "/images/nepal-v1/month_jestha.jpg"
+        },
+        {
+          "id": "month_asar",
+          "devanagari": "असार",
+          "romanized": "Asar",
+          "english": "June – July",
+          "audio_url": "/audio/nepal-v1/month_asar_np.m4a",
+          "has_audio": true,
+          "example_sentence_np": "Ahile Asar mahina ho.",
+          "example_sentence_en": "It is the month of Asar now.",
+          "image": "/images/nepal-v1/month_asar.jpg"
+        },
+        {
+          "id": "month_shrawan",
+          "devanagari": "साउन",
+          "romanized": "Shrawan",
+          "english": "July – August",
+          "audio_url": "/audio/nepal-v1/month_shrawan_np.m4a",
+          "has_audio": true,
+          "example_sentence_np": "Ahile Shrawan mahina ho.",
+          "example_sentence_en": "It is the month of Shrawan now.",
+          "image": "/images/nepal-v1/month_shrawan.jpg"
+        },
+        {
+          "id": "month_bhadra",
+          "devanagari": "भदौ",
+          "romanized": "Bhadra",
+          "english": "August – September",
+          "audio_url": "/audio/nepal-v1/month_bhadra_np.m4a",
+          "has_audio": true,
+          "example_sentence_np": "Ahile Bhadra mahina ho.",
+          "example_sentence_en": "It is the month of Bhadra now.",
+          "image": "/images/nepal-v1/month_bhadra.jpg"
+        },
+        {
+          "id": "month_ashwin",
+          "devanagari": "असोज",
+          "romanized": "Ashwin",
+          "english": "September – October",
+          "audio_url": "/audio/nepal-v1/month_ashwin_np.m4a",
+          "has_audio": true,
+          "example_sentence_np": "Ahile Ashwin mahina ho.",
+          "example_sentence_en": "It is the month of Ashwin now.",
+          "image": "/images/nepal-v1/month_ashwin.jpg"
+        },
+        {
+          "id": "month_kartik",
+          "devanagari": "कात्तिक",
+          "romanized": "Kartik",
+          "english": "October – November",
+          "audio_url": "/audio/nepal-v1/month_kartik_np.m4a",
+          "has_audio": true,
+          "example_sentence_np": "Ahile Kartik mahina ho.",
+          "example_sentence_en": "It is the month of Kartik now.",
+          "image": "/images/nepal-v1/month_kartik.jpg"
+        },
+        {
+          "id": "month_mangsir",
+          "devanagari": "मंसिर",
+          "romanized": "Mangsir",
+          "english": "November – December",
+          "audio_url": "/audio/nepal-v1/month_mangsir_np.m4a",
+          "has_audio": true,
+          "example_sentence_np": "Ahile Mangsir mahina ho.",
+          "example_sentence_en": "It is the month of Mangsir now.",
+          "image": "/images/nepal-v1/month_mangsir.jpg"
+        },
+        {
+          "id": "month_poush",
+          "devanagari": "पुस",
+          "romanized": "Poush",
+          "english": "December – January",
+          "audio_url": "/audio/nepal-v1/month_poush_np.m4a",
+          "has_audio": true,
+          "example_sentence_np": "Ahile Poush mahina ho.",
+          "example_sentence_en": "It is the month of Poush now.",
+          "image": "/images/nepal-v1/month_poush.jpg"
+        },
+        {
+          "id": "month_magh",
+          "devanagari": "माघ",
+          "romanized": "Magh",
+          "english": "January – February",
+          "audio_url": "/audio/nepal-v1/month_magh_np.m4a",
+          "has_audio": true,
+          "example_sentence_np": "Ahile Magh mahina ho.",
+          "example_sentence_en": "It is the month of Magh now.",
+          "image": "/images/nepal-v1/month_magh.jpg"
+        },
+        {
+          "id": "month_falgun",
+          "devanagari": "फागुन",
+          "romanized": "Falgun",
+          "english": "February – March",
+          "audio_url": "/audio/nepal-v1/month_falgun_np.m4a",
+          "has_audio": true,
+          "example_sentence_np": "Ahile Falgun mahina ho.",
+          "example_sentence_en": "It is the month of Falgun now.",
+          "image": "/images/nepal-v1/month_falgun.jpg"
+        },
+        {
+          "id": "month_chaitra",
+          "devanagari": "चैत",
+          "romanized": "Chaitra",
+          "english": "March – April",
+          "audio_url": "/audio/nepal-v1/month_chaitra_np.m4a",
+          "has_audio": true,
+          "example_sentence_np": "Ahile Chaitra mahina ho.",
+          "example_sentence_en": "It is the month of Chaitra now.",
+          "image": "/images/nepal-v1/month_chaitra.jpg"
+        }
+      ]
+    },
+    {
+      "id": "lyrics",
+      "title": "Lyric Breakdowns",
+      "kind": "texting",
+      "difficulty": "teen",
+      "theme": "What your favorite songs actually mean",
+      "cover_image": "/images/nepal-v1/cover_lyrics.jpg",
+      "min_age_band": "explorer",
+      "words": [
+        {
+          "id": "lyric_resham",
+          "devanagari": "रेशम फिरिरी",
+          "romanized": "Resham Firiri",
+          "english": "Traditional folk song every Nepali kid grows up hearing. 'Resham' means silk, 'firiri' is the fluttering motion — like silk dancing in the wind. Playful, upbeat, about beauty and joy. Composed by Buddhi Pariyar, collected from Pokhara villages. First recorded at Radio Nepal in 1969, sung by Sunder Shrestha and Dwarika Lal Joshi.",
+          "section": "Lyric Breakdowns",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/lyric_resham_np.m4a",
+          "quiz_short": "Silk fluttering in the wind",
+          "has_audio": true,
+          "image": "/images/nepal-v1/lyric_resham.jpg"
+        },
+        {
+          "id": "lyric_jechhau",
+          "devanagari": "जे छौ तिमी",
+          "romanized": "Je Chhau Timi",
+          "english": "Swoopna Suman × Samir Shrestha (2023). 'However you are.' Key line — 'Je chhau jaso chhau timi, tehi nai ho malai chahine' — 'no matter who you are, you're the one I need.' About loving someone exactly as they are.",
+          "section": "Lyric Breakdowns",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/lyric_jechhau_np.m4a",
+          "quiz_short": "However you are",
+          "has_audio": true,
+          "image": "/images/nepal-v1/lyric_jechhau.jpg"
+        },
+        {
+          "id": "lyric_exmaros",
+          "devanagari": "मेरो एक्स मरोस्",
+          "romanized": "Mero Ex Maros",
+          "english": "Jhapalish (2025, hip-hop). 'May my ex die' — playful, not serious. 'Maros' is slang for 'die,' used jokingly. A diss track for when you're over someone.",
+          "section": "Lyric Breakdowns",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/lyric_exmaros_np.m4a",
+          "quiz_short": "May my ex die",
+          "has_audio": true,
+          "image": "/images/nepal-v1/lyric_exmaros.jpg"
+        },
+        {
+          "id": "lyric_deuralima",
+          "devanagari": "देउरालीमा बतास चल्यो",
+          "romanized": "Deuralima Batas Chalyo",
+          "english": "Prem Dhoj Pradhan (classic, music by Natikaji). 'The wind blew at Deurali' — Deurali is a mountain pass where travelers rest. Nostalgic, about wind carrying memories through the hills. Makes Nepalis abroad homesick.",
+          "section": "Lyric Breakdowns",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/lyric_deuralima_np.m4a",
+          "quiz_short": "Wind at the mountain pass",
+          "has_audio": true,
+          "image": "/images/nepal-v1/lyric_deuralima.jpg"
+        },
+        {
+          "id": "lyric_sastomutu",
+          "devanagari": "सस्तो मुटु",
+          "romanized": "Sasto Mutu",
+          "english": "Sajjan Raj Vaidya. 'Cheap heart' — 'sasto' means cheap, 'mutu' means heart. About feeling like your love wasn't valued. Sad but beautiful.",
+          "section": "Lyric Breakdowns",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/lyric_sastomutu_np.m4a",
+          "quiz_short": "Cheap heart",
+          "has_audio": true,
+          "image": "/images/nepal-v1/lyric_sastomutu.jpg"
+        },
+        {
+          "id": "lyric_kutumakutu",
+          "devanagari": "कुटु मा कुटु",
+          "romanized": "Kutu Ma Kutu",
+          "english": "Rajan Raj Shiwakoti & Melina Rai (2017, from Dui Rupaiyan). 243M views — the most-watched Nepali video ever. 'Kutu ma kutu' is the sound of chewing something hard; 'supari dana' is areca nut. Offering supari is how you invite someone to a function in Nepali culture — they chew it to accept. Pure celebration.",
+          "section": "Lyric Breakdowns",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/lyric_kutumakutu_np.m4a",
+          "quiz_short": "The sound of chewing",
+          "has_audio": true
+        },
+        {
+          "id": "lyric_rukummaikot",
+          "devanagari": "रुकुम मैकोट",
+          "romanized": "Rukum Maikot",
+          "english": "SD Yogi & Shanti Shree Pariyar (2024, from Khusma). 193M views — fastest Nepali song to 100M. Rukum is a district in western Nepal, Maikot is a village there. A folk-pop love letter to the region.",
+          "section": "Lyric Breakdowns",
+          "formality": "timi",
+          "audio_url": "/audio/nepal-v1/lyric_rukummaikot_np.m4a",
+          "quiz_short": "Rukum and Maikot (two districts)",
+          "has_audio": true
+        }
+      ]
+    }
   ],
   "id": "nepal-v1",
   "language": "Nepali",
@@ -69755,6 +69755,11 @@
     "charkha": true,
     "khukuri": true,
     "sarangi": true,
-    "karuwa": true
-}
+    "karuwa": true,
+    "diyo": true,
+    "jamara": true,
+    "sayapatri": true,
+    "changa": true,
+    "mala": true
+  }
 }
