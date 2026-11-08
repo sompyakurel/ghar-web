@@ -489,11 +489,13 @@ EOF'
 .bagh-done-title { font-size: 22px; font-weight: 700; }
 .bagh-done-xp { color: #2e7d32; font-weight: 700; font-size: 18px; }
 
-/* Site header: brand on the left, Sign in top-right (the standard spot). */
-.site-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
-.site-header .brand { text-align: left; }
-.site-header h1 { font-size: 44px; margin: 0 0 4px; }
-.site-header p { color: #6b5d4f; margin: 0; font-size: 17px; }
-.signin-btn { background: #fff; border-radius: 12px; padding: 12px 18px; text-decoration: none; color: #333; font-weight: 700; box-shadow: 0 1px 4px rgba(0,0,0,.08); white-space: nowrap; }
+/* Sign in: pinned to the top-right of the WHOLE page (the viewport),
+   not the top-right of the centered content column. position:fixed
+   anchors it to the viewport, so it stays at the far top-right corner
+   no matter how wide the screen is. */
+.signin-btn { position: fixed; top: 12px; right: 16px; z-index: 50; background: #fff; border-radius: 12px; padding: 12px 18px; text-decoration: none; color: #333; font-weight: 700; box-shadow: 0 1px 4px rgba(0,0,0,.12); white-space: nowrap; }
 .signin-btn:hover { background: #f5f5f5; }
+@media (max-width: 640px) {
+  .signin-btn { top: 8px; right: 8px; padding: 8px 12px; font-size: 14px; }
+}
 .subnav { flex-wrap: wrap; }
