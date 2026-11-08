@@ -499,3 +499,19 @@ EOF'
   .signin-btn { top: 8px; right: 8px; padding: 8px 12px; font-size: 14px; }
 }
 .subnav { flex-wrap: wrap; }
+
+/* Parent dashboard: per-child progress detail. Mirrors the app's
+   "For Grown-ups" Progress section, plus the actual completed items
+   (lessons, missions, shop buys, treasures) by name. */
+.child-card { display: block; }
+.child-top { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+.child-progress { margin-top: 14px; border-top: 1px solid #eee; padding-top: 12px; }
+.child-progress h3 { font-size: 16px; margin: 0 0 6px; }
+.child-progress h4 { font-size: 14px; margin: 16px 0 6px; color: #666; }
+.stat-row { display: flex; justify-content: space-between; gap: 16px; padding: 6px 0; border-bottom: 1px solid #f2f0ec; font-size: 15px; }
+.stat-row b { font-weight: 700; white-space: nowrap; }
+.done-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.done-chip { background: #e8f5e9; border-radius: 999px; padding: 4px 10px; font-size: 13px; }
+.done-none { color: #999; font-size: 14px; margin: 0; }
+.device-note { color: #999; font-size: 13px; margin: 8px 0 0; }
+.cert-line { font-weight: 700; margin: 16px 0 0; }

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ghar — Parent dashboard</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=12">
 </head>
 <body>
 <div class="wrap">
@@ -26,10 +26,39 @@
   </div>
   <p class="auth-note">One unlock covers the whole family. A child's progress is saved to their profile — it follows them across devices. Delete a child any time and their data goes with them. <a href="certificate.html?preview">Preview the certificate →</a></p>
 </div>
-<script src="auth.js"></script>
+<script src="auth.js?v=6"></script>
+<script src="shop-data.js"></script>
 <script>
 if (!GharAuth.signedIn()) location.href = "signin.html";
+// Teen missions live in missions.html, not in the pack JSON — same 8 as the
+// app, same titles, so the dashboard can name them.
+const TEEN_MISSIONS = [
+  { id: "teen-text-it", en: "Text It For Real", ne: "साँच्चै मेसेज गर" },
+  { id: "teen-teach-slang", en: "Teach the Slang", ne: "स्ल्याङ सिकाऊ" },
+  { id: "teen-caption", en: "Caption That", ne: "क्याप्सन लेख" },
+  { id: "teen-comeback", en: "Comeback Ready", ne: "जवाफ दिन सिक" },
+  { id: "teen-lyrics", en: "Lyrics Check", ne: "गीतको अर्थ" },
+  { id: "teen-order", en: "Order in Nepali", ne: "नेपालीमा अर्डर" },
+  { id: "teen-call-home", en: "Call Home", ne: "घरमा फोन" },
+  { id: "teen-teach-back", en: "Teach It Back", ne: "सिकाएर देखाऊ" }
+];
 let pack = null;
+const SHOP_BY_ID = {};
+if (typeof SHOP !== "undefined") SHOP.forEach(s => SHOP_BY_ID[s.id] = s);
+const MYSTERY_BY_ID = {};
+if (typeof MYSTERY !== "undefined") MYSTERY.forEach(s => MYSTERY_BY_ID[s.id] = s);
+
+function esc(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+function chips(items, emptyText) {
+  if (!items.length) return `<p class="done-none">${emptyText}</p>`;
+  return `<div class="done-chips">${items.map(t => `<span class="done-chip">${t}</span>`).join("")}</div>`;
+}
+function statRow(label, value) {
+  return `<div class="stat-row"><span>${label}</span><b>${value}</b></div>`;
+}
+
 async function load() {
   try {
     const me = await GharAuth.api("/accounts/me");
@@ -40,23 +69,81 @@ async function load() {
       list.innerHTML = `<p class="auth-note">No children yet — add one below to get started.</p>`;
       return;
     }
+    // Mission titles: pack missions + the 8 teen missions.
+    const missionTitles = {};
+    pack.missions.forEach(m => missionTitles[m.id] = { en: m.title_en, ne: m.title_ne });
+    TEEN_MISSIONS.forEach(m => missionTitles[m.id] = { en: m.en, ne: m.ne });
+    const missionOrder = pack.missions.map(m => m.id).concat(TEEN_MISSIONS.map(m => m.id));
+    const totalMissions = missionOrder.length;
+
     list.innerHTML = "";
     for (const child of me.children) {
-      const p = await GharAuth.api("/accounts/children/" + child.id + "/progress");
-      let done = 0;
-      pack.decks.forEach(deck => {
-        const heard = p.heard[deck.id] || [];
-        if (heard.length >= deck.words.length) done++;
-      });
+      const [p, missions, shop, mystery] = await Promise.all([
+        GharAuth.api("/accounts/children/" + child.id + "/progress"),
+        GharAuth.api("/accounts/children/" + child.id + "/missions"),
+        GharAuth.api("/accounts/children/" + child.id + "/shop"),
+        GharAuth.api("/accounts/children/" + child.id + "/mystery")
+      ]);
+      // Lessons done: a deck is done when every word in it has been heard.
+      const doneDecks = pack.decks.filter(deck => (p.heard[deck.id] || []).length >= deck.words.length);
+      const done = doneDecks.length;
+      const missionIds = Object.keys(missions);
+      const verifiedCount = missionIds.filter(id => missions[id] === "verified").length;
       const active = GharAuth.childId() === child.id;
+
       const card = document.createElement("div");
       card.className = "child-card" + (active ? " active" : "");
-      card.innerHTML = `
-        <div class="child-info">
-          <span class="child-name">${child.name}</span>
-          <span class="child-progress">⭐ ${child.xp} XP · 📜 ${done} of ${pack.decks.length} lessons done</span>
+      let html = `
+        <div class="child-top">
+          <div class="child-info">
+            <span class="child-name">${esc(child.name)}</span>
+            <span class="child-progress">⭐ ${child.xp} XP · 📜 ${done} of ${pack.decks.length} lessons done</span>
+          </div>
+          <button class="quiz-next child-play">${active ? "✓ Learning as " + esc(child.name) : "Learn as " + esc(child.name) + " →"}</button>
         </div>
-        <button class="quiz-next child-play">${active ? "✓ Learning as " + child.name : "Learn as " + child.name + " →"}</button>`;
+        <div class="child-progress">
+          <h3>Progress</h3>
+          ${statRow("Total XP", child.xp)}
+          ${statRow("Lessons done", done + " of " + pack.decks.length)}
+          ${statRow("Missions completed", missionIds.length + " of " + totalMissions + (verifiedCount ? " · " + verifiedCount + " ⭐ verified" : ""))}`;
+      // Quiz + streak live on this device only (the app's parent screen shows
+      // them too) — show them for the child playing on this browser.
+      if (active) {
+        const quizCorrect = parseInt(localStorage.getItem("ghar.quiz.correctTotal") || "0", 10) || 0;
+        const quizBest = parseInt(localStorage.getItem("ghar.quiz.streakBest") || "0", 10) || 0;
+        const dayStreak = parseInt(localStorage.getItem("ghar.streak.count") || "0", 10) || 0;
+        html += `
+          ${statRow("Quiz answers right", quizCorrect)}
+          ${statRow("Best quiz streak", quizBest + " in a row")}
+          ${statRow("Day streak", dayStreak === 1 ? "1 day" : dayStreak + " days")}
+          <p class="device-note">Quiz answers, best streak, and day streak are counted on this device.</p>`;
+      }
+      // What was actually completed — the lessons, missions, shop buys, and
+      // treasures, by name.
+      html += `
+          <h4>Lessons completed</h4>
+          ${chips(doneDecks.map(d => "✓ " + esc(d.title)), "No lessons finished yet.")}
+          <h4>Missions completed</h4>
+          ${chips(missionOrder.filter(id => missions[id]).map(id => {
+            const t = missionTitles[id] || { en: id, ne: "" };
+            return (missions[id] === "verified" ? "⭐ " : "✓ ") + esc(t.en) + (t.ne ? " · " + esc(t.ne) : "");
+          }), "No missions finished yet.")}
+          <h4>Shop items owned</h4>
+          ${chips((shop.items || []).map(id => {
+            const s = SHOP_BY_ID[id];
+            return s ? s.emoji + " " + esc(s.ne) + " — " + esc(s.en) : esc(id);
+          }), "Nothing bought from the shop yet.")}
+          <h4>Mystery treasures earned</h4>
+          ${chips((mystery.items || []).map(id => {
+            const s = MYSTERY_BY_ID[id];
+            return s ? s.emoji + " " + esc(s.ne) + " — " + esc(s.en) : esc(id);
+          }), "No Mystery Box treasures yet — one box is earned per 3 lessons.")}`;
+      if (p.cert_earned_at) {
+        const d = new Date(p.cert_earned_at * 1000).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+        html += `<p class="cert-line">📜 Certificate earned ${d}</p>`;
+      }
+      html += `</div>`;
+      card.innerHTML = html;
       card.querySelector(".child-play").addEventListener("click", async () => {
         localStorage.setItem(CHILD_KEY, child.id);
         await GharAuth.carryOver();
