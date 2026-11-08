@@ -434,3 +434,30 @@ EOF'
 .suga-dialog h3 { margin: 0 0 6px; font-size: 22px; }
 .suga-dialog-close { position: absolute; top: 10px; right: 12px; border: none; background: none; font-size: 20px; cursor: pointer; color: #666; line-height: 1; padding: 4px 8px; }
 .suga-dialog .suga-teach { margin: 12px 0; }
+
+/* Balloon Pop: hear the word, pop its balloon. 60-second rounds. */
+.balloon-field { position: relative; height: min(520px, 62vh); background: linear-gradient(#bfe8ff, #e8f7ff); border-radius: 16px; overflow: hidden; touch-action: manipulation; }
+.balloon { position: absolute; width: 96px; height: 120px; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; transform: translate(-50%, -50%); box-shadow: 0 4px 10px rgba(0,0,0,.18); cursor: pointer; user-select: none; -webkit-user-select: none; }
+.balloon-pic { width: 44px; height: 44px; border-radius: 50%; border: 2px solid rgba(255,255,255,.8); object-fit: cover; }
+.balloon-word { color: #fff; font-weight: 700; font-size: 15px; line-height: 1.1; text-align: center; max-width: 88px; text-shadow: 0 1px 3px rgba(0,0,0,.45); }
+.balloon-knot { position: absolute; left: 50%; bottom: -7px; transform: translateX(-50%); width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-top: 10px solid #999; }
+.balloon-string { position: absolute; left: 50%; bottom: -51px; transform: translateX(-50%); width: 2px; height: 44px; background: rgba(0,0,0,.35); }
+.balloon-wobble { animation: balloon-wobble .25s ease-in-out; }
+@keyframes balloon-wobble { 0%, 100% { transform: translate(-50%, -50%) rotate(0deg); } 25% { transform: translate(-50%, -50%) rotate(-10deg); } 75% { transform: translate(-50%, -50%) rotate(10deg); } }
+.balloon-particle { position: absolute; width: 10px; height: 10px; border-radius: 50%; pointer-events: none; }
+.balloon-hud { display: flex; align-items: center; gap: 12px; padding: 8px 4px; font-size: 18px; }
+.balloon-hud-score { font-weight: 700; }
+.balloon-hud-target { flex: 1; text-align: center; color: #555; }
+.balloon-hud-time { font-weight: 700; }
+.balloon-time-bad { color: #e53935; }
+.balloon-penalty { color: #e53935; font-weight: 700; }
+.balloon-replay { text-align: center; }
+.balloon-ready, .balloon-done { text-align: center; padding: 28px 12px; }
+.balloon-ready-emoji { font-size: 72px; }
+.balloon-ready-title { font-size: 22px; font-weight: 700; }
+.balloon-ready-note { color: #666; }
+.balloon-ready-best { color: #666; font-weight: 700; }
+.balloon-done-title { font-size: 28px; font-weight: 700; }
+.balloon-done-score { font-size: 22px; }
+.balloon-done-best { color: #ef6c00; font-weight: 700; }
+.balloon-done-xp { color: #2e7d32; font-weight: 700; font-size: 18px; }

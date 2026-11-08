@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Balloon Pop 🎈 — Ghar</title>
+<link rel="stylesheet" href="style.css?v=9">
+</head>
+<body>
+<div class="wrap">
+  <p><a href="index.html#games">← Back to Games</a></p>
+  <h1>Balloon Pop 🎈</h1>
+  <p class="section-sub">Hear the Nepali word. Pop its balloon! 60-second rounds, +2 XP a pop.</p>
+
+  <!-- Ready screen -->
+  <div id="ready" class="balloon-ready">
+    <div class="balloon-ready-emoji">🎈</div>
+    <p class="balloon-ready-title">Hear the word.<br>Pop its balloon!</p>
+    <p class="balloon-ready-note">Wrong pops cost 3 seconds! ⏱</p>
+    <p id="ready-best" class="balloon-ready-best"></p>
+    <button class="quiz-next" id="start-btn">Start!</button>
+  </div>
+
+  <!-- Game screen -->
+  <div id="game" style="display:none">
+    <div class="balloon-hud">
+      <span class="balloon-hud-score">🎈 <span id="hud-score">0</span></span>
+      <span class="balloon-hud-target">Pop: <b id="hud-target">…</b></span>
+      <span class="balloon-hud-time" id="hud-time">⏱ 60</span>
+      <span class="balloon-penalty" id="hud-penalty" style="display:none">-3s</span>
+    </div>
+    <div id="field" class="balloon-field"></div>
+    <div class="balloon-replay">
+      <button class="quiz-next" id="replay-btn">🔊 Hear it again</button>
+    </div>
+  </div>
+
+  <!-- Done screen -->
+  <div id="done" class="balloon-done" style="display:none">
+    <p class="balloon-done-title">⏰ Time's up!</p>
+    <p class="balloon-done-score">🎈 <span id="done-pops">0</span> pops</p>
+    <p id="done-best" class="balloon-done-best"></p>
+    <p class="balloon-done-xp">+<span id="done-xp">0</span> XP</p>
+    <p>
+      <button class="quiz-next" id="again-btn">Play again</button>
+      <button class="quiz-next" id="done-btn">Done</button>
+    </p>
+  </div>
+</div>
+
+<script src="auth.js?v=6"></script>
+<script>
+function asset(u) {
+  if (!u) return "";
+  return u.replace(/^\/images\/nepal-v1\//, "assets/images/")
+          .replace(/^\/audio\/nepal-v1\//, "assets/audio/nepal-v1/");
+}
+const BEST_KEY = "ghar.balloon.best";
+let xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
+let best = parseInt(localStorage.getItem(BEST_KEY) || "0", 10);
+function saveXP() { localStorage.setItem("ghar.xp.total", String(xp)); }
+
+// Balloon Pop, matching the app (BalloonPopView.swift):
+// hear the Nepali word, pop the balloon showing it. 60-second rounds.
+// 4 balloons float up; the target is ALWAYS on screen. Correct pop +2 XP
+// (+1 if you already missed this target); a wrong tap costs 3 seconds.
+const ROUND_SECONDS = 60;
+const XP_PER_POP = 2;
+const COLORS = ["#e53935", "#1e88e5", "#43a047", "#fb8c00", "#8e24aa", "#ec407a"];
+let playable = [];      // words with a picture AND audio
+let balloons = [];      // {id, word, x, y, speed, color, wobbling, el}
+let particles = [];
+let target = null;
+let targetMissed = false;
+let score = 0, xpEarned = 0, timeLeft = ROUND_SECONDS, secondsSinceTarget = 0;
+let phase = "ready";
+let rafId = null, lastTick = 0, secondTimer = null;
+
+const field = document.getElementById("field");
+const wordPlayer = new Audio();
+function playWord(word) {
+  if (!word || !word.has_audio || !word.audio_url) return;
+  wordPlayer.pause();
+  wordPlayer.src = asset(word.audio_url);
+  wordPlayer.play().catch(() => {});
+}
+// A short balloon pop, synthesized with Web Audio (the app synthesizes
+// its pop the same way — no audio file). Pitch drops 700 -> 180 Hz.
+let actx = null;
+function popSound() {
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const t = actx.currentTime;
+    const osc = actx.createOscillator();
+    const gain = actx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(700, t);
+    osc.frequency.exponentialRampToValueAtTime(180, t + 0.14);
+    gain.gain.setValueAtTime(0.5, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
+    osc.connect(gain).connect(actx.destination);
+    osc.start(t);
+    osc.stop(t + 0.15);
+  } catch (e) { /* no audio context — the pop is visual only */ }
+}
+// End-of-round chime: a little ascending arpeggio (the app plays WinFanfare).
+function fanfare() {
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    [523, 659, 784].forEach((f, i) => {
+      const t = actx.currentTime + i * 0.12;
+      const osc = actx.createOscillator();
+      const gain = actx.createGain();
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(f, t);
+      gain.gain.setValueAtTime(0.001, t);
+      gain.gain.exponentialRampToValueAtTime(0.4, t + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+      osc.connect(gain).connect(actx.destination);
+      osc.start(t);
+      osc.stop(t + 0.4);
+    });
+  } catch (e) { /* silent */ }
+}
+
+function rand(a, b) { return a + Math.random() * (b - a); }
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function balloonEl(b) {
+  const el = document.createElement("div");
+  el.className = "balloon";
+  el.style.background = b.color;
+  el.style.left = (b.x * 100) + "%";
+  el.style.top = (b.y * 100) + "%";
+  const img = b.word.image
+    ? `<img class="balloon-pic" src="${asset(b.word.image)}" alt="">`
+    : "";
+  el.innerHTML = `${img}<span class="balloon-word">${b.word.devanagari}</span><span class="balloon-knot" style="border-top-color:${b.color}"></span><span class="balloon-string"></span>`;
+  el.addEventListener("click", () => tapBalloon(b.id));
+  return el;
+}
+function spawnBalloon(initial) {
+  const b = {
+    id: Math.random().toString(36).slice(2),
+    word: pick(playable),
+    x: rand(0.12, 0.88),
+    y: initial ? rand(0.15, 0.95) : 1.15,
+    speed: rand(0.10, 0.20),
+    color: pick(COLORS),
+    wobbling: false,
+    el: null,
+  };
+  b.el = balloonEl(b);
+  balloons.push(b);
+  field.appendChild(b.el);
+}
+function removeBalloon(b) {
+  const i = balloons.indexOf(b);
+  if (i >= 0) balloons.splice(i, 1);
+  if (b.el && b.el.parentNode) b.el.parentNode.removeChild(b.el);
+}
+function ensureTargetVisible() {
+  if (!target || !balloons.length) return;
+  if (!balloons.some(b => b.word.id === target.id)) {
+    const b = pick(balloons);
+    b.word = target;
+    renderBalloonWord(b);
+  }
+}
+function renderBalloonWord(b) {
+  // Re-render one balloon's picture + word after its word was re-planted.
+  const img = b.word.image
+    ? `<img class="balloon-pic" src="${asset(b.word.image)}" alt="">`
+    : "";
+  b.el.innerHTML = `${img}<span class="balloon-word">${b.word.devanagari}</span><span class="balloon-knot" style="border-top-color:${b.color}"></span><span class="balloon-string"></span>`;
+}
+function newTarget() {
+  if (!playable.length) return;
+  let w = pick(playable);
+  if (target && playable.length > 1) {
+    while (w.id === target.id) w = pick(playable);
+  }
+  target = w;
+  targetMissed = false;
+  secondsSinceTarget = 0;
+  document.getElementById("hud-target").textContent = target.devanagari;
+  ensureTargetVisible();
+  playWord(target);
+}
+function burst(b) {
+  for (let i = 0; i < 10; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = rand(0.15, 0.45);
+    const p = document.createElement("div");
+    p.className = "balloon-particle";
+    p.style.background = b.color;
+    p.style.left = (b.x * 100) + "%";
+    p.style.top = (b.y * 100) + "%";
+    field.appendChild(p);
+    const dx = Math.cos(angle) * speed * 220;
+    const dy = Math.sin(angle) * speed * 220 + 60;
+    p.animate([
+      { transform: "translate(0,0)", opacity: 1 },
+      { transform: `translate(${dx}px, ${dy}px)`, opacity: 0 },
+    ], { duration: 450, easing: "ease-out" }).onfinish = () => p.remove();
+  }
+}
+function tapBalloon(id) {
+  if (phase !== "playing" || !target) return;
+  const b = balloons.find(x => x.id === id);
+  if (!b) return;
+  if (b.word.id === target.id) {
+    popSound();
+    burst(b);
+    score += 1;
+    const earned = targetMissed ? 1 : XP_PER_POP;
+    xpEarned += earned;
+    xp += earned;
+    saveXP();
+    document.getElementById("hud-score").textContent = score;
+    removeBalloon(b);
+    spawnBalloon(false);
+    newTarget();
+  } else {
+    // Wrong one: -3 seconds, and this target now pays half XP.
+    targetMissed = true;
+    timeLeft = Math.max(0, timeLeft - 3);
+    const pen = document.getElementById("hud-penalty");
+    pen.style.display = "";
+    setTimeout(() => { pen.style.display = "none"; }, 800);
+    document.getElementById("hud-time").textContent = "⏱ " + timeLeft;
+    document.getElementById("hud-time").classList.add("balloon-time-bad");
+    b.el.classList.add("balloon-wobble");
+    setTimeout(() => b.el.classList.remove("balloon-wobble"), 250);
+    if (timeLeft <= 0) endGame();
+  }
+}
+function tick(ts) {
+  if (phase !== "playing") return;
+  const dt = Math.min(0.05, (ts - lastTick) / 1000 || 0.1);
+  lastTick = ts;
+  balloons.forEach(b => {
+    b.y -= b.speed * dt;
+    b.el.style.top = (b.y * 100) + "%";
+  });
+  balloons.filter(b => b.y < -0.25).forEach(removeBalloon);
+  while (balloons.length < 4) spawnBalloon(false);
+  ensureTargetVisible();
+  rafId = requestAnimationFrame(tick);
+}
+function startGame() {
+  score = 0; xpEarned = 0; timeLeft = ROUND_SECONDS; secondsSinceTarget = 0;
+  balloons.forEach(b => { if (b.el && b.el.parentNode) b.el.parentNode.removeChild(b.el); });
+  balloons = [];
+  field.innerHTML = "";
+  for (let i = 0; i < 4; i++) spawnBalloon(true);
+  document.getElementById("ready").style.display = "none";
+  document.getElementById("done").style.display = "none";
+  document.getElementById("game").style.display = "";
+  document.getElementById("hud-score").textContent = "0";
+  document.getElementById("hud-time").textContent = "⏱ " + ROUND_SECONDS;
+  document.getElementById("hud-time").classList.remove("balloon-time-bad");
+  phase = "playing";
+  newTarget();
+  lastTick = performance.now();
+  rafId = requestAnimationFrame(tick);
+  clearInterval(secondTimer);
+  secondTimer = setInterval(() => {
+    if (phase !== "playing") return;
+    timeLeft -= 1;
+    secondsSinceTarget += 1;
+    if (secondsSinceTarget >= 6) { secondsSinceTarget = 0; playWord(target); }
+    const t = document.getElementById("hud-time");
+    t.textContent = "⏱ " + timeLeft;
+    if (timeLeft <= 10) t.classList.add("balloon-time-bad");
+    if (timeLeft <= 0) endGame();
+  }, 1000);
+}
+function endGame() {
+  phase = "done";
+  cancelAnimationFrame(rafId);
+  clearInterval(secondTimer);
+  const isNewBest = score > 0 && score > best;
+  if (score > best) {
+    best = score;
+    localStorage.setItem(BEST_KEY, String(best));
+  }
+  GharAuth.pushTotals().catch(() => {});
+  if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
+  fanfare();
+  document.getElementById("game").style.display = "none";
+  document.getElementById("done").style.display = "";
+  document.getElementById("done-pops").textContent = score;
+  document.getElementById("done-xp").textContent = xpEarned;
+  document.getElementById("done-best").textContent =
+    isNewBest ? "New best! 🏆"
+    : (best > 0 ? "Best: " + best + " pops" : "");
+}
+document.getElementById("start-btn").addEventListener("click", startGame);
+document.getElementById("again-btn").addEventListener("click", startGame);
+document.getElementById("done-btn").addEventListener("click", () => { location.href = "index.html#games"; });
+document.getElementById("replay-btn").addEventListener("click", () => playWord(target));
+
+// Boot: pull server progress, then load the pack and keep words that
+// have BOTH a picture and audio (hear it, find the picture).
+document.getElementById("ready-best").textContent = best > 0 ? ("Best: " + best + " pops") : "";
+GharAuth.pull().catch(() => {}).then(() => fetch("data/nepal-v1.json"))
+  .then(r => r.json())
+  .then(pack => {
+    playable = pack.decks.flatMap(d => d.words).filter(w => w.image && w.has_audio);
+    if (!playable.length) {
+      document.getElementById("ready").innerHTML =
+        "<p>Balloon Pop needs words with pictures and audio — none found in the pack.</p>";
+    }
+  })
+  .catch(() => {
+    document.getElementById("ready").innerHTML =
+      "<p>Could not load the words. Check your connection and reload.</p>";
+  });
+</script>
+</body>
+</html>
