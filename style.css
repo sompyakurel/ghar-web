@@ -239,8 +239,8 @@ header p { color: #6b5d4f; margin: 0; font-size: 17px; }
 .confetti-piece { position: absolute; top: -12px; width: 10px; height: 16px; border-radius: 2px; animation: confetti-fall linear forwards; }
 @keyframes celeb-pop { from { transform: scale(.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 @keyframes confetti-fall { from { transform: translateY(0) rotate(0deg); opacity: 1; } to { transform: translateY(105vh) rotate(720deg); opacity: .6; } }
-.motivation-dog { animation: dog-bob 2.4s ease-in-out infinite; }
-.motivation-dog.bounce { animation: dog-bounce .5s ease; }
+.motivation-dog { animation: moti-bob 2.4s ease-in-out infinite; }
+.motivation-dog.bounce { animation: moti-bounce .5s ease; }
 .motivation-dog.celebrating { animation: dog-celebrate 1s ease infinite; }
  }
 @keyframes dog-celebrate { 0%,100% { transform: translateY(0) rotate(0deg); } 25% { transform: translateY(-12px) rotate(-3deg); } 50% { transform: translateY(0) rotate(0deg); } 75% { transform: translateY(-12px) rotate(3deg); } }
@@ -345,6 +345,8 @@ EOF'
 .myghar-weather { position: absolute; top: 10px; right: 10px; z-index: 7; background: rgba(255,255,255,.85); border-radius: 999px; padding: 4px 12px; font-size: 14px; font-weight: 600; }
 .myghar-dog { position: absolute; left: 47.5%; bottom: 3%; width: 20%; transform: translateX(-50%); z-index: 5; cursor: pointer; animation: dog-bob 2.4s ease-in-out infinite; }
 @keyframes dog-bob { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(-4px); } }
+@keyframes moti-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@keyframes moti-bounce { 0% { transform: scale(1); } 40% { transform: scale(1.12) translateY(-8px); } 100% { transform: scale(1); } }
 .myghar-dog.bounce { animation: dog-bounce .5s ease; }
 @keyframes dog-bounce { 0% { transform: translateX(-50%) scale(1); } 40% { transform: translateX(-50%) scale(1.12) translateY(-8px); } 100% { transform: translateX(-50%) scale(1); } }
 .myghar-hint { text-align: center; color: #666; font-size: 14px; margin: 8px 0; }
