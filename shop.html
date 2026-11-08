@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ghar — Shop</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
 <div class="wrap">
@@ -79,8 +79,6 @@ function render() {
           play("assets/audio/nepal-v1/myghar_sugaMitho_np.m4a");
         } else if (item.audio) {
           play(`assets/audio/nepal-v1/myghar_${item.audio}_np.m4a`);
-        } else {
-          play("assets/audio/nepal-v1/myghar_sugaGreeting_np.m4a");
         }
         render();
       });
