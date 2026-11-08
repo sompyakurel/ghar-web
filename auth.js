@@ -68,6 +68,34 @@ const GharAuth = {
     });
     return true;
   },
+  // Share the child's current stats to their leaderboard group, if they are
+  // in one. Silent no-op when there is no group or nickname yet, and it
+  // never throws — pages call it fire-and-forget after any XP/stat change
+  // so the board stays current without a manual "Share my score" tap.
+  async shareLeaderboard() {
+    const code = (localStorage.getItem("ghar.lb.code") || "").trim().toUpperCase();
+    const nickname = (localStorage.getItem("ghar.lb.nickname") || "").trim();
+    if (!code || !nickname) return false;
+    let missions = 0;
+    try {
+      const c = JSON.parse(localStorage.getItem("ghar.missions.completed") || "[]");
+      const v = JSON.parse(localStorage.getItem("ghar.missions.verified") || "[]");
+      missions = new Set([...c, ...v]).size;
+    } catch (e) { missions = 0; }
+    await fetch(GHAR_API + "/leaderboard/score", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        group_code: code,
+        nickname: nickname,
+        xp: this.xp(),
+        quiz_streak_best: parseInt(localStorage.getItem("ghar.quiz.streakBest") || "0", 10) || 0,
+        quiz_correct_total: parseInt(localStorage.getItem("ghar.quiz.correctTotal") || "0", 10) || 0,
+        missions_done: missions,
+      }),
+    });
+    return true;
+  },
   // Guest carry-over: when the server has nothing for this child yet but
   // the browser has guest progress, push the browser's progress up so
   // nothing is lost on signup. Returns true if it carried anything over.

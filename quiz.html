@@ -12,7 +12,7 @@
   <div id="content"></div>
   <p class="error" id="error" hidden>Couldn't load the quiz.</p>
 </div>
-<script src="auth.js"></script>
+<script src="auth.js?v=2"></script>
 <script>
 const TIERS = { beginner: "🌱 Beginner", intermediate: "🌿 Intermediate", hard: "🌳 Hard", teen: "🔥 Teen" };
 function isTestUnlock() {
@@ -226,6 +226,7 @@ function answer(i, btn) {
     if (quizStreak > quizStreakBest) quizStreakBest = quizStreak;
     saveQuizStats();
     GharAuth.pushTotals().catch(() => {});
+    if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
     playDing();
     btn.classList.add("correct");
     document.getElementById("celebrate").textContent = "🎉";

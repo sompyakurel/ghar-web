@@ -12,7 +12,7 @@
   <div id="content"></div>
   <p class="error" id="error" hidden>Couldn't load this deck.</p>
 </div>
-<script src="auth.js"></script>
+<script src="auth.js?v=2"></script>
 <div class="celebration" id="celebration" hidden>
   <div class="confetti" id="confetti"></div>
   <div class="celebration-card">
@@ -311,6 +311,7 @@ GharAuth.pull().catch(() => {}).then(() => fetch("data/nepal-v1.json"))
       const xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10) + COMPLETION_BONUS;
       localStorage.setItem("ghar.xp.total", String(xp));
       GharAuth.push(deckId).catch(() => {});
+      if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
       localStorage.setItem("ghar.justCompleted", deck.title);
       showCelebration(deck.title, rewarded.size === pack.decks.length, deck.difficulty === "teen");
     }

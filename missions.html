@@ -27,7 +27,7 @@
     <button class="back" id="record-close" style="margin-top:12px;">Close</button>
   </div>
 </div>
-<script src="auth.js"></script>
+<script src="auth.js?v=2"></script>
 <script>
 let pack = null;
 let completed = new Set();
@@ -96,6 +96,7 @@ function render() {
       completed.add(m.id);
       xp += (m.xp || 10);
       saveSets(); saveXP();
+      if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
       pushMission(m.id, "done");
       render();
     });
@@ -160,6 +161,7 @@ document.getElementById("confirm-btn").addEventListener("click", () => {
   completed.add(recordMission.id);
   xp += (recordMission.verified_xp || 25);
   saveSets(); saveXP();
+  if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
   pushMission(recordMission.id, "verified");
   document.getElementById("record-panel").hidden = true;
   render();

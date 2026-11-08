@@ -20,7 +20,7 @@
   <div class="shop-grid" id="shop-grid"></div>
   <div class="shop-owned" id="shop-owned"></div>
 </div>
-<script src="auth.js"></script>
+<script src="auth.js?v=2"></script>
 <script src="shop-data.js"></script>
 <script>
 // Ghar Shop -- buy room decorations and Suga the parrot with XP.
@@ -71,6 +71,7 @@ function render() {
         if (xp() < item.price) return;
         if (!confirm(`Buy ${item.en} for ${item.price} XP?`)) return;
         saveXP(xp() - item.price);
+        if (window.GharAuth && GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
         const list = shopOwned();
         list.push(item.id);
         shopSaveOwned(list);
