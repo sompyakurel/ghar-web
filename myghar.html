@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ghar — My Ghar</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
 <div class="wrap">
@@ -386,6 +386,13 @@ GharAuth.pull().catch(() => {}).then(async () => {
     if (m && Array.isArray(m.items)) {
       const merged = [...new Set([...mysteryOwned(), ...m.items])];
       mysterySaveOwned(merged);
+    }
+  } catch (e) { /* guest or offline -- local list stands */ }
+  try {
+    const sh = await GharAuth.api("/accounts/children/" + GharAuth.childId() + "/shop", "GET");
+    if (sh && Array.isArray(sh.items)) {
+      const mergedShop = [...new Set([...shopOwned(), ...sh.items])];
+      shopSaveOwned(mergedShop);
     }
   } catch (e) { /* guest or offline -- local list stands */ }
   // Cache the pack so the deck count (for the Mukut) can be read locally.
