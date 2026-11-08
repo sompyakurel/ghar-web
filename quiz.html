@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ghar — Quiz</title>
-<link rel="stylesheet" href="style.css?v=5">
+<link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
 <div class="wrap">
@@ -12,7 +12,7 @@
   <div id="content"></div>
   <p class="error" id="error" hidden>Couldn't load the quiz.</p>
 </div>
-<script src="auth.js?v=3"></script>
+<script src="auth.js?v=4"></script>
 <script>
 const TIERS = { beginner: "🌱 Beginner", intermediate: "🌿 Intermediate", hard: "🌳 Hard", teen: "🔥 Teen" };
 function isTestUnlock() {
@@ -228,7 +228,7 @@ function answer(i, btn) {
     // Daily Quiz Blitz: 5 correct answers in one day finishes the daily
     // challenge (+15 XP) and keeps the streak alive. (Matches the app.)
     let blitz = false;
-    if (window.GharStreak) {
+    if (typeof GharStreak !== "undefined") {
       GharStreak.recordQuizSolve();
       if (GharStreak.checkBlitzComplete()) { blitz = true; xp += 15; saveXP(); }
     }

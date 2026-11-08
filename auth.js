@@ -218,3 +218,6 @@ const GharStreak = {
     return true;
   },
 };
+// Top-level const does NOT attach to window, so expose it explicitly — the
+// pages' guards read window.GharStreak.
+window.GharStreak = GharStreak;

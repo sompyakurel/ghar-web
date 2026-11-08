@@ -415,3 +415,14 @@ EOF'
 /* Teen hold-to-confirm progress bar. */
 .teen-hold-bar { height: 8px; background: #e5e0d8; border-radius: 999px; margin-top: 10px; overflow: hidden; }
 .teen-hold-fill { height: 100%; width: 0%; background: #2e7d32; border-radius: 999px; }
+
+/* Suga the parrot: he bobs gently on his stand (the stand stays still),
+   and the teach row under his panel. */
+@keyframes suga-bob { 0%, 100% { transform: translate(-50%, -50%); } 50% { transform: translate(-50%, calc(-50% - 4px)); } }
+.myghar-suga { animation: suga-bob 1.6s ease-in-out infinite; }
+.suga-teach { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.suga-teach select { flex: 1; min-width: 220px; }
+
+/* Suga's feeding treat: pops up at his beak, then fades away. */
+.suga-treat { position: absolute; left: 88%; top: 52%; transform: translate(-50%, -50%); font-size: 30px; z-index: 6; animation: suga-treat-pop 1.2s ease forwards; pointer-events: none; }
+@keyframes suga-treat-pop { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.4); } 25% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); } 70% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -70%) scale(1); } }

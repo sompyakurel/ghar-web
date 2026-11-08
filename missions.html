@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ghar — Missions</title>
-<link rel="stylesheet" href="style.css?v=5">
+<link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
 <div class="wrap">
@@ -54,7 +54,7 @@
     <button class="back" id="record-close" style="margin-top:12px;">Close</button>
   </div>
 </div>
-<script src="auth.js?v=3"></script>
+<script src="auth.js?v=4"></script>
 <script>
 let pack = null;
 let completed = new Set();
@@ -85,7 +85,7 @@ function teenDoneCount() { return TEEN_MISSIONS.filter(m => completed.has(m.id))
 // a Mission day, claim the +15 XP daily challenge bonus. Returns the bonus
 // XP earned (0 or 15) so the caller can add it.
 function recordStreakAndDaily() {
-  if (!window.GharStreak) return 0;
+  if (typeof GharStreak === "undefined") return 0;
   GharStreak.recordMissionDone();
   if (GharStreak.claimIfMissionDay()) return 15;
   return 0;
@@ -169,7 +169,7 @@ function render() {
 }
 // --- Daily challenge card (Streak Challenge) ---
 function renderDaily() {
-  if (!window.GharStreak) return;
+  if (typeof GharStreak === "undefined") return;
   const c = GharStreak.todayChallenge();
   const done = GharStreak.dailyDoneToday();
   const n = GharStreak.count();

@@ -15,7 +15,8 @@
 // Shop items also carry a price (XP). Mystery items do not.
 const SHOP = [
   { id: "suga", ne: "सुगा", en: "Suga the parrot", emoji: "🦜", price: 100,
-    img: "suga.png", x: 0.90, y: 0.86, w: 12, audio: "suga" },
+    img: "suga.png", x: 0.90, y: 0.60, w: 12, audio: "suga",
+    stand: { img: "suga_stand.png", x: 0.90, y: 0.84, w: 15 } },
   { id: "tulsi", ne: "तुलसी", en: "Tulsi plant", emoji: "🪴", price: 30,
     img: "tulsi.png", x: 0.83, y: 0.88, w: 8, audio: "tulsi" },
   { id: "mandir", ne: "मन्दिर", en: "Mini temple", emoji: "🛕", price: 50,
