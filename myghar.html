@@ -160,6 +160,16 @@ let arranging = false;
 let layout = {};
 try { layout = JSON.parse(localStorage.getItem(LAYOUT_KEY) || "{}"); } catch (e) { layout = {}; }
 function saveLayout() { localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout)); }
+// Path mapper (same as deck.html): pack JSON refs /audio/nepal-v1/X and
+// /images/nepal-v1/X become assets/audio/nepal-v1/X and assets/images/X.
+// This was MISSING from myghar.html, so sugaTalk() threw
+// "ReferenceError: asset is not defined" the moment Suga had any taught
+// words — killing the button (no sound, no hint) before it could play.
+function asset(u) {
+  if (!u) return "";
+  return u.replace(/^\/images\/nepal-v1\//, "assets/images/")
+          .replace(/^\/audio\/nepal-v1\//, "assets/audio/nepal-v1/");
+}
 const player = new Audio();
 function play(url) { player.pause(); player.src = url; player.play().catch(() => {}); }
 function spawnConfetti() {
@@ -535,7 +545,8 @@ function sugaTalk() {
   sugaTaught().forEach(id => {
     const w = PACK_WORDS[id];
     if (w && w.has_audio && w.audio_url) {
-      options.push({ ne: w.devanagari, en: w.romanized, url: asset(w.audio_url), rate: 1.5 });
+      const url = asset(w.audio_url);
+      if (url) options.push({ ne: w.devanagari, en: w.romanized, url, rate: 1.5 });
     }
   });
   if (!options.length) return;
