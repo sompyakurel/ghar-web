@@ -515,3 +515,31 @@ EOF'
 .done-none { color: #999; font-size: 14px; margin: 0; }
 .device-note { color: #999; font-size: 13px; margin: 8px 0 0; }
 .cert-line { font-weight: 700; margin: 16px 0 0; }
+
+/* ---- Nepali spirit: prayer flags around the border ----
+   Five colours, repeating: blue, white, red, green, yellow.
+   Top + bottom buntings span the page; side strings are fixed to the
+   viewport edges on wide screens only (they would crowd a phone). */
+.prayer-bunting { line-height: 0; }
+.prayer-string { height: 2px; background: #5d4037; }
+.prayer-row { display: flex; gap: 3px; padding: 0 2px; }
+.prayer-flag { flex: 1 1 0; min-width: 14px; height: 30px; border-radius: 0 0 3px 3px; box-shadow: 0 1px 2px rgba(0,0,0,.18); }
+.prayer-flag:nth-child(odd) { transform: rotate(-1.2deg); }
+.prayer-flag:nth-child(even) { transform: rotate(1.2deg); }
+.prayer-flag.c-blue { background: #1e88e5; }
+.prayer-flag.c-white { background: #fdfdfd; border: 1px solid #e0e0e0; }
+.prayer-flag.c-red { background: #e53935; }
+.prayer-flag.c-green { background: #43a047; }
+.prayer-flag.c-yellow { background: #fdd835; }
+.prayer-bottom { margin-top: 28px; }
+.prayer-side { position: fixed; top: 0; bottom: 0; width: 30px; z-index: 40; display: flex; flex-direction: column; align-items: center; pointer-events: none; }
+.prayer-side::before { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; background: #5d4037; }
+.prayer-side .prayer-flag { flex: none; width: 26px; height: 30px; margin: 2px 0; border-radius: 3px; }
+.prayer-side.left { left: 8px; }
+.prayer-side.right { right: 8px; }
+@media (max-width: 1100px) { .prayer-side { display: none; } }
+/* Nepali flag next to the title + the spirit row under the tagline. */
+.nepal-flag { vertical-align: -6px; margin-right: 8px; }
+.spirit-row { display: flex; align-items: center; justify-content: center; gap: 18px; margin: 10px 0 0; color: #6b5d4f; font-size: 15px; }
+.spirit-row .spirit-item { display: inline-flex; align-items: center; gap: 6px; }
+.spirit-row img.danfe { width: 54px; height: 36px; object-fit: contain; }
