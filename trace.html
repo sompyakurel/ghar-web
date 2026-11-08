@@ -81,6 +81,9 @@
   'use strict';
   var BOX = 300;
   var HIT_RADIUS = 17;      // a dot lights when the finger is this close (300-box units)
+  var MAX_JUMP = 36;        // app's TraceView maxJump (0.12) in 300-box units: a dot only
+                            // counts if the finger moved here continuously from the last
+                            // dot it lit — teleporting across the stroke doesn't count
   var STEP = 5;             // sampling step along a drag segment
   var STROKE_FRAC = 0.75;   // a stroke counts at 75% of its dots
   var FONT_FAMILY = '"Noto Sans Devanagari", sans-serif';
@@ -117,6 +120,7 @@
   var strokes = [];         // [[x,y],...] per stroke, 300-box
   var strokeIdx = 0;        // the stroke being traced now
   var strokeHits = [];      // Set per stroke
+  var lastHit = null;       // position of the last dot lit in this stroke (continuity)
   var ink = [];             // finished strokes' ink (for drawing), each [[x,y],...]
   var cur = [];             // current stroke's ink
   var celebrated = false;
@@ -228,13 +232,19 @@
       var p = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
       for (var i = 0; i < cps.length; i++) {
         if (hits.has(i)) continue;
-        if (Math.hypot(cps[i][0] - p[0], cps[i][1] - p[1]) <= HIT_RADIUS) hits.add(i);
+        if (Math.hypot(cps[i][0] - p[0], cps[i][1] - p[1]) > HIT_RADIUS) continue;
+        // continuity: the dot must be near the last dot lit (or be the
+        // first dot of this touch) — no teleporting across the stroke.
+        if (lastHit && Math.hypot(cps[i][0] - lastHit[0], cps[i][1] - lastHit[1]) > MAX_JUMP) continue;
+        hits.add(i);
+        lastHit = cps[i];
       }
     }
     // stroke complete? advance (the check also runs on finger lift)
     if (strokeFrac(strokeIdx) >= STROKE_FRAC) advanceStroke();
   }
   function advanceStroke() {
+    lastHit = null;
     if (strokeIdx >= strokes.length - 1) { celebrateCompletion(); return; }
     strokeIdx++;
     ding();
@@ -289,7 +299,7 @@
   }
 
   function resetBoard() {
-    ink = []; cur = []; strokeIdx = 0;
+    ink = []; cur = []; strokeIdx = 0; lastHit = null;
     strokeHits = strokes.map(function () { return new Set(); });
     celebrated = false;
     $('trace-hint').hidden = true;
@@ -436,6 +446,7 @@
     drawing = false;
     if (cur.length) { ink.push(cur); cur = []; }
     lastPt = null;
+    lastHit = null;   // finger lifted: the next touch may start anywhere
     draw();
     checkStrokeOnLift();
   }
