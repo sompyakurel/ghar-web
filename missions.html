@@ -104,6 +104,31 @@ function saveSets() {
 function saveXP() { localStorage.setItem("ghar.xp.total", String(xp)); }
 const player = new Audio();
 function play(url) { player.pause(); player.src = url; player.play().catch(() => {}); }
+// The 880 Hz success ding (same as the quiz) — played when a mission
+// completes, on both "Done it" and "Prove it".
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  return audioCtx;
+}
+function playDing() {
+  try {
+    const ctx = getAudioCtx();
+    const now = ctx.currentTime;
+    [[880, 0.25], [1318, 0.12]].forEach(([freq, vol]) => {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      g.gain.setValueAtTime(vol, now);
+      g.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+      osc.connect(g).connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.9);
+    });
+  } catch (e) {}
+}
 function asset(u) {
   if (!u) return "";
   return u.replace(/^\/images\/nepal-v1\//, "assets/images/")
@@ -159,6 +184,7 @@ function render() {
       saveSets(); saveXP();
       if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
       pushMission(m.id, "done");
+      playDing();
       render();
     });
     const proveBtn = card.querySelector(".mission-prove");
@@ -313,6 +339,7 @@ function markTeenDone(m) {
   if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
   pushMission(m.id, "verified");
   play("assets/audio/nepal-v1/myghar_diyo_np.m4a");
+  playDing();
   render();
 }
 // --- Prove it: record, grown-up listens and confirms ---
@@ -374,6 +401,7 @@ document.getElementById("confirm-btn").addEventListener("click", () => {
   saveSets(); saveXP();
   if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
   pushMission(recordMission.id, "verified");
+  playDing();
   document.getElementById("record-panel").hidden = true;
   render();
 });

@@ -24,7 +24,7 @@ const SHOP = [
   { id: "ghanta", ne: "घण्टा", en: "Temple bell", emoji: "🔔", price: 40,
     img: "ghanta.png", x: 0.15, y: 0.25, w: 6, audio: "ghanta" },
   { id: "rangoli", ne: "रङ्गोली", en: "Rangoli", emoji: "🎨", price: 25,
-    img: "rangoli.png", x: 0.50, y: 0.96, w: 18, audio: "rangoli" },
+    img: "rangoli.png", x: 0.50, y: 0.93, w: 10, audio: "rangoli" },
   { id: "diyo", ne: "दियो", en: "Oil lamp", emoji: "🪔", price: 20,
     img: "diyo.png", x: 0.08, y: 0.93, w: 5, audio: "diyo" },
   { id: "jamara", ne: "जमरा", en: "Jamara shoots", emoji: "🌿", price: 15,
