@@ -669,3 +669,40 @@ EOF'
 .trace-name-btns button { border: 2px solid #e8ddd3; background: #fff; border-radius: 999px; padding: 10px 18px; cursor: pointer; font: inherit; font-weight: 700; }
 .trace-name-btns button:first-child { background: #d4a017; border-color: #d4a017; color: #fff; }
 .trace-name-btns button:hover { border-color: #d4a017; }
+
+/* ---- Home refresh (2026-11-08): streak badge, big spirit images,
+   Bhunte's guide panel beside the learning path ---- */
+
+/* Streak badge, fixed top-left (mirrors the Sign in button top-right) so
+   the day streak is the first thing a kid sees. */
+.streak-badge { position: fixed; top: 12px; left: 16px; z-index: 50; background: #fff7e6; border: 2px solid #ff9800; border-radius: 999px; padding: 10px 16px; font-weight: 800; font-size: 17px; color: #e65100; box-shadow: 0 1px 6px rgba(0,0,0,.14); white-space: nowrap; }
+.streak-badge span { font-size: 19px; }
+@media (max-width: 640px) {
+  .streak-badge { top: 8px; left: 8px; padding: 8px 12px; font-size: 15px; }
+  .streak-badge span { font-size: 17px; }
+}
+
+/* Spirit row: just the three images, bigger, no labels at all. */
+.spirit-row { display: flex; align-items: center; justify-content: center; gap: 36px; margin: 14px 0 0; }
+.spirit-row .spirit-img { height: 130px; width: auto; object-fit: contain; }
+.spirit-row .spirit-danfe { height: 110px; }
+.spirit-row .spirit-flag { height: 150px; }
+@media (max-width: 640px) {
+  .spirit-row { gap: 20px; }
+  .spirit-row .spirit-img { height: 90px; }
+  .spirit-row .spirit-danfe { height: 76px; }
+  .spirit-row .spirit-flag { height: 104px; }
+}
+
+/* Lessons: Bhunte's guide panel on one side, the learning path on the
+   other. The panel sticks while the path scrolls, so Bhunte stays beside
+   the journey. */
+.lessons-layout { display: flex; gap: 28px; align-items: flex-start; }
+.lessons-layout .motivation { flex: 0 0 300px; flex-direction: column; align-items: center; text-align: center; margin-bottom: 0; position: sticky; top: 64px; }
+.lessons-layout .motivation-body { width: 100%; }
+.lessons-layout .motivation-dog { width: 120px; height: 120px; margin-bottom: 4px; }
+.lessons-layout #decks { flex: 1; min-width: 0; }
+@media (max-width: 760px) {
+  .lessons-layout { flex-direction: column; }
+  .lessons-layout .motivation { flex: none; width: 100%; position: static; }
+}

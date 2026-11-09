@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ghar — Learn Nepali</title>
-<link rel="stylesheet" href="style.css?v=18">
+<link rel="stylesheet" href="style.css?v=19">
 </head>
 <body>
 <div class="prayer-bunting" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span></div></div>
@@ -17,11 +17,12 @@
     <h1><svg class="nepal-flag" viewBox="-3 -3 66 81" width="32" height="40" role="img" aria-label="Flag of Nepal"><path d="M0,0 L60,0 L0,30 L45,45 L0,75 Z" fill="#DC143C" stroke="#003893" stroke-width="4" stroke-linejoin="round"/><circle cx="17" cy="15" r="7" fill="#fff"/><circle cx="21" cy="12" r="6" fill="#DC143C"/><g stroke="#fff" stroke-width="2" stroke-linecap="round"><line x1="15" y1="42" x2="15" y2="48"/><line x1="15" y1="58" x2="15" y2="64"/><line x1="5" y1="53" x2="11" y2="53"/><line x1="19" y1="53" x2="25" y2="53"/><line x1="8" y1="46" x2="12" y2="50"/><line x1="18" y1="56" x2="22" y2="60"/><line x1="22" y1="46" x2="18" y2="50"/><line x1="12" y1="56" x2="8" y2="60"/></g><circle cx="15" cy="53" r="5" fill="#fff"/></svg>🏠 Ghar</h1>
     <p>Learn Nepali, have fun.</p>
     <div class="spirit-row">
-      <span class="spirit-item"><img class="danfe" src="assets/images/danfe.png" alt="Danfe, Nepal's national bird"> Danfe</span>
-      <span class="spirit-item">🪷 Buddha</span>
-      <span class="spirit-item">नेपाल · Nepal</span>
+      <img class="spirit-img spirit-danfe" src="assets/images/danfe.png" alt="Danfe, Nepal's national bird">
+      <img class="spirit-img spirit-buddha" src="assets/images/buddha.png" alt="Buddha">
+      <img class="spirit-img spirit-flag" src="assets/images/nepal-flag.png" alt="Flag of Nepal">
     </div>
     <a class="signin-btn" id="signin-btn" href="signin.html">👤 Sign in</a>
+    <div class="streak-badge" id="streak-badge" title="Day streak — come back tomorrow to keep it going!">🔥 <span id="streak-count">0</span></div>
   </header>
   <nav class="subnav">
     <a href="#lessons">📚 Lessons</a>
@@ -40,19 +41,21 @@
   <section class="home-section" id="lessons">
     <h2>📚 Lessons</h2>
     <p class="section-sub">Follow the path — finish each lesson to walk to the next one. Bhunte waits at your next step.</p>
-    <div class="motivation" id="motivation">
-      <img class="motivation-dog" id="bhunte-dog" src="assets/images/bhunte.svg" alt="Bhunte the dog" title="Tap me to hear me talk!">
-      <div class="motivation-body">
-        <p class="motivation-bubble" id="bhunte-says"><span class="bubble-ne" id="bhunte-ne">नमस्ते! म भुन्ते हुँ। सँगै नेपाली सिकौं। एउटा पाठ पूरा गरेर XP कमाऔं!</span><span class="bubble-en" id="bhunte-en">Namaste! I'm Bhunte. Let's learn Nepali together. Finish a lesson to earn XP!</span></p>
-        <p class="motivation-hint">👆 Tap Bhunte to hear him talk</p>
-        <p class="motivation-xp">⭐ <span id="xp-total">0</span> XP</p>
-        <p class="motivation-cert">📜 Certificate: <span id="cert-done">0</span> of 22 lessons done</p>
-        <div class="progress motivation-progress"><div id="cert-bar"></div></div>
-        <p class="motivation-goals">Earn XP to decorate your house · Complete all lessons for a certificate · Mystery rewards along the way</p>
-        <p class="motivation-cert-link" id="cert-link" hidden><a href="certificate.html">🏆 View your certificate →</a></p>
+    <div class="lessons-layout">
+      <div class="motivation" id="motivation">
+        <img class="motivation-dog" id="bhunte-dog" src="assets/images/bhunte.svg" alt="Bhunte the dog" title="Tap me to hear me talk!">
+        <div class="motivation-body">
+          <p class="motivation-bubble" id="bhunte-says"><span class="bubble-ne" id="bhunte-ne">नमस्ते! म भुन्ते हुँ। सँगै नेपाली सिकौं। एउटा पाठ पूरा गरेर XP कमाऔं!</span><span class="bubble-en" id="bhunte-en">Namaste! I'm Bhunte. Let's learn Nepali together. Finish a lesson to earn XP!</span></p>
+          <p class="motivation-hint">👆 Tap Bhunte to hear him talk</p>
+          <p class="motivation-xp">⭐ <span id="xp-total">0</span> XP</p>
+          <p class="motivation-cert">📜 Certificate: <span id="cert-done">0</span> of 22 lessons done</p>
+          <div class="progress motivation-progress"><div id="cert-bar"></div></div>
+          <p class="motivation-goals">Earn XP to decorate your house · Complete all lessons for a certificate · Mystery rewards along the way</p>
+          <p class="motivation-cert-link" id="cert-link" hidden><a href="certificate.html">🏆 View your certificate →</a></p>
+        </div>
       </div>
+      <div id="decks"></div>
     </div>
-    <div id="decks"></div>
     <p class="error" id="error" hidden>Couldn't load the lessons. Check your connection and refresh.</p>
   </section>
 
@@ -237,9 +240,10 @@ function heardList(deckId) {
     return Array.isArray(v) ? v : [];
   } catch (e) { return []; }
 }
-// Show the XP straight away from this device, before any fetch runs — so
-// a slow or failed lessons load never leaves the header reading 0.
+// Show the XP and the streak straight away from this device, before any
+// fetch runs — so a slow or failed lessons load never leaves them at 0.
 document.getElementById("xp-total").textContent = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
+document.getElementById("streak-count").textContent = (window.GharStreak ? GharStreak.count() : parseInt(localStorage.getItem("ghar.streak.count") || "0", 10));
 GharAuth.pull().catch(() => {}).then(() => {
   const btn = document.getElementById("signin-btn");
   if (GharAuth.signedIn()) { btn.textContent = "👤 My account"; btn.href = "dashboard.html"; }
