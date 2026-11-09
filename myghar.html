@@ -490,6 +490,12 @@ function renderDog(xp, state) {
   const stage = dogStageFor(xp);
   dog.style.width = STAGE_WIDTH[stage] + "%";
   if (riveCanvas) riveCanvas.style.width = STAGE_WIDTH[stage] + "%";
+  // The Rive surface must match the canvas's final size. If the canvas
+  // was resized (stage change) or just shown, re-sync it — otherwise the
+  // surface stays 0x0 from when it was hidden and the dog never draws.
+  if (riveCanvas && riveLive && !locked && window.mygharBhunte && window.mygharBhunte.resize) {
+    window.mygharBhunte.resize();
+  }
   document.getElementById("dog-stage-label").textContent = locked ? "Locked" : STAGE_NAMES[stage];
   document.getElementById("xp-label").textContent = xp;
   document.getElementById("streak-label").textContent = (state && state.streak) || 0;
@@ -595,6 +601,12 @@ window.mygharBhunte = (window.GharBhunte && window.GharBhunte.mount) ? window.Gh
     const xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
     const stage = dogStageFor(xp);
     play(stage === 0 ? "assets/audio/nepal-v1/dog_bark.m4a" : "assets/audio/nepal-v1/dog_bark_big.m4a");
+  },
+  // When the .riv arrives, re-run renderDog so the canvas gets the right
+  // stage width and the surface is resized to match.
+  onReady: () => {
+    const state = readState();
+    renderDog(state.xp, state);
   },
 }) : null;
 document.getElementById("mystery-btn").addEventListener("click", () => {

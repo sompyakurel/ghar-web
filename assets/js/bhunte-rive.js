@@ -54,6 +54,12 @@
       else pendingCelebrate = true; // fire it once the .riv arrives
     };
     api.pet = function () { fire("pet"); };
+    // Re-sync the Rive drawing surface to the canvas's current size.
+    // Must run AFTER the canvas is visible and sized — resizing while it
+    // is display:none gives a 0x0 surface and the dog never draws.
+    api.resize = function () {
+      try { if (r) r.resizeDrawingSurfaceToCanvas(); } catch (e) {}
+    };
 
     try {
       r = new window.rive.Rive({
@@ -63,13 +69,16 @@
         autoplay: true,
         autoBind: true,
         onLoad: function () {
-          try { r.resizeDrawingSurfaceToCanvas(); } catch (e) {}
           api.ready = true;
           // Show the canvas only if the img is currently visible (a page
           // may hide its dog, e.g. My Ghar's mission lock), then hide
           // the img so only the live dog shows.
           canvas.style.display = img.style.display === "none" ? "none" : "";
           img.style.display = "none";
+          // Resize AFTER the canvas is visible and has a size. Resizing
+          // while it is display:none gives a 0x0 surface and the dog
+          // never draws (the canvas stays blank).
+          try { r.resizeDrawingSurfaceToCanvas(); } catch (e) {}
           if (pendingCelebrate) { pendingCelebrate = false; fire("celebrate"); }
           if (opts.onReady) opts.onReady(api);
         },
