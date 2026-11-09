@@ -7,6 +7,34 @@
 <link rel="stylesheet" href="style.css?v=24">
 <script src="https://unpkg.com/@rive-app/webgl2@2.49.4/rive.js"></script>
 <script src="assets/js/bhunte-rive.js"></script>
+<style>
+  /* First-visit tour: Bhunte shows new families where the basics are. */
+  #tour-dim { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 60; }
+  #tour-dim[hidden], #tour-card[hidden], #tour-welcome[hidden] { display: none; }
+  .tour-highlight { outline: 4px solid #f9a825 !important; outline-offset: 4px; border-radius: 12px; box-shadow: 0 0 24px rgba(249,168,37,.55); z-index: 61 !important; pointer-events: none; }
+  #tour-card { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); width: min(560px, calc(100vw - 24px)); background: #fff; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,.35); padding: 16px 18px; z-index: 62; }
+  #tour-card .tour-top { display: flex; gap: 12px; align-items: flex-start; }
+  #tour-bhunte { width: 64px; height: 64px; flex-shrink: 0; border-radius: 12px; background: #fff3e0; }
+  #tour-en { font-size: 18px; font-weight: 700; margin: 0 0 4px; color: #26221f; }
+  #tour-ne { font-size: 16px; margin: 0 0 2px; color: #4a3f35; }
+  #tour-roman { font-size: 13px; color: #6b5d4f; margin: 0; font-style: italic; }
+  #tour-controls { display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  #tour-controls button { font-size: 15px; padding: 8px 16px; border: none; border-radius: 999px; cursor: pointer; background: #e3a04b; color: #fff; font-weight: 700; }
+  #tour-controls button:hover { background: #d18f3c; }
+  #tour-controls #tour-back, #tour-controls #tour-skip { background: #f0e8dc; color: #4a3f35; }
+  #tour-controls #tour-back:hover, #tour-controls #tour-skip:hover { background: #e5dcc9; }
+  #tour-step { font-size: 13px; color: #6b5d4f; margin-left: auto; }
+  #tour-welcome { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(420px, calc(100vw - 32px)); background: #fff; border-radius: 20px; box-shadow: 0 12px 40px rgba(0,0,0,.4); padding: 24px; text-align: center; z-index: 62; }
+  #tour-welcome img { width: 110px; height: 110px; border-radius: 16px; background: #fff3e0; }
+  #tour-welcome h2 { margin: 12px 0 6px; font-size: 24px; }
+  #tour-welcome p { margin: 0 0 16px; color: #4a3f35; font-size: 16px; line-height: 1.5; }
+  #tour-welcome button { font-size: 16px; padding: 10px 22px; border: none; border-radius: 999px; cursor: pointer; font-weight: 700; margin: 0 4px; }
+  #tour-start { background: #e3a04b; color: #fff; }
+  #tour-start:hover { background: #d18f3c; }
+  #tour-dismiss { background: #f0e8dc; color: #4a3f35; }
+  .motivation-tour { font-size: 13px; margin: 8px 0 0; }
+  .motivation-tour a { color: #b87700; font-weight: 700; text-decoration: none; }
+</style>
 </head>
 <body>
 <div class="prayer-bunting" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span></div></div>
@@ -54,6 +82,7 @@
           <p class="motivation-cert">📜 Certificate: <span id="cert-done">0</span> of 22 lessons done</p>
           <div class="progress motivation-progress"><div id="cert-bar"></div></div>
           <p class="motivation-goals">Earn XP to decorate your house · Complete all lessons for a certificate · Mystery rewards along the way</p>
+          <p class="motivation-tour"><a href="#" id="tour-replay">👋 Take the tour</a></p>
           <p class="motivation-cert-link" id="cert-link" hidden><a href="certificate.html">🏆 View your certificate →</a></p>
         </div>
       </div>
@@ -417,5 +446,162 @@ if (TEST) {
 }
 </script>
 <div class="prayer-bunting prayer-bottom" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span></div></div>
+<!-- First-visit tour: Bhunte shows new families where the basics are.
+     Nepali voice (Som's clone) + English text. Shows once, on first load
+     for a brand-new visitor (no XP yet); "Take the tour" replays it. -->
+<div id="tour-dim" hidden></div>
+<div id="tour-card" hidden>
+  <div class="tour-top">
+    <img id="tour-bhunte" src="assets/images/bhunte.svg" alt="Bhunte">
+    <div>
+      <p id="tour-en"></p>
+      <p id="tour-ne"></p>
+      <p id="tour-roman"></p>
+    </div>
+  </div>
+  <div id="tour-controls">
+    <button type="button" id="tour-hear">🔊 Hear Bhunte</button>
+    <button type="button" id="tour-back">← Back</button>
+    <button type="button" id="tour-next">Next →</button>
+    <span id="tour-step"></span>
+    <button type="button" id="tour-skip">Skip tour</button>
+  </div>
+</div>
+<div id="tour-welcome" hidden>
+  <img src="assets/images/bhunte.svg" alt="Bhunte">
+  <h2>Namaste! I'm Bhunte 👋</h2>
+  <p>New to Ghar? Let me show you around — where to learn, play, and find your room. It takes about a minute, and I'll talk you through it in Nepali.</p>
+  <button type="button" id="tour-start">▶️ Take the tour</button>
+  <button type="button" id="tour-dismiss">No thanks</button>
+</div>
+<script>
+(function () {
+  var DONE_KEY = "ghar.tour.done";
+  // One step per basic: Bhunte talks in Nepali (his voice), the card shows
+  // the English line plus the Nepali line and its romanization.
+  var STEPS = [
+    { target: "#motivation", audio: "assets/audio/tour/tour_welcome_np.m4a",
+      en: "Hi! I'm Bhunte. Let me show you around Ghar!",
+      ne: "नमस्ते! म भुन्ते हुँ। म तिमीलाई घर घुमाउँछु!",
+      roman: "Namaste! Ma Bhunte hun. Ma timilai Ghar ghumaunchhu!" },
+    { target: "#decks", audio: "assets/audio/tour/tour_lessons_np.m4a",
+      en: "These are the lessons. Follow the path, learn words, and earn XP!",
+      ne: "यहाँ पाठहरू छन्। बाटो पछ्याऊ, शब्दहरू सिक, अनि XP कमाऊ!",
+      roman: "Yaha pathharu chhan. Bato pachhyau, shabdaharu sik, ani XP kamaau!" },
+    { target: "#quiz", audio: "assets/audio/tour/tour_quiz_np.m4a",
+      en: "Here's the quiz! Answer right and earn XP!",
+      ne: "यहाँ प्रश्नोत्तरी छ! सही उत्तर देऊ, अनि XP कमाऊ!",
+      roman: "Yaha prashnottari chha! Sahi uttar deu, ani XP kamaau!" },
+    { target: "#writing", audio: "assets/audio/tour/tour_writing_np.m4a",
+      en: "Write letters here! Follow the dots and learn to write!",
+      ne: "यहाँ अक्षरहरू लेख! डटहरू पछ्याऊ, अनि लेख्न सिक!",
+      roman: "Yaha aksharharu lekh! Datharu pachhyau, ani lekhna sik!" },
+    { target: "#games", audio: "assets/audio/tour/tour_games_np.m4a",
+      en: "Here are the games! Learn Nepali while you play!",
+      ne: "यहाँ खेलहरू छन्! खेल्दै नेपाली सिक!",
+      roman: "Yaha khelharu chhan! Kheldai Nepali sik!" },
+    { target: "#myghar", audio: "assets/audio/tour/tour_myghar_np.m4a",
+      en: "This is my house! Finish missions to unlock me!",
+      ne: "यो मेरो घर हो! मिसनहरू पूरा गर, अनि मलाई अनलक गर!",
+      roman: "Yo mero ghar ho! Missionharu pura gara, ani malai unlock gara!" },
+    { target: "#missions", audio: "assets/audio/tour/tour_missions_np.m4a",
+      en: "Here are the missions! Finish them and earn XP!",
+      ne: "यहाँ मिसनहरू छन्! पूरा गर, XP कमाऊ!",
+      roman: "Yaha missionharu chhan! Pura gara, XP kamaau!" },
+    { target: "#leaderboard", audio: "assets/audio/tour/tour_leaderboard_np.m4a",
+      en: "Compete with your family here! See who's ahead!",
+      ne: "यहाँ परिवारसँग प्रतिस्पर्धा गर! को अगाडि छ, हेर!",
+      roman: "Yaha pariwaarsanga pratispardha gara! Ko agadi chha, hera!" },
+    { target: "#signin-btn", audio: "assets/audio/tour/tour_done_np.m4a",
+      en: "Ready? Sign in to save your progress, then start learning!",
+      ne: "तयार छौ? साइन इन गर, प्रगति सेभ गर, अनि सिक्न सुरु गर!",
+      roman: "Tayar chhau? Sign in gara, pragati save gara, ani sikna suru gara!" },
+  ];
+  var idx = -1;
+  var audio = new Audio();
+  var currentTarget = null;
+  var savedPos = "", savedZ = "";
+  function $(id) { return document.getElementById(id); }
+  function show(el) { if (el) el.hidden = false; }
+  function hide(el) { if (el) el.hidden = true; }
+  function clearHighlight() {
+    if (!currentTarget) return;
+    currentTarget.classList.remove("tour-highlight");
+    currentTarget.style.position = savedPos;
+    currentTarget.style.zIndex = savedZ;
+    currentTarget = null;
+  }
+  function highlight(sel) {
+    clearHighlight();
+    var el = document.querySelector(sel);
+    if (!el) return;
+    currentTarget = el;
+    var cs = window.getComputedStyle(el);
+    savedPos = el.style.position;
+    savedZ = el.style.zIndex;
+    if (cs.position === "static") el.style.position = "relative";
+    el.style.zIndex = "61";
+    el.classList.add("tour-highlight");
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+  function playStep(i) {
+    audio.pause();
+    audio.src = STEPS[i].audio;
+    audio.play().catch(function () {});
+  }
+  function renderStep(i) {
+    idx = i;
+    var s = STEPS[i];
+    $("tour-en").textContent = s.en;
+    $("tour-ne").textContent = s.ne;
+    $("tour-roman").textContent = s.roman;
+    $("tour-step").textContent = "Step " + (i + 1) + " of " + STEPS.length;
+    $("tour-back").hidden = (i === 0);
+    $("tour-next").textContent = (i === STEPS.length - 1) ? "Finish ✓" : "Next →";
+    highlight(s.target);
+    playStep(i);
+  }
+  function endTour() {
+    audio.pause();
+    clearHighlight();
+    hide($("tour-dim")); hide($("tour-card")); hide($("tour-welcome"));
+    try { localStorage.setItem(DONE_KEY, "1"); } catch (e) {}
+  }
+  function startTour() {
+    hide($("tour-welcome"));
+    show($("tour-dim")); show($("tour-card"));
+    renderStep(0);
+  }
+  $("tour-start").addEventListener("click", startTour);
+  $("tour-dismiss").addEventListener("click", endTour);
+  $("tour-skip").addEventListener("click", endTour);
+  $("tour-next").addEventListener("click", function () {
+    if (idx >= STEPS.length - 1) endTour();
+    else renderStep(idx + 1);
+  });
+  $("tour-back").addEventListener("click", function () {
+    if (idx > 0) renderStep(idx - 1);
+  });
+  $("tour-hear").addEventListener("click", function () {
+    if (idx >= 0) playStep(idx);
+  });
+  var replay = $("tour-replay");
+  if (replay) replay.addEventListener("click", function (e) {
+    e.preventDefault();
+    try { localStorage.removeItem(DONE_KEY); } catch (err) {}
+    show($("tour-dim")); show($("tour-welcome"));
+  });
+  // First load only, for a brand-new visitor (no XP yet) who hasn't seen
+  // it. Returning families with progress never get the popup.
+  var done = false, xp = 0;
+  try {
+    done = localStorage.getItem(DONE_KEY) === "1";
+    xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10) || 0;
+  } catch (e) {}
+  if (!done && xp === 0) {
+    setTimeout(function () { show($("tour-dim")); show($("tour-welcome")); }, 700);
+  }
+})();
+</script>
 </body>
 </html>
