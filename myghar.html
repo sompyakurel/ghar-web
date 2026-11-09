@@ -216,6 +216,15 @@ function setDogLeft(pct, seconds) {
 }
 function setDogWalking(on) {
   dogElements().forEach(el => el.classList.toggle("walking", on));
+  // Tell the live Rive dog to walk too (only the grown-up .riv has a
+  // "walk" input; Puppy/Young ignore it). The CSS bob is the fallback
+  // when the .riv is not loaded.
+  try {
+    const stage = dogStageFor(readState().xp);
+    const api = stage === 0 ? window.mygharPuppy
+      : stage === 1 ? window.mygharBhunte : window.mygharGrownup;
+    if (api && api.walk) api.walk(on);
+  } catch (e) {}
 }
 function dogIsLocked() {
   try { return (readState().missionsDone || 0) < 10; } catch (e) { return true; }
@@ -246,21 +255,37 @@ function fetchLater(fn, ms) {
 // to it, picks it up, and carries it back left — the ball stays at the
 // dog's mouth while both glide home. Only ONE ball: the animated emoji.
 // (The fetch pose picture has no ball in it.)
+// The ball must ride at the dog's MOUTH, not his feet. The mouth sits
+// ~63% up the dog element from its bottom edge (the fetch pose's open
+// mouth is in the upper part of the picture). Measure the live element
+// so the height adapts to the stage and the screen size.
+function dogMouthBottomPct() {
+  const stage = document.getElementById("stage");
+  const vis = dogElements().find(el => !el.hidden && el.offsetParent !== null)
+    || document.getElementById("dog");
+  if (!stage || !vis) return 26;
+  const s = stage.getBoundingClientRect();
+  const d = vis.getBoundingClientRect();
+  if (!s.height || !d.height) return 26;
+  const mouthY = d.bottom - 0.63 * d.height; // viewport y of the mouth
+  return Math.max(12, Math.min(45, (s.bottom - mouthY) / s.height * 100));
+}
 function runFetchSequence() {
   const ball = document.getElementById("fetch-ball");
   if (!ball) return;
   const startLeft = dogRoamX;
   const landLeft = Math.min(startLeft + 16, 70);
   const mouthOff = 4; // ball sits this far from the dog's centre, at its mouth
+  const mouthBottom = dogMouthBottomPct(); // ball height at the mouth
   clearFetchTimers();
   // Ball starts at the dog's mouth, then arcs out to the right and lands.
   ball.style.transition = "left 0.7s ease-out, bottom 0.35s ease-out";
   ball.style.left = (startLeft + mouthOff) + "%";
-  ball.style.bottom = "8%";
+  ball.style.bottom = mouthBottom + "%";
   ball.hidden = false;
   fetchLater(() => {
     ball.style.left = landLeft + "%";
-    ball.style.bottom = "20%";
+    ball.style.bottom = (mouthBottom + 12) + "%";
   }, 30);
   fetchLater(() => {
     ball.style.transition = "bottom 0.35s ease-in";
@@ -272,13 +297,14 @@ function runFetchSequence() {
     setDogWalking(true);
     setDogLeft(landLeft - 2, 0.9);
   }, 700);
-  // Pick it up and carry it back left, ball at the mouth the whole way.
-  // The dog turns to face left for the walk home, so the ball rides on
-  // the left side of its centre.
+  // Pick it up WITH HIS MOUTH and carry it back left, ball at the mouth
+  // the whole way. The dog turns to face left for the walk home, so the
+  // ball rides on the left side of its centre.
   fetchLater(() => {
     setDogFacing(true);
     ball.style.transition = "left 1s ease-in-out, bottom 0.4s ease-in-out";
     ball.style.left = (startLeft - mouthOff) + "%";
+    ball.style.bottom = mouthBottom + "%";
     setDogLeft(startLeft, 1);
   }, 1600);
   fetchLater(() => {

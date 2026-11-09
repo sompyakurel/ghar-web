@@ -26,7 +26,7 @@
     opts = opts || {};
     var img = document.getElementById(imgId);
     // No-op handle: the page keeps working on its static image.
-    var api = { ready: false, celebrate: function () {}, pet: function () {} };
+    var api = { ready: false, celebrate: function () {}, pet: function () {}, walk: function () {} };
     if (!img) return api;
     if (!window.rive || !window.rive.Rive) return api;
 
@@ -45,6 +45,7 @@
 
     var r = null;
     var pendingCelebrate = false;
+    var pendingWalk = null;
 
     function fire(name) {
       if (!api.ready || !r) return;
@@ -55,11 +56,26 @@
         }
       } catch (e) {}
     }
+    // Boolean inputs (the grown-up dog's "walk" — true while he roams).
+    // Rives without that input (Puppy, Young) just ignore it.
+    function setBool(name, value) {
+      if (!api.ready || !r) return;
+      try {
+        var inputs = r.stateMachineInputs(STATE_MACHINE) || [];
+        for (var i = 0; i < inputs.length; i++) {
+          if (inputs[i].name === name) { inputs[i].value = !!value; return; }
+        }
+      } catch (e) {}
+    }
     api.celebrate = function () {
       if (api.ready) fire("celebrate");
       else pendingCelebrate = true; // fire it once the .riv arrives
     };
     api.pet = function () { fire("pet"); };
+    api.walk = function (on) {
+      if (api.ready) setBool("walk", on);
+      else pendingWalk = !!on; // apply once the .riv arrives
+    };
     // Re-sync the Rive drawing surface to the canvas's current size.
     // Must run AFTER the canvas is visible and sized — resizing while it
     // is display:none gives a 0x0 surface and the dog never draws.
@@ -88,6 +104,7 @@
             try { r.resizeDrawingSurfaceToCanvas(); } catch (e) {}
           }
           if (pendingCelebrate) { pendingCelebrate = false; fire("celebrate"); }
+          if (pendingWalk !== null) { var w = pendingWalk; pendingWalk = null; setBool("walk", w); }
           if (opts.onReady) opts.onReady(api);
         },
         onLoadError: function () {
