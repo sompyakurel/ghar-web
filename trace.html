@@ -16,7 +16,7 @@
 <div class="prayer-side right" aria-hidden="true"><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span></div>
 
 <div class="wrap">
-  <p><a href="index.html">← Home</a></p>
+  <p><a href="index.html#writing">← Writing</a></p>
   <h1>✍️ Trace the letters</h1>
   <p class="trace-sub">Trace each word one stroke at a time — follow the glowing dots, stroke by stroke. Works with a finger or a mouse. Finish a whole deck to earn a Mystery Box 🎁</p>
 
@@ -75,7 +75,7 @@
     <div class="trace-controls">
       <button id="trace-watch" type="button">👀 Watch</button>
       <button id="trace-clear" type="button">↺ Clear</button>
-      <button id="trace-back" type="button">← All words</button>
+      <button id="trace-back" type="button">← All sections</button>
     </div>
   </div>
 </div>
@@ -138,6 +138,9 @@
   }
 
   var words = {};           // id -> {dev,en,roman,deck,deckTitle,section,audio,strokes}
+  var picData = {};         // id -> {outline, imgRect, image} for Fruits/Body Parts
+  var mode = 'word';        // 'picture' (trace the shape) or 'word' (trace the letters)
+  var picImg = null;        // the loaded picture Image for picture mode
   var deckWords = {};       // deck id -> [word ids] (traceable decks only)
   var deckTitles = {};
   var pickerDeck = null;    // deck currently open in the picker (null = deck list)
@@ -205,7 +208,14 @@
     var W = canvas.width, k = W / BOX;
     ctx.clearRect(0, 0, W, W);
     ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, W);
-    if (template && words[currentId]) {
+    if (mode === 'picture' && picImg && picImg.complete && picData[currentId]) {
+      // faint picture, drawn exactly where the outline dots are
+      var r = picData[currentId].imgRect;
+      ctx.save(); ctx.scale(k, k);
+      ctx.globalAlpha = 0.35;
+      ctx.drawImage(picImg, r[0], r[1], r[2], r[3]);
+      ctx.restore();
+    } else if (template && words[currentId]) {
       ctx.save(); ctx.scale(k, k);
       ctx.translate(template.tx, template.ty); ctx.scale(template.s, template.s);
       ctx.font = template.size + 'px ' + FONT_FAMILY;
@@ -242,13 +252,20 @@
     var frac = totalDots() ? hitDots() / totalDots() : 0;
     $('trace-progress-fill').style.width = Math.round(frac * 100) + '%';
     $('trace-progress-pct').textContent = Math.round(frac * 100) + '%';
-    $('trace-stroke-label').textContent = celebrated ? 'All strokes done! 🎉'
-      : 'Stroke ' + (strokeIdx + 1) + ' of ' + strokes.length;
+    if (celebrated) $('trace-stroke-label').textContent = 'All strokes done! 🎉';
+    else if (mode === 'picture') $('trace-stroke-label').textContent = 'Step 1 of 2 · Trace the picture 🖼️';
+    else if (picData[currentId]) $('trace-stroke-label').textContent = 'Step 2 of 2 · Stroke ' + (strokeIdx + 1) + ' of ' + strokes.length;
+    else $('trace-stroke-label').textContent = 'Stroke ' + (strokeIdx + 1) + ' of ' + strokes.length;
   }
 
   function hitTestSegment(a, b) {
     if (celebrated || strokeIdx >= strokes.length) return;
     var cps = strokes[strokeIdx], hits = strokeHits[strokeIdx];
+    // The picture outline is a closed loop: the continuity rule (lastHit)
+    // breaks on it, because the loop curves back near itself and lastHit
+    // can jump across the loop. For the picture, the 75% coverage alone
+    // is the anti-scribble guard. Word strokes keep the continuity rule.
+    var useContinuity = (mode !== 'picture');
     var dist = Math.hypot(b[0] - a[0], b[1] - a[1]);
     var steps = Math.max(1, Math.floor(dist / STEP));
     for (var s = 0; s <= steps; s++) {
@@ -259,7 +276,7 @@
         if (Math.hypot(cps[i][0] - p[0], cps[i][1] - p[1]) > HIT_RADIUS) continue;
         // continuity: the dot must be near the last dot lit (or be the
         // first dot of this touch) — no teleporting across the stroke.
-        if (lastHit && Math.hypot(cps[i][0] - lastHit[0], cps[i][1] - lastHit[1]) > MAX_JUMP) continue;
+        if (useContinuity && lastHit && Math.hypot(cps[i][0] - lastHit[0], cps[i][1] - lastHit[1]) > MAX_JUMP) continue;
         hits.add(i);
         lastHit = cps[i];
       }
@@ -268,6 +285,12 @@
   }
   function advanceStroke() {
     lastHit = null;
+    if (mode === 'picture') {
+      // the picture outline is done — now trace the word
+      ding();
+      startWordStep();
+      return;
+    }
     if (strokeIdx >= strokes.length - 1) { celebrateCompletion(); return; }
     strokeIdx++;
     ding();
@@ -334,25 +357,48 @@
     draw();
   }
 
+  function startPictureStep() {
+    // Step 1: trace the picture's outline (one closed loop, the whole shape).
+    mode = 'picture';
+    var P = picData[currentId];
+    strokes = [P.outline];
+    template = null;
+    picImg = new Image();
+    picImg.onload = function () { if (currentId && mode === 'picture') draw(); };
+    picImg.src = asset('/images/nepal-v1/' + P.image);
+    watchDur = 6000;
+    resetBoard();
+  }
+  function startWordStep() {
+    // Step 2: trace the written word (the usual per-stroke tracing).
+    mode = 'word';
+    var W = words[currentId];
+    var wid = currentId;
+    strokes = W.strokes || [];
+    template = computeTemplate(W.dev);
+    if (document.fonts && document.fonts.load) {
+      document.fonts.load('220px "Noto Sans Devanagari"', W.dev).then(function () {
+        if (currentId === wid && mode === 'word') { template = computeTemplate(W.dev); draw(); }
+      }).catch(function () {});
+    }
+    watchDur = Math.max(5000, 3500 * W.dev.length);
+    resetBoard();
+  }
+
   function openWord(id) {
     var W = words[id];
     if (!W) return;
     currentId = id; currentDeck = W.deck;
-    strokes = W.strokes || [];
     $('trace-dev').textContent = W.dev;
     $('trace-meta').textContent = W.roman + ' · ' + W.en + '  ·  ' + W.deckTitle;
     $('trace-hear').style.display = W.audio ? '' : 'none';
     $('trace-picker').hidden = true;
     $('trace-name-setup').hidden = true;
     $('trace-board').hidden = false;
-    template = computeTemplate(W.dev);
-    if (document.fonts && document.fonts.load) {
-      document.fonts.load('220px "Noto Sans Devanagari"', W.dev).then(function () {
-        if (currentId === id) { template = computeTemplate(W.dev); draw(); }
-      }).catch(function () {});
-    }
-    watchDur = Math.max(5000, 3500 * W.dev.length);
-    resetBoard();
+    // Fruits + Body Parts trace the picture first, then the word (the app's
+    // TraceView two-step flow). Everything else goes straight to the word.
+    if (picData[id]) startPictureStep();
+    else startWordStep();
     hearWord();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -558,7 +604,7 @@
       var sec = words[id].section || '';
       (groups[sec] = groups[sec] || []).push(id);
     });
-    var html2 = '<p><button type="button" class="trace-back-decks" id="trace-back-decks">← All decks</button></p>' +
+    var html2 = '<p><button type="button" class="trace-back-decks" id="trace-back-decks">← All sections</button></p>' +
       '<h2 class="trace-deck-h">' + esc(deckTitles[pickerDeck] || pickerDeck) + '</h2>';
     Object.keys(groups).forEach(function (sec) {
       var gids = groups[sec];
@@ -704,6 +750,10 @@
   }).catch(function () {
     $('trace-picker').innerHTML = '<p>Could not load the tracing dots. Check your connection and reload.</p>';
   });
+  // picture outlines for Fruits + Body Parts (trace the shape first, then the word)
+  fetch('data/picture-dots.json').then(function (r) { return r.json(); }).then(function (data) {
+    picData = data || {};
+  }).catch(function () { picData = {}; });
   if (document.fonts && document.fonts.load) {
     document.fonts.load('220px "Noto Sans Devanagari"', 'अ').catch(function () {});
   }
