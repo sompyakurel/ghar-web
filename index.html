@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ghar — Learn Nepali</title>
-<link rel="stylesheet" href="style.css?v=19">
+<link rel="stylesheet" href="style.css?v=20">
 </head>
 <body>
 <div class="prayer-bunting" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span></div></div>
@@ -21,8 +21,13 @@
       <img class="spirit-img spirit-buddha" src="assets/images/buddha.png" alt="Buddha">
       <img class="spirit-img spirit-flag" src="assets/images/nepal-flag.png" alt="Flag of Nepal">
     </div>
+    <div class="streak-wrap">
+      <a class="streak-badge" id="streak-badge" href="myghar.html" title="Your day streak — tap to see it in My Ghar">
+        <span class="streak-label">streak</span>
+        <span class="streak-flame">🔥 <span id="streak-count">0</span></span>
+      </a>
+    </div>
     <a class="signin-btn" id="signin-btn" href="signin.html">👤 Sign in</a>
-    <div class="streak-badge" id="streak-badge" title="Day streak — come back tomorrow to keep it going!">🔥 <span id="streak-count">0</span></div>
   </header>
   <nav class="subnav">
     <a href="#lessons">📚 Lessons</a>
@@ -196,12 +201,12 @@ function asset(u) {
           .replace(/^\/audio\/nepal-v1\//, "assets/audio/nepal-v1/");
 }
 let toastTimer;
-function toast(msg) {
+function toast(msg, ms) {
   const t = document.getElementById("toast");
   t.textContent = msg;
   t.classList.add("show");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove("show"), 2500);
+  toastTimer = setTimeout(() => t.classList.remove("show"), ms || 2500);
 }
 const homePlayer = new Audio();
 const bhuntePlayer = new Audio();
@@ -306,7 +311,7 @@ GharAuth.pull().catch(() => {}).then(() => {
         ? `<img class="path-guide ${side === "left" ? "right" : "left"}" src="assets/images/bhunte.svg" alt="Bhunte waits here">`
         : `<span></span>`;
       row.innerHTML = side === "left" ? card + stone + guide : guide + stone + card;
-      if (!st.open) row.addEventListener("click", e => { e.preventDefault(); toast("🔒 This deck unlocks with Ghar Premium"); });
+      if (!st.open) row.addEventListener("click", e => { e.preventDefault(); toast("🔒 This deck unlocks with Ghar Premium", 4000); });
       path.appendChild(row);
       side = side === "left" ? "right" : "left";
     });

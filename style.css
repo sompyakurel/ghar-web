@@ -673,13 +673,16 @@ EOF'
 /* ---- Home refresh (2026-11-08): streak badge, big spirit images,
    Bhunte's guide panel beside the learning path ---- */
 
-/* Streak badge, fixed top-left (mirrors the Sign in button top-right) so
-   the day streak is the first thing a kid sees. */
-.streak-badge { position: fixed; top: 12px; left: 16px; z-index: 50; background: #fff7e6; border: 2px solid #ff9800; border-radius: 999px; padding: 10px 16px; font-weight: 800; font-size: 17px; color: #e65100; box-shadow: 0 1px 6px rgba(0,0,0,.14); white-space: nowrap; }
-.streak-badge span { font-size: 19px; }
+/* Streak badge: sits below the spirit row's flag, over on the right, clear
+   of the prayer-flag strings on the edges. A link to My Ghar (where the
+   streak lives). The word "streak" sits on top, flame + count below. */
+.streak-wrap { display: flex; justify-content: flex-end; margin: 10px 0 0; }
+.streak-badge { display: inline-flex; flex-direction: column; align-items: center; background: #fff7e6; border: 2px solid #ff9800; border-radius: 14px; padding: 6px 16px 8px; font-weight: 800; color: #e65100; box-shadow: 0 1px 6px rgba(0,0,0,.14); text-decoration: none; line-height: 1.15; }
+.streak-badge:hover { background: #ffefc2; }
+.streak-badge .streak-label { font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: #bf6a00; }
+.streak-badge .streak-flame { font-size: 19px; }
 @media (max-width: 640px) {
-  .streak-badge { top: 8px; left: 8px; padding: 8px 12px; font-size: 15px; }
-  .streak-badge span { font-size: 17px; }
+  .streak-badge .streak-flame { font-size: 17px; }
 }
 
 /* Spirit row: just the three images, bigger, no labels at all. */
