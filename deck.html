@@ -23,6 +23,7 @@
     <div class="celebration-emoji">🎉</div>
     <div class="celebration-title">Deck complete!</div>
     <div class="celebration-sub" id="celebration-sub"></div>
+    <a class="celebration-next" id="celebration-next" href="index.html" style="display:inline-block;margin-top:16px;padding:12px 24px;background:#43a047;color:#fff;border-radius:999px;font-weight:700;font-size:17px;text-decoration:none;">Next lesson →</a>
   </div>
 </div>
 <script>
@@ -185,17 +186,18 @@ function heardCountFor(id) {
     return Array.isArray(arr) ? arr.length : 0;
   } catch (e) { return 0; }
 }
-function showCelebration(title, allDone, isTeen, voiceUrl) {
+function showCelebration(title, allDone, isTeen) {
   const ov = document.getElementById("celebration");
   document.getElementById("celebration-sub").textContent = `${title} · +${COMPLETION_BONUS} XP`;
   ov.hidden = false;
   spawnConfetti();
   playDing();
-  // Completion voice is Jessica (English guidance), never the Nepali
-  // tap-to-talk clips — the deck page must not speak Nepali on completion.
-  if (!isTeen && voiceUrl) {
+  // Deck-page completion voice: Jessica encouragement ("Good job! Keep
+  // going! Your certificate is waiting for you!") — NOT the next-lesson
+  // guidance, which the home page says on return (so it isn't said twice).
+  if (!isTeen) {
     bhuntePlayer.pause();
-    bhuntePlayer.src = voiceUrl;
+    bhuntePlayer.src = allDone ? "assets/audio/bhunte/guide_next_certificate.m4a" : "assets/audio/bhunte/deck_complete.m4a";
     setTimeout(() => bhuntePlayer.play().catch(() => {}), 600);
   }
   setTimeout(() => { ov.hidden = true; }, 3000);
@@ -330,9 +332,9 @@ GharAuth.pull().catch(() => {}).then(() => fetch("data/nepal-v1.json"))
       localStorage.setItem("ghar.xp.total", String(xp));
       GharAuth.push(deckId).catch(() => {});
       if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
-      // Next lesson for the Jessica completion voice (it names it by name):
-      // first still-to-do deck after this one, else first unfinished overall,
-      // else the certificate.
+      // Next lesson for the celebration's "Next lesson" button (and the home
+      // page scroll): first still-to-do deck after this one, else first
+      // unfinished overall, else the certificate.
       const curIdx = pack.decks.findIndex(d => d.id === deckId);
       let nextId = null;
       for (let i = curIdx + 1; i < pack.decks.length; i++) {
@@ -342,8 +344,12 @@ GharAuth.pull().catch(() => {}).then(() => fetch("data/nepal-v1.json"))
         const firstIncomplete = pack.decks.find(d => heardCountFor(d.id) < d.words.length);
         nextId = firstIncomplete ? firstIncomplete.id : null;
       }
-      const guideUrl = nextId ? "assets/audio/bhunte/guide_next_" + nextId + ".m4a" : "assets/audio/bhunte/guide_next_certificate.m4a";
-      showCelebration(deck.title, rewarded.size === pack.decks.length, deck.difficulty === "teen", guideUrl);
+      const nextBtn = document.getElementById("celebration-next");
+      if (nextBtn) {
+        if (nextId) { nextBtn.href = "deck.html?deck=" + nextId; nextBtn.textContent = "Next lesson →"; }
+        else { nextBtn.href = "certificate.html"; nextBtn.textContent = "See your certificate →"; }
+      }
+      showCelebration(deck.title, rewarded.size === pack.decks.length, deck.difficulty === "teen");
     }
     function updateProgress() {
       const n = heard.size;

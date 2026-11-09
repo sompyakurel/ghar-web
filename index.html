@@ -364,6 +364,7 @@ GharAuth.pull().catch(() => {}).then(() => {
       const isCurrent = idx === currentIdx;
       const row = document.createElement(st.open ? "a" : "div");
       row.className = "path-row" + (st.done ? " done" : isCurrent ? " current" : "") + (st.open ? "" : " locked");
+      row.setAttribute("data-deck", deck.id);
       if (st.open) row.href = `deck.html?deck=${deck.id}`;
       let stoneInner = "";
       if (deck.id === "colors") {
@@ -442,6 +443,14 @@ GharAuth.pull().catch(() => {}).then(() => {
       bhuntePlayer.pause();
       bhuntePlayer.src = bhunteLine;
       bhuntePlayer.play().catch(() => {});
+      // Land on the next lesson in the path (not the top of the page) when
+      // returning after a completion — so "back" flows into the next lesson.
+      if (nextDeck) {
+        setTimeout(() => {
+          const target = document.querySelector('[data-deck="' + nextDeck.id + '"]') || document.querySelector(".path-row.current");
+          if (target) target.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 150);
+      }
     }
   })
   .catch((err) => {
