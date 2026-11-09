@@ -522,11 +522,14 @@ function renderDog(xp, state) {
   const stage = dogStageFor(xp);
   const isGrownup = stage === 2;
   const isPuppy = stage === 0;
-  // Which Rive is live: Puppy stage uses the baby puppy .riv, Young uses Bhunte.
+  // Which Rive is live: Puppy uses the baby puppy .riv, Young uses Bhunte,
+  // Big uses the grown-up .riv.
   const puppyLive = !!(window.mygharPuppy && window.mygharPuppy.ready);
   const bhunteLive = !!(window.mygharBhunte && window.mygharBhunte.ready);
+  const grownupLive = !!(window.mygharGrownup && window.mygharGrownup.ready);
   const puppyCanvas = document.getElementById("dog-rive-puppy");
   const riveCanvas = document.getElementById("dog-rive");
+  const grownupCanvas = document.getElementById("dog-rive-grownup");
   // Static fallback image per stage: baby puppy SVG (Puppy), Bhunte SVG
   // (Young), grown-up picture (Big).
   const wantSrc = isGrownup ? POSE_IMGS.grownup : isPuppy ? "assets/images/bhunte_puppy.svg" : "assets/images/bhunte.svg";
@@ -535,11 +538,13 @@ function renderDog(xp, state) {
   // the dog/canvas visibility alone until the pose clears.
   if (!currentPose) {
     // Static img shows only when no live Rive canvas is showing for this
-    // stage (Big always uses the grown-up picture).
-    const showImg = !locked && (isGrownup || (isPuppy ? !puppyLive : !bhunteLive));
+    // stage (the grown-up picture is the fallback if grownup.riv is not ready).
+    const liveForStage = isGrownup ? grownupLive : isPuppy ? puppyLive : bhunteLive;
+    const showImg = !locked && !liveForStage;
     dog.style.display = showImg ? "" : "none";
     if (puppyCanvas) puppyCanvas.style.display = (!locked && isPuppy && puppyLive) ? "" : "none";
     if (riveCanvas) riveCanvas.style.display = (!locked && !isPuppy && !isGrownup && bhunteLive) ? "" : "none";
+    if (grownupCanvas) grownupCanvas.style.display = (!locked && isGrownup && grownupLive) ? "" : "none";
   }
   document.getElementById("sign-name").style.display = locked ? "none" : "";
   const poseRow = document.getElementById("pose-row");
@@ -551,15 +556,17 @@ function renderDog(xp, state) {
   dog.style.width = STAGE_WIDTH[stage] + "%";
   if (riveCanvas) riveCanvas.style.width = STAGE_WIDTH[stage] + "%";
   if (puppyCanvas) puppyCanvas.style.width = STAGE_WIDTH[stage] + "%";
+  if (grownupCanvas) grownupCanvas.style.width = STAGE_WIDTH[stage] + "%";
   const pimg = document.getElementById("dog-pose");
   if (pimg) pimg.style.width = STAGE_WIDTH[stage] + "%";
   // The Rive surface must match the canvas's final size. If the canvas
   // was resized (stage change) or just shown, re-sync it — otherwise the
   // surface stays 0x0 from when it was hidden and the dog never draws.
   // Resize only the VISIBLE canvas, after it is visible and sized.
-  if (!locked && !isGrownup) {
+  if (!locked) {
     if (isPuppy && puppyLive && window.mygharPuppy && window.mygharPuppy.resize) window.mygharPuppy.resize();
-    if (!isPuppy && bhunteLive && window.mygharBhunte && window.mygharBhunte.resize) window.mygharBhunte.resize();
+    if (!isPuppy && !isGrownup && bhunteLive && window.mygharBhunte && window.mygharBhunte.resize) window.mygharBhunte.resize();
+    if (isGrownup && grownupLive && window.mygharGrownup && window.mygharGrownup.resize) window.mygharGrownup.resize();
   }
   document.getElementById("dog-stage-label").textContent = locked ? "Locked" : STAGE_NAMES[stage];
   document.getElementById("xp-label").textContent = xp;
@@ -570,9 +577,10 @@ function renderDog(xp, state) {
     const name = localStorage.getItem(DOG_NAME_KEY) || "Bhunte";
     showCelebration(`🎉 ${name} grew!`, `${name} is now a ${STAGE_NAMES[stage]}!`);
     play(stage === 0 ? "assets/audio/nepal-v1/dog_bark.m4a" : "assets/audio/nepal-v1/dog_bark_big.m4a");
-    // Celebrate on the Rive dog for the NEW stage (Big has no Rive dog).
+    // Celebrate on the Rive dog for the NEW stage.
     if (stage === 0 && window.mygharPuppy) window.mygharPuppy.celebrate();
     else if (stage === 1 && window.mygharBhunte) window.mygharBhunte.celebrate();
+    else if (stage === 2 && window.mygharGrownup) window.mygharGrownup.celebrate();
   } else {
     localStorage.setItem(DOG_STAGE_KEY, String(stage));
   }
@@ -667,12 +675,14 @@ function showPose(pose) {
   const dog = document.getElementById("dog");
   const canvas = document.getElementById("dog-rive");
   const puppyCanvas = document.getElementById("dog-rive-puppy");
+  const grownupCanvas = document.getElementById("dog-rive-grownup");
   const img = document.getElementById("dog-pose");
   currentPose = pose;
   if (poseTimer) { clearTimeout(poseTimer); poseTimer = null; }
   if (dog) dog.style.display = "none";
   if (canvas) canvas.style.display = "none";
   if (puppyCanvas) puppyCanvas.style.display = "none";
+  if (grownupCanvas) grownupCanvas.style.display = "none";
   img.src = POSE_IMGS[pose];
   img.hidden = false;
   const xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
@@ -745,6 +755,13 @@ window.mygharBhunte = (window.GharBhunte && window.GharBhunte.mount) ? window.Gh
 window.mygharPuppy = (window.GharBhunte && window.GharBhunte.mount) ? window.GharBhunte.mount("dog", {
   src: "assets/rive/puppy.riv",
   canvasId: "dog-rive-puppy",
+  onTap: barkForStage,
+  onReady: riveReady,
+  deferShow: true,
+}) : null;
+window.mygharGrownup = (window.GharBhunte && window.GharBhunte.mount) ? window.GharBhunte.mount("dog", {
+  src: "assets/rive/grownup.riv",
+  canvasId: "dog-rive-grownup",
   onTap: barkForStage,
   onReady: riveReady,
   deferShow: true,
