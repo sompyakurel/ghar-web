@@ -276,6 +276,24 @@ const homeBhunte = (window.GharBhunte && window.GharBhunte.mount) ? window.GharB
     bhuntePlayer.play().catch(() => {});
   },
 }) : null;
+// Spirit row: tap a picture to hear a fact about Nepal (and see it as a toast).
+const spiritFacts = {
+  danfe: { text: "Danfe is the national bird of Nepal!", audio: "assets/audio/bhunte/spirit_danfe.m4a" },
+  buddha: { text: "Buddha was born in Lumbini, Nepal!", audio: "assets/audio/bhunte/spirit_buddha.m4a" },
+  flag: { text: "Nepal's flag is the most unique flag in the whole world!", audio: "assets/audio/bhunte/spirit_flag.m4a" },
+};
+document.querySelectorAll(".spirit-img").forEach(img => {
+  const key = img.classList.contains("spirit-danfe") ? "danfe" : img.classList.contains("spirit-buddha") ? "buddha" : img.classList.contains("spirit-flag") ? "flag" : null;
+  if (!key) return;
+  img.style.cursor = "pointer";
+  img.addEventListener("click", () => {
+    const fact = spiritFacts[key];
+    toast(fact.text, 4000);
+    homePlayer.pause();
+    homePlayer.src = fact.audio;
+    homePlayer.play().catch(() => {});
+  });
+});
 let homePlayingBtn = null;
 function toggleHomeAudio(url, btn) {
   if (homePlayingBtn === btn && !homePlayer.paused) {
@@ -392,13 +410,21 @@ GharAuth.pull().catch(() => {}).then(() => {
     if (done >= pack.decks.length) { ne.textContent = "तिमीले गर्‍यौ! तिमीले प्रमाणपत्र पायौ! 🎉"; en.textContent = "You did it! You earned your certificate!"; bhunteLine = "assets/audio/bhunte/bhunte_certificate.m4a"; document.getElementById("cert-link").hidden = false; }
     else if (done === 0) { ne.textContent = "नमस्ते! म भुन्ते हुँ। सँगै नेपाली सिकौं। एउटा पाठ पूरा गरेर XP कमाऔं!"; en.textContent = "Namaste! I'm Bhunte. Let's learn Nepali together. Finish a lesson to earn XP!"; bhunteLine = "assets/audio/bhunte/bhunte_hello.m4a"; }
     else { ne.textContent = "स्याबास! अगाडि बढ। तिम्रो प्रमाणपत्र पर्खिरहेको छ!"; en.textContent = "You're doing great! Keep going. Your certificate is waiting!"; bhunteLine = "assets/audio/bhunte/bhunte_keepgoing.m4a"; }
-    if (localStorage.getItem("ghar.justCompleted")) {
+    const justTitle = localStorage.getItem("ghar.justCompleted");
+    if (justTitle) {
       localStorage.removeItem("ghar.justCompleted");
       bhunteDog.classList.add("celebrating");
       setTimeout(() => bhunteDog.classList.remove("celebrating"), 2600);
       if (homeBhunte) homeBhunte.celebrate();
-      // Bhunte guides to the next lesson: name it in the bubble and in his voice.
-      const nextDeck = pack.decks.find(d => heardList(d.id).length < d.words.length);
+      // "Next" means the first lesson still to do AFTER the one just finished —
+      // not the first unfinished lesson overall (that would stick on an early
+      // skipped deck, e.g. Daily Conversations, after every completion).
+      const justIdx = pack.decks.findIndex(d => d.title === justTitle);
+      let nextDeck = null;
+      for (let i = justIdx + 1; i < pack.decks.length; i++) {
+        if (heardList(pack.decks[i].id).length < pack.decks[i].words.length) { nextDeck = pack.decks[i]; break; }
+      }
+      if (!nextDeck) nextDeck = pack.decks.find(d => heardList(d.id).length < d.words.length);
       if (nextDeck) {
         ne.textContent = "तिमीले यो पाठ पूरा गर्‍यौ! अब " + nextDeck.title + " मा जाऔं!";
         en.textContent = "You've completed this lesson! Now let's move to " + nextDeck.title + "!";
