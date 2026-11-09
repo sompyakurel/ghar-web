@@ -305,6 +305,10 @@ GharAuth.pull().catch(() => {}).then(() => fetch("data/nepal-v1.json"))
     });
     function evaluateCompletion() {
       if (!(total > 0 && heard.size === total)) return;
+      // Mark the lesson just completed EVERY time it is finished (first time
+      // or re-do), so the home-page guidance (Jessica) fires on re-dos too —
+      // not only the first time the +25 XP is awarded.
+      localStorage.setItem("ghar.justCompleted", deck.title);
       let rewarded;
       try { rewarded = new Set(JSON.parse(localStorage.getItem(REWARDED_KEY) || "[]")); }
       catch (e) { rewarded = new Set(); }
@@ -315,7 +319,6 @@ GharAuth.pull().catch(() => {}).then(() => fetch("data/nepal-v1.json"))
       localStorage.setItem("ghar.xp.total", String(xp));
       GharAuth.push(deckId).catch(() => {});
       if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
-      localStorage.setItem("ghar.justCompleted", deck.title);
       showCelebration(deck.title, rewarded.size === pack.decks.length, deck.difficulty === "teen");
     }
     function updateProgress() {
