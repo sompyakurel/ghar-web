@@ -178,15 +178,24 @@ function spawnConfetti() {
   }
 }
 const bhuntePlayer = new Audio();
-function showCelebration(title, allDone, isTeen) {
+// Heard-count for any deck (safe read), used to find the next lesson.
+function heardCountFor(id) {
+  try {
+    const arr = JSON.parse(localStorage.getItem("ghar.heard." + id) || "[]");
+    return Array.isArray(arr) ? arr.length : 0;
+  } catch (e) { return 0; }
+}
+function showCelebration(title, allDone, isTeen, voiceUrl) {
   const ov = document.getElementById("celebration");
   document.getElementById("celebration-sub").textContent = `${title} · +${COMPLETION_BONUS} XP`;
   ov.hidden = false;
   spawnConfetti();
   playDing();
-  if (!isTeen) {
+  // Completion voice is Jessica (English guidance), never the Nepali
+  // tap-to-talk clips — the deck page must not speak Nepali on completion.
+  if (!isTeen && voiceUrl) {
     bhuntePlayer.pause();
-    bhuntePlayer.src = allDone ? "assets/audio/bhunte/bhunte_certificate.m4a" : "assets/audio/bhunte/bhunte_keepgoing.m4a";
+    bhuntePlayer.src = voiceUrl;
     setTimeout(() => bhuntePlayer.play().catch(() => {}), 600);
   }
   setTimeout(() => { ov.hidden = true; }, 3000);
@@ -307,8 +316,10 @@ GharAuth.pull().catch(() => {}).then(() => fetch("data/nepal-v1.json"))
       if (!(total > 0 && heard.size === total)) return;
       // Mark the lesson just completed EVERY time it is finished (first time
       // or re-do), so the home-page guidance (Jessica) fires on re-dos too —
-      // not only the first time the +25 XP is awarded.
+      // not only the first time the +25 XP is awarded. Store the deck id as
+      // well as the title so the home page matches it exactly.
       localStorage.setItem("ghar.justCompleted", deck.title);
+      localStorage.setItem("ghar.justCompletedId", deckId);
       let rewarded;
       try { rewarded = new Set(JSON.parse(localStorage.getItem(REWARDED_KEY) || "[]")); }
       catch (e) { rewarded = new Set(); }
@@ -319,7 +330,20 @@ GharAuth.pull().catch(() => {}).then(() => fetch("data/nepal-v1.json"))
       localStorage.setItem("ghar.xp.total", String(xp));
       GharAuth.push(deckId).catch(() => {});
       if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
-      showCelebration(deck.title, rewarded.size === pack.decks.length, deck.difficulty === "teen");
+      // Next lesson for the Jessica completion voice (it names it by name):
+      // first still-to-do deck after this one, else first unfinished overall,
+      // else the certificate.
+      const curIdx = pack.decks.findIndex(d => d.id === deckId);
+      let nextId = null;
+      for (let i = curIdx + 1; i < pack.decks.length; i++) {
+        if (heardCountFor(pack.decks[i].id) < pack.decks[i].words.length) { nextId = pack.decks[i].id; break; }
+      }
+      if (!nextId) {
+        const firstIncomplete = pack.decks.find(d => heardCountFor(d.id) < d.words.length);
+        nextId = firstIncomplete ? firstIncomplete.id : null;
+      }
+      const guideUrl = nextId ? "assets/audio/bhunte/guide_next_" + nextId + ".m4a" : "assets/audio/bhunte/guide_next_certificate.m4a";
+      showCelebration(deck.title, rewarded.size === pack.decks.length, deck.difficulty === "teen", guideUrl);
     }
     function updateProgress() {
       const n = heard.size;
