@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ghar — My Ghar</title>
 <link rel="stylesheet" href="style.css?v=13">
+<script src="https://unpkg.com/@rive-app/webgl2@2.49.4/rive.js"></script>
+<script src="assets/js/bhunte-rive.js"></script>
 </head>
 <body>
 <div class="prayer-bunting" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span></div></div>
@@ -469,7 +471,12 @@ function renderDog(xp, state) {
   const dog = document.getElementById("dog");
   const locked = (state ? state.missionsDone : 0) < 10;
   const lockEl = document.getElementById("dog-locked");
-  dog.style.display = locked ? "none" : "";
+  // When the live Rive dog is showing, the static img stays hidden and
+  // the canvas takes the lock/visibility state instead.
+  const riveLive = !!(window.mygharBhunte && window.mygharBhunte.ready);
+  const riveCanvas = document.getElementById("dog-rive");
+  dog.style.display = (locked || riveLive) ? "none" : "";
+  if (riveCanvas && riveLive) riveCanvas.style.display = locked ? "none" : "";
   document.getElementById("sign-name").style.display = locked ? "none" : "";
   if (lockEl) {
     lockEl.hidden = !locked;
@@ -477,6 +484,7 @@ function renderDog(xp, state) {
   }
   const stage = dogStageFor(xp);
   dog.style.width = STAGE_WIDTH[stage] + "%";
+  if (riveCanvas) riveCanvas.style.width = STAGE_WIDTH[stage] + "%";
   document.getElementById("dog-stage-label").textContent = locked ? "Locked" : STAGE_NAMES[stage];
   document.getElementById("xp-label").textContent = xp;
   document.getElementById("streak-label").textContent = (state && state.streak) || 0;
@@ -486,6 +494,7 @@ function renderDog(xp, state) {
     const name = localStorage.getItem(DOG_NAME_KEY) || "Bhunte";
     showCelebration(`🎉 ${name} grew!`, `${name} is now a ${STAGE_NAMES[stage]}!`);
     play(stage === 0 ? "assets/audio/nepal-v1/dog_bark.m4a" : "assets/audio/nepal-v1/dog_bark_big.m4a");
+    if (window.mygharBhunte) window.mygharBhunte.celebrate();
   } else {
     localStorage.setItem(DOG_STAGE_KEY, String(stage));
   }
@@ -571,6 +580,18 @@ document.getElementById("dog").addEventListener("click", () => {
   dog.classList.add("bounce");
   play(stage === 0 ? "assets/audio/nepal-v1/dog_bark.m4a" : "assets/audio/nepal-v1/dog_bark_big.m4a");
 });
+// Live Rive Bhunte: when assets/rive/bhunte.riv is published, the canvas
+// replaces the static picture (Idle loop, Pet on tap, Celebrate when he
+// grows a stage). Until then the picture above stays and nothing changes.
+// The canvas takes the same spot/size as the picture (the .myghar-dog
+// class), and renderDog() below keeps it hidden while Bhunte is locked.
+window.mygharBhunte = (window.GharBhunte && window.GharBhunte.mount) ? window.GharBhunte.mount("dog", {
+  onTap: () => {
+    const xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
+    const stage = dogStageFor(xp);
+    play(stage === 0 ? "assets/audio/nepal-v1/dog_bark.m4a" : "assets/audio/nepal-v1/dog_bark_big.m4a");
+  },
+}) : null;
 document.getElementById("mystery-btn").addEventListener("click", () => {
   openMysteryBox(readState());
 });

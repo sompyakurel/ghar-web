@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ghar — Learn Nepali</title>
 <link rel="stylesheet" href="style.css?v=24">
+<script src="https://unpkg.com/@rive-app/webgl2@2.49.4/rive.js"></script>
+<script src="assets/js/bhunte-rive.js"></script>
 </head>
 <body>
 <div class="prayer-bunting" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span></div></div>
@@ -235,6 +237,16 @@ bhunteDog.addEventListener("click", () => {
   bhuntePlayer.src = bhunteLine;
   bhuntePlayer.play().catch(() => {});
 });
+// Live Rive Bhunte: when assets/rive/bhunte.riv is published, the canvas
+// replaces the static picture (Idle loop, Pet on tap, Celebrate on a deck
+// completion). Until then the picture above stays and nothing changes.
+const homeBhunte = (window.GharBhunte && window.GharBhunte.mount) ? window.GharBhunte.mount("bhunte-dog", {
+  onTap: () => {
+    bhuntePlayer.pause();
+    bhuntePlayer.src = bhunteLine;
+    bhuntePlayer.play().catch(() => {});
+  },
+}) : null;
 let homePlayingBtn = null;
 function toggleHomeAudio(url, btn) {
   if (homePlayingBtn === btn && !homePlayer.paused) {
@@ -355,6 +367,7 @@ GharAuth.pull().catch(() => {}).then(() => {
       localStorage.removeItem("ghar.justCompleted");
       bhunteDog.classList.add("celebrating");
       setTimeout(() => bhunteDog.classList.remove("celebrating"), 2600);
+      if (homeBhunte) homeBhunte.celebrate();
     }
   })
   .catch((err) => {
