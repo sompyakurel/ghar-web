@@ -2,8 +2,8 @@
 body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: #fff3e0; color: #26221f; margin: 0; padding: 0; }
 .wrap { max-width: 760px; margin: 0 auto; padding: 24px 16px 48px; }
 header { text-align: center; margin-bottom: 24px; }
-header h1 { font-size: 44px; margin: 0 0 4px; }
-header p { color: #6b5d4f; margin: 0; font-size: 17px; }
+header h1 { font-size: 54px; font-weight: 800; color: #b71c1c; margin: 0 0 4px; letter-spacing: .5px; }
+header p { color: #4a3f35; margin: 0; font-size: 20px; font-weight: 700; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; }
 .card { background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.08); cursor: pointer; text-decoration: none; color: inherit; display: block; }
 .card img { width: 100%; aspect-ratio: 16/10; object-fit: cover; display: block; }
@@ -673,15 +673,16 @@ EOF'
 /* ---- Home refresh (2026-11-08): streak badge, big spirit images,
    Bhunte's guide panel beside the learning path ---- */
 
-/* Streak badge: sits below the spirit row's flag, over on the right, clear
-   of the prayer-flag strings on the edges. A link to My Ghar (where the
-   streak lives). The word "streak" sits on top, flame + count below. */
-.streak-wrap { display: flex; justify-content: flex-end; margin: 10px 0 0; }
-.streak-badge { display: inline-flex; flex-direction: column; align-items: center; background: #fff7e6; border: 2px solid #ff9800; border-radius: 14px; padding: 6px 16px 8px; font-weight: 800; color: #e65100; box-shadow: 0 1px 6px rgba(0,0,0,.14); text-decoration: none; line-height: 1.15; }
+/* Streak badge: fixed top-left, BELOW the top prayer-flag bunting and
+   clear of the left prayer-flag string (which ends at x=38px). A link to
+   Missions, where the streak comes from. The word "streak" sits on top,
+   flame + count below. */
+.streak-badge { position: fixed; top: 44px; left: 48px; z-index: 50; display: inline-flex; flex-direction: column; align-items: center; background: #fff7e6; border: 2px solid #ff9800; border-radius: 14px; padding: 6px 16px 8px; font-weight: 800; color: #e65100; box-shadow: 0 1px 6px rgba(0,0,0,.14); text-decoration: none; line-height: 1.15; }
 .streak-badge:hover { background: #ffefc2; }
 .streak-badge .streak-label { font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: #bf6a00; }
 .streak-badge .streak-flame { font-size: 19px; }
 @media (max-width: 640px) {
+  .streak-badge { top: 40px; left: 8px; padding: 5px 12px 6px; }
   .streak-badge .streak-flame { font-size: 17px; }
 }
 
@@ -708,4 +709,24 @@ EOF'
 @media (max-width: 760px) {
   .lessons-layout { flex-direction: column; }
   .lessons-layout .motivation { flex: none; width: 100%; position: static; }
+}
+
+/* ---- Flashy subnav (2026-11-08): each top link is a bright, bold pill ---- */
+.subnav a { color: #fff; font-size: 16px; padding: 14px 10px; border-radius: 16px; box-shadow: 0 3px 8px rgba(0,0,0,.18); transition: transform .15s ease, box-shadow .15s ease; }
+.subnav a:hover { transform: translateY(-3px) scale(1.03); box-shadow: 0 6px 14px rgba(0,0,0,.25); }
+.subnav a:nth-child(1) { background: linear-gradient(135deg, #ff8a50, #ff7043); }
+.subnav a:nth-child(2) { background: linear-gradient(135deg, #26c6da, #00acc1); }
+.subnav a:nth-child(3) { background: linear-gradient(135deg, #f06292, #ec407a); }
+.subnav a:nth-child(4) { background: linear-gradient(135deg, #9575cd, #7e57c2); }
+.subnav a:nth-child(5) { background: linear-gradient(135deg, #42a5f5, #1e88e5); }
+.subnav a:nth-child(6) { background: linear-gradient(135deg, #66bb6a, #43a047); }
+.subnav a:nth-child(7) { background: linear-gradient(135deg, #ef5350, #e53935); }
+.subnav a:nth-child(8) { background: linear-gradient(135deg, #ffa726, #fb8c00); }
+.subnav a:nth-child(9) { background: linear-gradient(135deg, #ff7043, #f4511e); }
+.subnav a:nth-child(10) { background: linear-gradient(135deg, #ffca28, #ff8f00); }
+
+/* Keep the big title clear of the fixed streak badge / sign-in button on
+   narrow screens. */
+@media (max-width: 640px) {
+  header h1 { font-size: 40px; }
 }
