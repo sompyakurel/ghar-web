@@ -349,6 +349,27 @@ EOF'
 @keyframes moti-bounce { 0% { transform: scale(1); } 40% { transform: scale(1.12) translateY(-8px); } 100% { transform: scale(1); } }
 .myghar-dog.bounce { animation: dog-bounce .5s ease; }
 @keyframes dog-bounce { 0% { transform: translateX(-50%) scale(1); } 40% { transform: translateX(-50%) scale(1.12) translateY(-8px); } 100% { transform: translateX(-50%) scale(1); } }
+/* Fetch: the dog runs out after the ball and back (like the app), ~2.6s.
+   The pose img keeps its translateX(-50%) centering; the run adds a
+   horizontal offset on top of it. The ball arcs out and back on the
+   same beat. */
+.myghar-dog.fetching { animation: fetch-run 2.6s ease-in-out; }
+@keyframes fetch-run {
+  0% { transform: translateX(-50%) translateX(0) translateY(0); }
+  30% { transform: translateX(-50%) translateX(55%) translateY(-12px); }
+  55% { transform: translateX(-50%) translateX(110%) translateY(0); }
+  80% { transform: translateX(-50%) translateX(55%) translateY(-12px); }
+  100% { transform: translateX(-50%) translateX(0) translateY(0); }
+}
+#fetch-ball { position: absolute; left: 56%; bottom: 10%; font-size: 34px; z-index: 6; pointer-events: none; }
+#fetch-ball.ball-arc { animation: ball-arc 2.6s ease-in-out; }
+@keyframes ball-arc {
+  0% { transform: translate(0, 0); }
+  30% { transform: translate(90px, -80px); }
+  55% { transform: translate(190px, 0); }
+  80% { transform: translate(90px, -80px); }
+  100% { transform: translate(0, 0); }
+}
 .myghar-hint { text-align: center; color: #666; font-size: 14px; margin: 8px 0; }
 .myghar-earn { background: #fff; border: 1px solid #e5e0d8; border-radius: 12px; padding: 16px 20px; margin: 16px 0; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
 .myghar-earn h3 { margin: 0 0 4px; }

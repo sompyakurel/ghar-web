@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ghar — My Ghar</title>
-<link rel="stylesheet" href="style.css?v=13">
+<link rel="stylesheet" href="style.css?v=14">
 <script src="https://unpkg.com/@rive-app/webgl2@2.49.4/rive.js"></script>
 <script src="assets/js/bhunte-rive.js"></script>
 </head>
@@ -32,6 +32,7 @@
     <div id="shop-items"></div>
     <img class="myghar-dog" id="dog" src="assets/images/bhunte.svg" alt="Bhunte the dog">
     <img class="myghar-dog" id="dog-pose" src="assets/images/myghar/bhunte_sleep.png" alt="Bhunte" hidden>
+    <span id="fetch-ball" hidden>🎾</span>
     <div class="myghar-dog-locked" id="dog-locked" hidden></div>
   </div>
   <p class="myghar-hint" id="hint">Tap Bhunte and he'll bark! 🐶</p>
@@ -163,14 +164,25 @@ const CELL_X = [0.10, 0.26];
 const SHELF_Y = [0.345, 0.515, 0.69];
 const STAGE_NAMES = ["Puppy", "Young Dog", "Big Dog"];
 const STAGE_WIDTH = [20, 25, 30]; // % of the stage width, per stage
-// Bhunte pose pictures (AI-generated, same character as the baby puppy).
-// sleep/eat/fetch are temporary poses; grownup is the Big-stage dog.
+// Bhunte pose pictures (AI-generated).
+// Puppy poses match the baby puppy; grown-up poses match the Big-stage dog.
+// showPose picks the grown-up set at stage 2 (150+ XP) so Sleep/Feed/Fetch
+// no longer swap the grown-up dog for a puppy.
 const POSE_IMGS = {
   sleep: "assets/images/myghar/bhunte_sleep.png",
   eat: "assets/images/myghar/bhunte_eat.png",
   fetch: "assets/images/myghar/bhunte_fetch.png",
   grownup: "assets/images/myghar/bhunte_grownup.png",
+  sleep_grownup: "assets/images/myghar/bhunte_grownup_sleep.png",
+  eat_grownup: "assets/images/myghar/bhunte_grownup_eat.png",
+  fetch_grownup: "assets/images/myghar/bhunte_grownup_fetch.png",
 };
+function poseImgFor(pose) {
+  const xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
+  const isGrownup = dogStageFor(xp) === 2;
+  if (isGrownup && POSE_IMGS[pose + "_grownup"]) return POSE_IMGS[pose + "_grownup"];
+  return POSE_IMGS[pose];
+}
 let currentPose = null; // "sleep" | "eat" | "fetch" | null
 let poseTimer = null;
 const LAYOUT_KEY = "ghar.myghar.layout";
@@ -683,8 +695,18 @@ function showPose(pose) {
   if (canvas) canvas.style.display = "none";
   if (puppyCanvas) puppyCanvas.style.display = "none";
   if (grownupCanvas) grownupCanvas.style.display = "none";
-  img.src = POSE_IMGS[pose];
+  img.src = poseImgFor(pose);
   img.hidden = false;
+  // Fetch animates like the app: the dog runs out after the ball and back.
+  // (Sleep/Feed are still pictures; only Fetch gets the run.)
+  const ball = document.getElementById("fetch-ball");
+  if (pose === "fetch") {
+    img.classList.add("fetching");
+    if (ball) { ball.hidden = false; ball.classList.remove("ball-arc"); void ball.offsetWidth; ball.classList.add("ball-arc"); }
+  } else {
+    img.classList.remove("fetching");
+    if (ball) { ball.hidden = true; ball.classList.remove("ball-arc"); }
+  }
   const xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
   img.style.width = STAGE_WIDTH[dogStageFor(xp)] + "%";
   document.getElementById("hint").textContent =
@@ -695,7 +717,9 @@ function clearPose() {
   const img = document.getElementById("dog-pose");
   if (poseTimer) { clearTimeout(poseTimer); poseTimer = null; }
   currentPose = null;
-  if (img) img.hidden = true;
+  if (img) { img.hidden = true; img.classList.remove("fetching"); }
+  const ball = document.getElementById("fetch-ball");
+  if (ball) { ball.hidden = true; ball.classList.remove("ball-arc"); }
   document.getElementById("hint").textContent = "Tap Bhunte and he'll bark! 🐶";
   const state = readState();
   renderDog(state.xp, state);
