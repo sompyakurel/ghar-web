@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>✍️ Trace the letters — Ghar</title>
-<link rel="stylesheet" href="style.css?v=17">
+<link rel="stylesheet" href="style.css?v=18">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;700&display=swap" rel="stylesheet">
@@ -18,9 +18,25 @@
 <div class="wrap">
   <p><a href="index.html">← Home</a></p>
   <h1>✍️ Trace the letters</h1>
-  <p class="trace-sub">Trace each word one stroke at a time — follow the glowing dots, stroke by stroke. Finish a whole deck to earn a Mystery Box 🎁</p>
+  <p class="trace-sub">Trace each word one stroke at a time — follow the glowing dots, stroke by stroke. Works with a finger or a mouse. Finish a whole deck to earn a Mystery Box 🎁</p>
 
   <div id="trace-picker"></div>
+
+  <div id="trace-name-setup" class="trace-name-setup" hidden>
+    <h2>✏️ My Name</h2>
+    <p>Type your name in Nepali (Devanagari) and in English, then practice writing it.</p>
+    <label class="trace-name-label">Name in Nepali (नेपाली)
+      <input id="trace-name-dev" type="text" placeholder="आशा" autocomplete="off">
+    </label>
+    <label class="trace-name-label">Name in English
+      <input id="trace-name-en" type="text" placeholder="Asha" autocomplete="off">
+    </label>
+    <p id="trace-name-error" class="trace-name-error" hidden>Please type your name in Nepali first.</p>
+    <div class="trace-name-btns">
+      <button id="trace-name-save" type="button">Save &amp; practice →</button>
+      <button id="trace-name-cancel" type="button">← Back</button>
+    </div>
+  </div>
 
   <div id="trace-board" class="trace-board" hidden>
     <div class="trace-head">
@@ -53,7 +69,7 @@
       <div class="trace-progress-bar"><div id="trace-progress-fill"></div></div>
       <span id="trace-progress-pct">0%</span>
     </div>
-    <p class="trace-hint-line">Trace with your finger — practice, no XP yet</p>
+    <p class="trace-hint-line">Trace with your finger or mouse — practice, no XP yet</p>
     <p id="trace-hint" class="trace-hint" hidden>Follow the glowing dots — trace this stroke first ✏️</p>
 
     <div class="trace-controls">
@@ -64,29 +80,33 @@
   </div>
 </div>
 
-<div class="prayer-bunting bottom" aria-hidden="true"><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span></div>
+<div class="prayer-bunting bottom" aria-hidden="true"><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span></div>
 
 <script>
 /* Trace the letters — Samio-style per-stroke tracing.
-   The word is broken into strokes (its real pen-strokes, in writing
-   order). The child traces ONE stroke at a time: only the current
-   stroke's dots light up, and a stroke counts when >=75% of its dots
-   are hit. Then the next stroke unlocks. All strokes done = the word
-   is traced. Trace is practice — no XP. A finished word is marked
-   traced (star) and heard (counts toward its deck). Finishing a whole
-   deck earns a Mystery Box via ghar.mystery.writingBoxes.
-   Dots come from data/writing-dots.json (precomputed from the same
-   Noto Sans Devanagari font the page renders the word in). */
+   Only the sections the app makes traceable: Alphabets, My Name,
+   Numbers, Fruits, Body Parts, Animals. A word is split into its
+   pen-strokes in writing order; only the current stroke's dots glow
+   gold and count; a stroke completes at >=75% of its dots, then the
+   next unlocks. A dot only counts if the finger/mouse moved here
+   continuously from the last dot it lit (the app's maxJump rule) —
+   teleporting across a curve lights almost nothing. Trace is
+   practice — no XP. A finished word is marked traced (star) and
+   heard (counts toward its deck). Finishing a whole deck earns a
+   Mystery Box. My Name generates its dots in the browser, the same
+   way the app renders its LetterGuide at runtime. */
 (function () {
   'use strict';
   var BOX = 300;
-  var HIT_RADIUS = 17;      // a dot lights when the finger is this close (300-box units)
-  var MAX_JUMP = 36;        // app's TraceView maxJump (0.12) in 300-box units: a dot only
-                            // counts if the finger moved here continuously from the last
-                            // dot it lit — teleporting across the stroke doesn't count
+  var HIT_RADIUS = 17;      // a dot lights when the pointer is this close (300-box units)
+  var MAX_JUMP = 36;        // app's TraceView maxJump (0.12) in 300-box units
   var STEP = 5;             // sampling step along a drag segment
   var STROKE_FRAC = 0.75;   // a stroke counts at 75% of its dots
+  var DOT_GAP = 9;          // min spacing between dots along a stroke
   var FONT_FAMILY = '"Noto Sans Devanagari", sans-serif';
+  // the six traceable sections, in the order Som gave them
+  var TRACE_DECKS = ['alphabet', 'myname', 'numbers', 'fruits', 'bodyparts', 'animals'];
+  var TRACE_TITLES = { alphabet: 'Alphabets', myname: 'My Name', numbers: 'Numbers', fruits: 'Fruits', bodyparts: 'Body Parts', animals: 'Animals' };
 
   var $ = function (id) { return document.getElementById(id); };
   function asset(u) {
@@ -110,10 +130,15 @@
   function boxGrantedSet() {
     return new Set((localStorage.getItem('ghar.writing.boxGranted') || '').split(',').filter(Boolean));
   }
+  function myName() {
+    return {
+      dev: (localStorage.getItem('ghar.myname.devanagari') || '').trim(),
+      en: (localStorage.getItem('ghar.myname.english') || '').trim()
+    };
+  }
 
   var words = {};           // id -> {dev,en,roman,deck,deckTitle,section,audio,strokes}
-  var deckOrder = [];       // deck ids in pack order
-  var deckWords = {};       // deck id -> [word ids]
+  var deckWords = {};       // deck id -> [word ids] (traceable decks only)
   var deckTitles = {};
   var pickerDeck = null;    // deck currently open in the picker (null = deck list)
   var currentId = null, currentDeck = null;
@@ -121,13 +146,14 @@
   var strokeIdx = 0;        // the stroke being traced now
   var strokeHits = [];      // Set per stroke
   var lastHit = null;       // position of the last dot lit in this stroke (continuity)
-  var ink = [];             // finished strokes' ink (for drawing), each [[x,y],...]
+  var ink = [];             // finished strokes' ink, each [[x,y],...]
   var cur = [];             // current stroke's ink
   var celebrated = false;
   var audio = new Audio();
   var template = null;
   var watching = false, watchRaf = 0, watchStart = 0, watchDur = 5000;
   var canvas = $('trace-canvas'), ctx = canvas.getContext('2d');
+  var drawing = false, lastPt = null, downViaPointer = false;
 
   function tone(freq, when, dur) {
     try {
@@ -177,8 +203,8 @@
 
   function draw() {
     var W = canvas.width, k = W / BOX;
-    ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
+    ctx.clearRect(0, 0, W, W);
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, W);
     if (template && words[currentId]) {
       ctx.save(); ctx.scale(k, k);
       ctx.translate(template.tx, template.ty); ctx.scale(template.s, template.s);
@@ -200,8 +226,6 @@
       ctx.stroke();
     }
     ink.forEach(paintStroke); paintStroke(cur);
-    // dots: done strokes green, current stroke glowing gold (hit=green, else gold),
-    // future strokes pale grey
     for (var si = 0; si < strokes.length; si++) {
       for (var di = 0; di < strokes[si].length; di++) {
         var p = strokes[si][di];
@@ -240,7 +264,6 @@
         lastHit = cps[i];
       }
     }
-    // stroke complete? advance (the check also runs on finger lift)
     if (strokeFrac(strokeIdx) >= STROKE_FRAC) advanceStroke();
   }
   function advanceStroke() {
@@ -263,26 +286,29 @@
     var W = words[currentId];
     var traced = tracedSet();
     if (!traced.has(currentId)) { traced.add(currentId); saveTraced(traced); }
-    var heard = new Set((localStorage.getItem('ghar.heard.' + currentDeck) || '').split(',').filter(Boolean));
-    if (!heard.has(currentId)) {
-      heard.add(currentId);
-      localStorage.setItem('ghar.heard.' + currentDeck, Array.from(heard).sort().join(','));
-      if (window.GharAuth && GharAuth.signedIn()) GharAuth.push(currentDeck);
-      if (window.GharAuth) { GharAuth.pushTotals(); GharAuth.shareLeaderboard(); }
-    }
-    // whole deck traced? earn a Mystery Box (once per deck)
-    var ids = deckWords[currentDeck] || [];
-    var granted = boxGrantedSet();
+    // My Name has no deck to count toward and no Mystery Box (app: the box
+    // is for the letter sections, not the name).
     var boxEarned = false;
-    if (ids.length && ids.every(function (id) { return traced.has(id); }) && !granted.has(currentDeck)) {
-      granted.add(currentDeck);
-      localStorage.setItem('ghar.writing.boxGranted', Array.from(granted).sort().join(','));
-      var boxes = parseInt(localStorage.getItem('ghar.mystery.writingBoxes') || '0', 10) || 0;
-      localStorage.setItem('ghar.mystery.writingBoxes', String(boxes + 1));
-      boxEarned = true;
+    if (currentDeck !== 'myname') {
+      var heard = new Set((localStorage.getItem('ghar.heard.' + currentDeck) || '').split(',').filter(Boolean));
+      if (!heard.has(currentId)) {
+        heard.add(currentId);
+        localStorage.setItem('ghar.heard.' + currentDeck, Array.from(heard).sort().join(','));
+        if (window.GharAuth && GharAuth.signedIn()) GharAuth.push(currentDeck);
+        if (window.GharAuth) { GharAuth.pushTotals(); GharAuth.shareLeaderboard(); }
+      }
+      var ids = deckWords[currentDeck] || [];
+      var granted = boxGrantedSet();
+      if (ids.length && ids.every(function (id) { return traced.has(id); }) && !granted.has(currentDeck)) {
+        granted.add(currentDeck);
+        localStorage.setItem('ghar.writing.boxGranted', Array.from(granted).sort().join(','));
+        var boxes = parseInt(localStorage.getItem('ghar.mystery.writingBoxes') || '0', 10) || 0;
+        localStorage.setItem('ghar.mystery.writingBoxes', String(boxes + 1));
+        boxEarned = true;
+      }
     }
     $('trace-celebrate-dev').textContent = W.dev;
-    $('trace-celebrate-line').textContent = 'You traced ' + W.roman + '!';
+    $('trace-celebrate-line').textContent = 'You traced ' + (W.roman || W.en) + '!';
     $('trace-box-note').hidden = !boxEarned;
     $('trace-next').style.display = nextWordId() ? '' : 'none';
     $('trace-celebrate').hidden = false;
@@ -315,7 +341,9 @@
     strokes = W.strokes || [];
     $('trace-dev').textContent = W.dev;
     $('trace-meta').textContent = W.roman + ' · ' + W.en + '  ·  ' + W.deckTitle;
+    $('trace-hear').style.display = W.audio ? '' : 'none';
     $('trace-picker').hidden = true;
+    $('trace-name-setup').hidden = true;
     $('trace-board').hidden = false;
     template = computeTemplate(W.dev);
     if (document.fonts && document.fonts.load) {
@@ -329,27 +357,201 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  /* ---- My Name: the dots are generated in the browser, the same way the
+     app renders its LetterGuide at runtime (render -> thin -> order ->
+     split into strokes). ---- */
+  function zhangSuen(g, N) {
+    var img = new Uint8Array(g);
+    function nb(x, y) {
+      return [img[(y - 1) * N + x], img[(y - 1) * N + x + 1], img[y * N + x + 1],
+              img[(y + 1) * N + x + 1], img[(y + 1) * N + x], img[(y + 1) * N + x - 1],
+              img[y * N + x - 1], img[(y - 1) * N + x - 1]];
+    }
+    function trans(p) {
+      var seq = [p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[0]], c = 0;
+      for (var i = 0; i < 8; i++) if (seq[i] === 0 && seq[i + 1] === 1) c++;
+      return c;
+    }
+    function count(p) { var s = 0; for (var i = 0; i < 8; i++) s += p[i]; return s; }
+    var changed = true;
+    while (changed) {
+      changed = false;
+      var rem = [];
+      for (var y = 1; y < N - 1; y++) for (var x = 1; x < N - 1; x++) {
+        if (!img[y * N + x]) continue;
+        var p = nb(x, y), b = count(p);
+        if (b < 2 || b > 6 || trans(p) !== 1) continue;
+        if (p[0] * p[2] * p[4] !== 0 || p[2] * p[4] * p[6] !== 0) continue;
+        rem.push(y * N + x);
+      }
+      if (rem.length) { changed = true; rem.forEach(function (i) { img[i] = 0; }); }
+      rem = [];
+      for (var y2 = 1; y2 < N - 1; y2++) for (var x2 = 1; x2 < N - 1; x2++) {
+        if (!img[y2 * N + x2]) continue;
+        var q = nb(x2, y2), b2 = count(q);
+        if (b2 < 2 || b2 > 6 || trans(q) !== 1) continue;
+        if (q[0] * q[2] * q[6] !== 0 || q[0] * q[4] * q[6] !== 0) continue;
+        rem.push(y2 * N + x2);
+      }
+      if (rem.length) { changed = true; rem.forEach(function (i) { img[i] = 0; }); }
+    }
+    return img;
+  }
+  function nnWalk(pts) {
+    var n = pts.length, used = new Array(n).fill(false), path = [];
+    var start = 0;
+    for (var i = 1; i < n; i++) {
+      if (pts[i][1] < pts[start][1] || (pts[i][1] === pts[start][1] && pts[i][0] < pts[start][0])) start = i;
+    }
+    path.push(pts[start]); used[start] = true;
+    var cur = pts[start];
+    for (var k = 1; k < n; k++) {
+      var best = -1, bestD = Infinity;
+      for (var j = 0; j < n; j++) {
+        if (used[j]) continue;
+        var d = Math.hypot(pts[j][0] - cur[0], pts[j][1] - cur[1]);
+        if (d < bestD) { bestD = d; best = j; }
+      }
+      if (best < 0) break;
+      path.push(pts[best]); used[best] = true; cur = pts[best];
+    }
+    return path;
+  }
+  function sampleStroke(pts, gap) {
+    if (!pts.length) return [];
+    var out = [pts[0]], last = pts[0];
+    for (var i = 1; i < pts.length; i++) {
+      if (Math.hypot(pts[i][0] - last[0], pts[i][1] - last[1]) >= gap) { out.push(pts[i]); last = pts[i]; }
+    }
+    if (out[out.length - 1] !== pts[pts.length - 1]) out.push(pts[pts.length - 1]);
+    return out;
+  }
+  function splitStrokes(path) {
+    var raw = [[]];
+    for (var i = 0; i < path.length; i++) {
+      if (i > 0 && Math.hypot(path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1]) > 12) raw.push([]);
+      raw[raw.length - 1].push(path[i]);
+    }
+    raw = raw.filter(function (s) { return s.length >= 3; });
+    var dots = raw.map(function (s) { return sampleStroke(s, DOT_GAP); });
+    var out = [];
+    for (var i = 0; i < dots.length; i++) {
+      var s = dots[i];
+      if (s.length < 4 && out.length) out[out.length - 1] = out[out.length - 1].concat(s);
+      else if (s.length < 4 && i + 1 < dots.length) dots[i + 1] = s.concat(dots[i + 1]);
+      else if (s.length > 30) { var mid = Math.floor(s.length / 2); out.push(s.slice(0, mid)); out.push(s.slice(mid)); }
+      else out.push(s);
+    }
+    out = out.filter(function (s) { return s.length >= 2; });
+    out.sort(function (a, b) {
+      var ay = Math.min.apply(null, a.map(function (p) { return p[1]; }));
+      var by = Math.min.apply(null, b.map(function (p) { return p[1]; }));
+      if (Math.abs(ay - by) > 12) return ay - by;
+      var ax = Math.min.apply(null, a.map(function (p) { return p[0]; }));
+      var bx = Math.min.apply(null, b.map(function (p) { return p[0]; }));
+      return ax - bx;
+    });
+    return out;
+  }
+  function makeDotsForText(dev) {
+    try {
+      var tpl = computeTemplate(dev);
+      if (!tpl) return null;
+      var c300 = document.createElement('canvas'); c300.width = 300; c300.height = 300;
+      var c = c300.getContext('2d');
+      c.fillStyle = '#fff'; c.fillRect(0, 0, 300, 300);
+      c.save(); c.translate(tpl.tx, tpl.ty); c.scale(tpl.s, tpl.s);
+      c.font = tpl.size + 'px ' + FONT_FAMILY; c.fillStyle = '#000';
+      c.fillText(dev, 0, 0);
+      c.restore();
+      var img = c.getImageData(0, 0, 300, 300).data;
+      var N = 90, cell = 300 / N, grid = new Uint8Array(N * N);
+      for (var py = 0; py < 300; py++) for (var px = 0; px < 300; px++) {
+        if (img[(py * 300 + px) * 4] < 128) {
+          grid[Math.min(N - 1, Math.floor(py / cell)) * N + Math.min(N - 1, Math.floor(px / cell))] = 1;
+        }
+      }
+      var skel = zhangSuen(grid, N);
+      var pts = [];
+      for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) {
+        if (skel[y * N + x]) pts.push([(x + 0.5) * cell, (y + 0.5) * cell]);
+      }
+      if (pts.length < 5) return null;
+      var strokes = splitStrokes(nnWalk(pts));
+      return strokes.length ? strokes : null;
+    } catch (e) { return null; }
+  }
+  function nameWord() {
+    var n = myName();
+    return { id: 'myname', dev: n.dev, en: 'My name', roman: n.en || n.dev,
+             deck: 'myname', deckTitle: 'My Name', section: '', audio: '', strokes: null };
+  }
+  function openNameWord() {
+    var n = myName();
+    if (!n.dev) { openNameSetup(); return; }
+    var W = nameWord();
+    // generate the dots for this name in the browser (needs the web font)
+    var gen = function () {
+      var st = makeDotsForText(W.dev);
+      if (!st) {
+        $('trace-picker').hidden = false;
+        $('trace-board').hidden = true;
+        alert('Could not make tracing dots for that name — try a shorter name.');
+        return;
+      }
+      W.strokes = st;
+      words['myname'] = W;
+      deckWords['myname'] = ['myname'];
+      openWord('myname');
+    };
+    if (document.fonts && document.fonts.load) {
+      document.fonts.load('220px "Noto Sans Devanagari"', W.dev).then(gen).catch(gen);
+    } else gen();
+  }
+  function openNameSetup() {
+    var n = myName();
+    $('trace-picker').hidden = true;
+    $('trace-board').hidden = true;
+    $('trace-name-setup').hidden = false;
+    $('trace-name-dev').value = n.dev;
+    $('trace-name-en').value = n.en;
+    $('trace-name-error').hidden = true;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   function renderPicker() {
     var traced = tracedSet();
     var root = $('trace-picker');
+    $('trace-name-setup').hidden = true;
     if (!pickerDeck) {
-      // deck list
       var html = '<div class="trace-deck-grid">';
-      deckOrder.forEach(function (did) {
+      TRACE_DECKS.forEach(function (did) {
+        var title = TRACE_TITLES[did];
+        if (did === 'myname') {
+          var n = myName();
+          var done = traced.has('myname');
+          html += '<button type="button" class="trace-deck' + (done ? ' done' : '') + '" data-deck="myname">' +
+            '<span class="trace-deck-title">✏️ My Name</span>' +
+            '<span class="trace-deck-count">' + (n.dev ? esc(n.dev) + (done ? ' ⭐' : '') : 'Set it up, then practice writing it') + '</span></button>';
+          return;
+        }
         var ids = deckWords[did] || [];
         var got = ids.filter(function (id) { return traced.has(id); }).length;
-        var done = ids.length && got === ids.length;
-        html += '<button type="button" class="trace-deck' + (done ? ' done' : '') + '" data-deck="' + esc(did) + '">' +
-          '<span class="trace-deck-title">' + esc(deckTitles[did] || did) + '</span>' +
-          '<span class="trace-deck-count">' + got + ' / ' + ids.length + ' traced' + (done ? ' 🎁' : '') + '</span></button>';
+        var done2 = ids.length && got === ids.length;
+        html += '<button type="button" class="trace-deck' + (done2 ? ' done' : '') + '" data-deck="' + esc(did) + '">' +
+          '<span class="trace-deck-title">' + esc(title) + '</span>' +
+          '<span class="trace-deck-count">' + got + ' / ' + ids.length + ' traced' + (done2 ? ' 🎁' : '') + '</span></button>';
       });
       root.innerHTML = html + '</div>';
       root.querySelectorAll('.trace-deck').forEach(function (btn) {
-        btn.addEventListener('click', function () { pickerDeck = btn.getAttribute('data-deck'); renderPicker(); });
+        btn.addEventListener('click', function () {
+          var did = btn.getAttribute('data-deck');
+          if (did === 'myname') { openNameWord(); return; }
+          pickerDeck = did; renderPicker();
+        });
       });
       return;
     }
-    // word list for one deck, grouped by section
     var ids = deckWords[pickerDeck] || [];
     var groups = {};
     ids.forEach(function (id) {
@@ -382,11 +584,9 @@
   /* Watch: animate a pen dot along the strokes in order. */
   function startWatch() {
     if (watching || !strokes.length) return;
-    stopWatch();
-    watching = true;
-    resetBoard();
-    // flatten strokes into one ordered point list (with a small gap between strokes)
-    var flat = [];
+    resetBoard();            // NOTE: resetBoard calls stopWatch, so set
+    watching = true;         // watching=true AFTER it — the old order
+    var flat = [];           // (watching=true, then resetBoard) killed it
     strokes.forEach(function (st) { flat = flat.concat(st); });
     watchStart = performance.now();
     var total = flat.length;
@@ -394,7 +594,6 @@
       if (!watching) return;
       var t = Math.min((now - watchStart) / watchDur, 1);
       var n = Math.max(1, Math.floor(t * total));
-      // rebuild ink + hits up to point n so the drawing looks traced
       ink = []; cur = [];
       strokeHits = strokes.map(function () { return new Set(); });
       var seen = 0;
@@ -405,7 +604,7 @@
         seen += strokes[si].length;
         if (take < strokes[si].length) break;
       }
-      strokeIdx = Math.min(strokes.length - 1, strokes.findIndex(function (s, i) { return strokeHits[i].size < s.length; }));
+      strokeIdx = strokes.findIndex(function (s, i) { return strokeHits[i].size < s.length; });
       if (strokeIdx < 0) strokeIdx = strokes.length - 1;
       draw();
       var head = flat[Math.min(n - 1, total - 1)];
@@ -421,18 +620,20 @@
   }
   function stopWatch() { watching = false; if (watchRaf) cancelAnimationFrame(watchRaf); watchRaf = 0; }
 
-  var drawing = false, lastPt = null;
-  canvas.addEventListener('pointerdown', function (ev) {
+  /* Drawing input — pointer events (finger, pen, mouse) plus mouse events
+     as a fallback, so a desktop without a touchscreen can draw too.
+     Pointer events fire first for a mouse; the mouse handlers ignore a
+     press the pointer events already claimed (downViaPointer). */
+  function beginDraw(ev) {
     if (celebrated || watching) return;
     ev.preventDefault();
     drawing = true;
-    canvas.setPointerCapture(ev.pointerId);
     var p = toBox(ev);
     cur = [p]; lastPt = p;
     $('trace-hint').hidden = true;
     draw();
-  });
-  canvas.addEventListener('pointermove', function (ev) {
+  }
+  function moveDraw(ev) {
     if (!drawing || celebrated || watching) return;
     ev.preventDefault();
     var p = toBox(ev);
@@ -440,18 +641,25 @@
     if (lastPt) hitTestSegment(lastPt, p);
     lastPt = p;
     draw();
-  });
-  function endStroke() {
+  }
+  function endDraw() {
     if (!drawing) return;
     drawing = false;
     if (cur.length) { ink.push(cur); cur = []; }
     lastPt = null;
-    lastHit = null;   // finger lifted: the next touch may start anywhere
+    lastHit = null;   // pointer lifted: the next touch may start anywhere
     draw();
     checkStrokeOnLift();
   }
-  canvas.addEventListener('pointerup', endStroke);
-  canvas.addEventListener('pointercancel', endStroke);
+  canvas.addEventListener('pointerdown', function (ev) { downViaPointer = true; beginDraw(ev); });
+  canvas.addEventListener('pointermove', function (ev) { if (downViaPointer) moveDraw(ev); });
+  canvas.addEventListener('pointerup', function () { downViaPointer = false; endDraw(); });
+  canvas.addEventListener('pointercancel', function () { downViaPointer = false; endDraw(); });
+  canvas.addEventListener('pointerleave', function () { if (downViaPointer) { downViaPointer = false; endDraw(); } });
+  canvas.addEventListener('mousedown', function (ev) { if (!downViaPointer) beginDraw(ev); });
+  canvas.addEventListener('mousemove', function (ev) { if (!downViaPointer && drawing) moveDraw(ev); });
+  canvas.addEventListener('mouseup', function () { if (!downViaPointer) endDraw(); });
+  canvas.addEventListener('mouseleave', function () { if (!downViaPointer && drawing) endDraw(); });
 
   $('trace-hear').addEventListener('click', hearWord);
   $('trace-clear').addEventListener('click', resetBoard);
@@ -460,6 +668,7 @@
     stopWatch();
     $('trace-board').hidden = true;
     $('trace-picker').hidden = false;
+    pickerDeck = null;
     renderPicker();
   });
   $('trace-again').addEventListener('click', resetBoard);
@@ -467,13 +676,27 @@
     var n = nextWordId();
     if (n) openWord(n);
   });
+  $('trace-name-save').addEventListener('click', function () {
+    var dev = $('trace-name-dev').value.trim();
+    var en = $('trace-name-en').value.trim();
+    if (!dev) { $('trace-name-error').hidden = false; $('trace-name-dev').focus(); return; }
+    localStorage.setItem('ghar.myname.devanagari', dev);
+    localStorage.setItem('ghar.myname.english', en);
+    $('trace-name-setup').hidden = true;
+    openNameWord();
+  });
+  $('trace-name-cancel').addEventListener('click', function () {
+    $('trace-name-setup').hidden = true;
+    $('trace-picker').hidden = false;
+    pickerDeck = null;
+    renderPicker();
+  });
 
   fetch('data/writing-dots.json').then(function (r) { return r.json(); }).then(function (data) {
     words = data;
-    // deck order = first-seen order in the data (pack order)
     Object.keys(data).forEach(function (id) {
       var W = data[id];
-      if (!deckWords[W.deck]) { deckWords[W.deck] = []; deckOrder.push(W.deck); deckTitles[W.deck] = W.deckTitle; }
+      if (!deckWords[W.deck]) { deckWords[W.deck] = []; deckTitles[W.deck] = W.deckTitle; }
       deckWords[W.deck].push(id);
     });
     renderPicker();
