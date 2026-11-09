@@ -24,14 +24,14 @@
 
   <div id="trace-name-setup" class="trace-name-setup" hidden>
     <h2>✏️ My Name</h2>
-    <p>Type your name in Nepali (Devanagari) and in English, then practice writing it.</p>
-    <label class="trace-name-label">Name in Nepali (नेपाली)
-      <input id="trace-name-dev" type="text" placeholder="आशा" autocomplete="off">
-    </label>
+    <p>Type your name in English once — the Nepali spelling appears by itself. Fix it below if it needs correcting, then practice writing it.</p>
     <label class="trace-name-label">Name in English
       <input id="trace-name-en" type="text" placeholder="Asha" autocomplete="off">
     </label>
-    <p id="trace-name-error" class="trace-name-error" hidden>Please type your name in Nepali first.</p>
+    <label class="trace-name-label">Name in Nepali (नेपाली)
+      <input id="trace-name-dev" type="text" placeholder="आशा" autocomplete="off">
+    </label>
+    <p id="trace-name-error" class="trace-name-error" hidden>Please type your name in English first.</p>
     <div class="trace-name-btns">
       <button id="trace-name-save" type="button">Save &amp; practice →</button>
       <button id="trace-name-cancel" type="button">← Back</button>
@@ -151,6 +151,105 @@
   function boxGrantedSet() {
     return new Set((localStorage.getItem('ghar.writing.boxGranted') || '').split(',').filter(Boolean));
   }
+  // English -> Devanagari transliteration for names, ported from the app's
+  // DevanagariTransliterator (rule-based v1). Same rule as the app: type the
+  // name once in English and the Nepali spelling appears by itself; the
+  // parent corrects it below if needed. Scan left-to-right, longest match
+  // first. Consonants carry the inherent 'a' — a following 'a' is absorbed,
+  // other vowels become matras, and a consonant before another consonant
+  // gets a halant.
+  var TRANS_CONSONANTS = [
+    ["ksh", "क्ष"], ["tra", "त्र"], ["gya", "ज्ञ"],
+    ["kh", "ख"], ["gh", "घ"], ["chh", "छ"], ["jh", "झ"],
+    ["th", "थ"], ["dh", "ध"], ["ph", "फ"], ["bh", "भ"],
+    ["sh", "श"], ["k", "क"], ["g", "ग"], ["ng", "ङ"],
+    ["ch", "च"], ["j", "ज"], ["ny", "ञ"],
+    ["T", "ट"], ["Th", "ठ"], ["D", "ड"], ["Dh", "ढ"], ["N", "ण"],
+    ["t", "त"], ["d", "द"], ["n", "न"],
+    ["p", "प"], ["b", "ब"], ["m", "म"],
+    ["y", "य"], ["r", "र"], ["l", "ल"], ["v", "व"], ["w", "व"],
+    ["s", "स"], ["h", "ह"]
+  ];
+  var TRANS_VOWELS = [
+    ["ai", "ऐ"], ["au", "औ"],
+    ["aa", "आ"], ["ee", "ई"], ["ii", "ई"],
+    ["oo", "ऊ"], ["uu", "ऊ"],
+    ["a", "अ"], ["i", "इ"], ["u", "उ"],
+    ["e", "ए"], ["o", "ओ"]
+  ];
+  var TRANS_MATRAS = [
+    ["ai", "ै"], ["au", "ौ"],
+    ["aa", "ा"], ["ee", "ी"], ["ii", "ी"],
+    ["oo", "ू"], ["uu", "ू"],
+    ["i", "ि"], ["u", "ु"],
+    ["e", "े"], ["o", "ो"],
+    // "a" after a consonant is the inherent vowel (no sign) — except
+    // word-final, where it is pronounced long. Listed last so "aa" wins.
+    ["a", ""]
+  ];
+  function transliterateName(english) {
+    var s = (english || "").trim();
+    if (!s) return "";
+    var lower = s.toLowerCase();
+    var result = "";
+    var i = 0;
+    var prevWasConsonant = false;
+    function startsAt(str, pos, prefix) {
+      return str.slice(pos, pos + prefix.length) === prefix;
+    }
+    while (i < lower.length) {
+      var matched = false;
+      for (var c = 0; c < TRANS_CONSONANTS.length; c++) {
+        var en = TRANS_CONSONANTS[c][0], de = TRANS_CONSONANTS[c][1];
+        if (startsAt(lower, i, en)) {
+          var after = i + en.length;
+          var needsHalant = false;
+          if (after < lower.length) {
+            var nextStr = lower.slice(after);
+            var nextIsVowel = TRANS_VOWELS.some(function (v) { return startsAt(nextStr, 0, v[0]); });
+            var nextIsConsonant = TRANS_CONSONANTS.some(function (cc) { return startsAt(nextStr, 0, cc[0]); });
+            if (nextIsConsonant && !nextIsVowel) needsHalant = true;
+          }
+          result += de;
+          if (needsHalant) result += "्";
+          i = after;
+          prevWasConsonant = !needsHalant;
+          matched = true;
+          break;
+        }
+      }
+      if (matched) continue;
+      var table = prevWasConsonant ? TRANS_MATRAS : TRANS_VOWELS;
+      var vowelMatched = false;
+      for (var v = 0; v < table.length; v++) {
+        var ven = table[v][0], vde = table[v][1];
+        if (startsAt(lower, i, ven)) {
+          // "a" after a consonant is inherent — skip it, EXCEPT word-final,
+          // where a name's trailing "a" is pronounced long (Asha -> आशा,
+          // not अश). The app's v1 drops it; the parent would have to fix
+          // every common name by hand, so the site keeps the long vowel.
+          if (prevWasConsonant && ven === "a") {
+            if (i + ven.length === lower.length) result += "ा";
+          } else {
+            result += vde;
+          }
+          i += ven.length;
+          prevWasConsonant = false;
+          vowelMatched = true;
+          break;
+        }
+      }
+      if (vowelMatched) continue;
+      // Unknown character — skip it.
+      i += 1;
+      prevWasConsonant = false;
+    }
+    return result;
+  }
+  // True once the parent has hand-edited the Nepali field, so typing in
+  // English stops overwriting it (same as the app's didEditDevanagari).
+  var didEditDevanagari = false;
+
   function myName() {
     return {
       dev: (localStorage.getItem('ghar.myname.devanagari') || '').trim(),
@@ -750,9 +849,24 @@
     $('trace-name-setup').hidden = false;
     $('trace-name-dev').value = n.dev;
     $('trace-name-en').value = n.en;
+    // A saved Nepali name was hand-set (or previously confirmed), so typing
+    // in English must not overwrite it until the parent clears it.
+    didEditDevanagari = !!n.dev;
     $('trace-name-error').hidden = true;
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+  // App rule: type the name once in English and the Nepali spelling fills
+  // itself in. Editing the Nepali field by hand stops the auto-fill.
+  $('trace-name-en').addEventListener('input', function () {
+    if (!didEditDevanagari) {
+      $('trace-name-dev').value = transliterateName($('trace-name-en').value);
+    }
+    $('trace-name-error').hidden = true;
+  });
+  $('trace-name-dev').addEventListener('input', function () {
+    didEditDevanagari = true;
+    $('trace-name-error').hidden = true;
+  });
 
   function renderPicker() {
     var traced = tracedSet();
@@ -918,7 +1032,10 @@
   $('trace-name-save').addEventListener('click', function () {
     var dev = $('trace-name-dev').value.trim();
     var en = $('trace-name-en').value.trim();
-    if (!dev) { $('trace-name-error').hidden = false; $('trace-name-dev').focus(); return; }
+    // English is the primary input now (same as the app). If the Nepali
+    // field is empty but English is present, fill it from the transliteration.
+    if (!dev && en) dev = transliterateName(en);
+    if (!dev) { $('trace-name-error').hidden = false; $('trace-name-en').focus(); return; }
     localStorage.setItem('ghar.myname.devanagari', dev);
     localStorage.setItem('ghar.myname.english', en);
     $('trace-name-setup').hidden = true;
