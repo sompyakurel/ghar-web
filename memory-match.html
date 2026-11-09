@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Memory Match 🧠 — Ghar</title>
+<link rel="stylesheet" href="style.css?v=24">
+<style>
+body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
+.mm-wrap { max-width: 680px; margin: 0 auto; text-align: center; }
+.mm-wrap h1 { font-size: 40px; margin: 6px 0 2px; color: #3e2723; }
+.mm-wrap h1 .brain { display: inline-block; animation: brainBob 2.4s ease-in-out infinite; }
+@keyframes brainBob { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-6px) rotate(3deg); } }
+.mm-modes { display: flex; flex-direction: column; gap: 14px; max-width: 460px; margin: 24px auto; }
+.mm-modes button { font-size: 19px; font-weight: 700; padding: 18px; border-radius: 18px; border: none; cursor: pointer; box-shadow: 0 3px 10px rgba(0,0,0,.14); transition: transform .15s, box-shadow .15s; color: #fff; }
+.mm-modes button:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(0,0,0,.2); }
+#mode-easy { background: linear-gradient(135deg, #66bb6a, #43a047); }
+#mode-med { background: linear-gradient(135deg, #ffa726, #fb8c00); }
+#mode-hard { background: linear-gradient(135deg, #ef5350, #e53935); }
+.mm-hud { display: flex; gap: 10px; justify-content: center; margin: 12px 0; flex-wrap: wrap; }
+.mm-hud .stat { background: #fff; border-radius: 999px; padding: 8px 16px; font-size: 16px; font-weight: 800; color: #3e2723; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+.mm-toggles { display: flex; gap: 10px; justify-content: center; margin: 6px 0 2px; flex-wrap: wrap; }
+.mm-toggles button { font-size: 15px; font-weight: 700; padding: 8px 16px; border-radius: 999px; border: none; background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.12); cursor: pointer; }
+.mm-toggles button:hover { background: #f5f5f5; }
+.mm-toggles button.off { opacity: .55; }
+#mm-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; max-width: 640px; margin: 14px auto; }
+.card { aspect-ratio: 1; perspective: 600px; cursor: pointer; }
+.card-inner { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform .45s; }
+.card.flipped .card-inner { transform: rotateY(180deg); }
+.card-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 14px; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 10px rgba(0,0,0,.16); }
+.card-back { background: linear-gradient(135deg, #ff7043, #e53935 55%, #b71c1c); color: #fff; font-size: 44px; }
+.card-back::after { content: ""; position: absolute; inset: 8px; border: 2px dashed rgba(255,255,255,.55); border-radius: 10px; pointer-events: none; }
+.card-front { background: #fff; transform: rotateY(180deg); flex-direction: column; padding: 6px; box-sizing: border-box; }
+.card-front img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+.card-front .w-dev { font-size: 30px; font-weight: 800; color: #3e2723; line-height: 1.15; }
+.card-front .w-rom { font-size: 14px; font-weight: 700; color: #8d7b68; margin-top: 4px; }
+.card.matched { cursor: default; }
+.card.matched .card-inner { transform: rotateY(180deg); }
+.card.matched .card-face { box-shadow: 0 0 0 3px #43a047, 0 3px 10px rgba(0,0,0,.16); }
+.card.matched .card-front { animation: matchGlow 0.6s ease-out; }
+@keyframes matchGlow { 0% { background: #c8e6c9; } 100% { background: #fff; } }
+#mm-win { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center; z-index: 100; }
+#mm-win[hidden] { display: none; }
+.win-box { background: #fff; border-radius: 20px; padding: 28px 30px; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,.3); max-width: 420px; margin: 0 16px; }
+.win-box h2 { font-size: 30px; margin: 0 0 8px; color: #3e2723; }
+.win-box p { font-size: 18px; margin: 6px 0; color: #5d4037; }
+.win-box .win-btns { display: flex; gap: 10px; justify-content: center; margin-top: 18px; flex-wrap: wrap; }
+.win-box .win-btns button { font-size: 16px; font-weight: 700; padding: 12px 20px; border-radius: 14px; border: none; cursor: pointer; background: linear-gradient(135deg, #66bb6a, #43a047); color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+.win-box .win-btns button.secondary { background: #fff; color: #3e2723; box-shadow: 0 1px 4px rgba(0,0,0,.15); }
+.mm-btns { display: flex; gap: 10px; justify-content: center; margin: 14px 0 24px; flex-wrap: wrap; }
+.mm-btns button { font-size: 17px; font-weight: 700; padding: 12px 20px; border-radius: 14px; border: none; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.12); cursor: pointer; transition: transform .15s, box-shadow .15s; }
+.mm-btns button:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(0,0,0,.16); background: #fff8ee; }
+#mm-loading { font-size: 18px; font-weight: 700; color: #6b5d4f; margin: 30px 0; }
+.confetti { position: fixed; top: -12px; width: 10px; height: 16px; z-index: 200; pointer-events: none; animation: confFall linear forwards; }
+@keyframes confFall { to { transform: translateY(110vh) rotate(720deg); opacity: .8; } }
+</style>
+</head>
+<body>
+<div class="prayer-bunting" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span></div></div>
+<div class="prayer-side left" aria-hidden="true"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span></div>
+<div class="prayer-side right" aria-hidden="true"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span></div>
+<div class="wrap">
+<div class="wrap">
+  <p><a href="index.html#games">← Back to Games</a></p>
+  <div class="mm-wrap">
+    <h1><span class="brain">🧠</span> Memory Match</h1>
+    <p class="section-sub">Flip the cards — match each picture to its Nepali word!</p>
+
+    <div class="mm-modes" id="mode-pick">
+      <button id="mode-easy" type="button">🌱 Easy · 6 pairs<br><span style="font-size:14px;font-weight:400">A gentle warm-up</span></button>
+      <button id="mode-med" type="button">🌿 Medium · 8 pairs<br><span style="font-size:14px;font-weight:400">A good challenge</span></button>
+      <button id="mode-hard" type="button">🌳 Hard · 12 pairs<br><span style="font-size:14px;font-weight:400">For memory masters</span></button>
+    </div>
+
+    <div id="game" hidden>
+      <div class="mm-toggles">
+        <button id="btn-music" type="button">🎵 Music: On</button>
+        <button id="btn-sound" type="button">🔊 Sounds: On</button>
+      </div>
+      <div class="mm-hud">
+        <span class="stat" id="hud-moves">🎴 Moves: 0</span>
+        <span class="stat" id="hud-time">⏱ 0:00</span>
+        <span class="stat" id="hud-pairs">✅ Pairs: 0/8</span>
+      </div>
+      <div id="mm-loading" hidden>Loading words…</div>
+      <div id="mm-grid"></div>
+      <div class="mm-btns">
+        <button id="btn-new" type="button">↺ New game</button>
+        <button id="btn-mode" type="button">Change difficulty</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="mm-win" hidden>
+  <div class="win-box">
+    <h2>🎉 You did it!</h2>
+    <p id="win-stats"></p>
+    <p id="win-xp"></p>
+    <p id="win-best"></p>
+    <div class="win-btns">
+      <button id="btn-again" type="button">↺ Play again</button>
+      <button id="btn-win-mode" type="button" class="secondary">Change difficulty</button>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script src="auth.js?v=7"></script>
+<script>
+(function () {
+  // ---- Sound & music (Web Audio, synthesized — no files, no copyright) ----
+  var audioCtx = null, musicGain = null, sfxGain = null, delaySend = null;
+  var musicOn = localStorage.getItem('ghar.memory.music') !== '0';
+  var sfxOn = localStorage.getItem('ghar.memory.sounds') !== '0';
+  var musicTimer = null, musicStep = 0, nextStepTime = 0;
+  var droneOsc = null, droneGain = null;
+  var MEL = [329.63, 392.00, 440.00, 392.00, 329.63, 293.66, 261.63, 293.66, 329.63, 392.00, 523.25, 440.00, 392.00, 329.63, 293.66, 0];
+  var STEP = 60 / 76 / 2;
+
+  function ensureAudio() {
+    if (!audioCtx) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return false;
+      audioCtx = new AC();
+      musicGain = audioCtx.createGain(); musicGain.gain.value = 0.14; musicGain.connect(audioCtx.destination);
+      sfxGain = audioCtx.createGain(); sfxGain.gain.value = 0.5; sfxGain.connect(audioCtx.destination);
+      var delay = audioCtx.createDelay(1); delay.delayTime.value = 0.27;
+      var fb = audioCtx.createGain(); fb.gain.value = 0.32;
+      var wet = audioCtx.createGain(); wet.gain.value = 0.3;
+      delay.connect(fb); fb.connect(delay); delay.connect(wet); wet.connect(musicGain);
+      delaySend = delay;
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return true;
+  }
+  function playNote(freq, when, dur, type, vol, dest) {
+    var o = audioCtx.createOscillator();
+    o.type = type || 'triangle';
+    o.frequency.value = freq;
+    var g = audioCtx.createGain();
+    g.gain.setValueAtTime(0, when);
+    g.gain.linearRampToValueAtTime(vol, when + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, when + dur);
+    o.connect(g);
+    g.connect(dest || musicGain);
+    if (dest === musicGain && delaySend) g.connect(delaySend);
+    o.start(when); o.stop(when + dur + 0.05);
+  }
+  function scheduleMusic() {
+    if (!musicOn || !audioCtx) return;
+    var ahead = audioCtx.currentTime + 0.35;
+    while (nextStepTime < ahead) {
+      var step = musicStep % 16;
+      var f = MEL[step];
+      if (f) playNote(f, nextStepTime, STEP * 1.8, 'triangle', 0.5, musicGain);
+      if (step % 4 === 0) {
+        var bf = (step === 0 || step === 8) ? 130.81 : 98.00;
+        playNote(bf, nextStepTime, STEP * 3.2, 'sine', 0.4, musicGain);
+      }
+      nextStepTime += STEP;
+      musicStep++;
+    }
+  }
+  function startDrone() {
+    if (droneOsc || !audioCtx) return;
+    droneOsc = audioCtx.createOscillator(); droneOsc.type = 'sine'; droneOsc.frequency.value = 65.41;
+    droneGain = audioCtx.createGain(); droneGain.gain.value = 0.0;
+    droneGain.gain.linearRampToValueAtTime(0.05, audioCtx.currentTime + 2);
+    droneOsc.connect(droneGain); droneGain.connect(musicGain);
+    droneOsc.start();
+  }
+  function stopDrone() {
+    if (!droneOsc) return;
+    var o = droneOsc, g = droneGain; droneOsc = null; droneGain = null;
+    g.gain.linearRampToValueAtTime(0.0001, audioCtx.currentTime + 0.4);
+    o.stop(audioCtx.currentTime + 0.5);
+  }
+  function startMusic() {
+    if (!ensureAudio() || !musicOn) return;
+    if (musicTimer) return;
+    nextStepTime = audioCtx.currentTime + 0.08;
+    musicStep = 0;
+    musicTimer = setInterval(scheduleMusic, 90);
+    startDrone();
+  }
+  function stopMusic() {
+    if (musicTimer) { clearInterval(musicTimer); musicTimer = null; }
+    stopDrone();
+  }
+  function sfxFlip() {
+    if (!sfxOn || !ensureAudio()) return;
+    var t = audioCtx.currentTime;
+    playNote(520, t, 0.07, 'triangle', 0.4, sfxGain);
+  }
+  function sfxMatch() {
+    if (!sfxOn || !ensureAudio()) return;
+    var t = audioCtx.currentTime;
+    playNote(880, t, 0.25, 'triangle', 0.5, sfxGain);
+    playNote(1318.5, t + 0.1, 0.3, 'triangle', 0.4, sfxGain);
+  }
+  function sfxNoMatch() {
+    if (!sfxOn || !ensureAudio()) return;
+    var t = audioCtx.currentTime;
+    playNote(220, t, 0.15, 'sine', 0.4, sfxGain);
+  }
+  function sfxWin() {
+    if (!sfxOn || !ensureAudio()) return;
+    var t = audioCtx.currentTime;
+    [523.25, 659.25, 783.99, 1046.5].forEach(function (f, i) { playNote(f, t + i * 0.13, 0.3, 'triangle', 0.5, sfxGain); });
+  }
+  function refreshToggles() {
+    var m = document.getElementById('btn-music');
+    var s = document.getElementById('btn-sound');
+    m.textContent = musicOn ? '🎵 Music: On' : '🎵 Music: Off';
+    s.textContent = sfxOn ? '🔊 Sounds: On' : '🔇 Sounds: Off';
+    m.classList.toggle('off', !musicOn);
+    s.classList.toggle('off', !sfxOn);
+  }
+
+  // ---- Game ----
+  var DIFFS = { easy: { pairs: 6, label: 'Easy' }, med: { pairs: 8, label: 'Medium' }, hard: { pairs: 12, label: 'Hard' } };
+  var diff = 'med';
+  var pack = null;        // full pack JSON
+  var cards = [];         // {word, kind: 'pic'|'word'}
+  var flipped = [];       // currently face-up, unmatched card elements
+  var lock = false;
+  var moves = 0, pairsFound = 0, totalPairs = 8;
+  var startTime = 0, timerInt = null, elapsed = 0;
+  var over = false;
+  var audioEl = null;     // one shared Audio element for word clips
+  var xpPaid = false;
+
+  var gridEl = document.getElementById('mm-grid');
+  var loadingEl = document.getElementById('mm-loading');
+  var toastEl = document.getElementById('toast');
+  var toastTimer;
+
+  function toast(msg, ms) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove('show'); }, ms || 2500);
+  }
+
+  function asset(p) {
+    if (!p) return '';
+    return p.replace(/^\/images\/nepal-v1\//, 'assets/images/').replace(/^\/audio\/nepal-v1\//, 'assets/audio/nepal-v1/');
+  }
+
+  function shuffle(a) {
+    a = a.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  function fmtTime(s) {
+    var m = Math.floor(s / 60), ss = s % 60;
+    return m + ':' + (ss < 10 ? '0' : '') + ss;
+  }
+
+  function updateHud() {
+    document.getElementById('hud-moves').textContent = '🎴 Moves: ' + moves;
+    document.getElementById('hud-time').textContent = '⏱ ' + fmtTime(elapsed);
+    document.getElementById('hud-pairs').textContent = '✅ Pairs: ' + pairsFound + '/' + totalPairs;
+  }
+
+  function playWordAudio(w) {
+    var url = asset(w.audio_url);
+    if (!url) return;
+    if (!audioEl) audioEl = new Audio();
+    audioEl.pause();
+    audioEl.src = url;
+    audioEl.play().catch(function () {});
+  }
+
+  function buildGrid() {
+    // Pick random playable words (picture + audio), one picture card + one
+    // word card per word, then shuffle the deck.
+    // Dedupe: the pack has a few words that share a devanagari string or an
+    // image (e.g. "सुन्तला" is both a colour and a fruit). Two identical
+    // word cards would be indistinguishable, so keep only the first of each.
+    var seenDev = {}, seenImg = {};
+    var playable = [];
+    pack.decks.forEach(function (d) {
+      d.words.forEach(function (w) {
+        if (!w.image || !w.has_audio) return;
+        if (seenDev[w.devanagari] || seenImg[w.image]) return;
+        seenDev[w.devanagari] = true;
+        seenImg[w.image] = true;
+        playable.push(w);
+      });
+    });
+    var chosen = shuffle(playable).slice(0, totalPairs);
+    cards = [];
+    chosen.forEach(function (w) {
+      cards.push({ word: w, kind: 'pic' });
+      cards.push({ word: w, kind: 'word' });
+    });
+    cards = shuffle(cards);
+    gridEl.innerHTML = '';
+    cards.forEach(function (c, idx) {
+      var card = document.createElement('div');
+      card.className = 'card';
+      card.dataset.idx = idx;
+      var inner = document.createElement('div');
+      inner.className = 'card-inner';
+      var back = document.createElement('div');
+      back.className = 'card-face card-back';
+      back.textContent = '🏠';
+      var front = document.createElement('div');
+      front.className = 'card-face card-front';
+      if (c.kind === 'pic') {
+        var img = document.createElement('img');
+        img.src = asset(c.word.image);
+        img.alt = c.word.english || '';
+        front.appendChild(img);
+      } else {
+        var dev = document.createElement('div');
+        dev.className = 'w-dev';
+        dev.textContent = c.word.devanagari;
+        var rom = document.createElement('div');
+        rom.className = 'w-rom';
+        rom.textContent = c.word.romanized || '';
+        front.appendChild(dev);
+        front.appendChild(rom);
+      }
+      inner.appendChild(back);
+      inner.appendChild(front);
+      card.appendChild(inner);
+      card.addEventListener('click', function () { onCard(card, c); });
+      gridEl.appendChild(card);
+    });
+  }
+
+  function onCard(cardEl, c) {
+    if (over || lock) return;
+    if (cardEl.classList.contains('flipped') || cardEl.classList.contains('matched')) return;
+    sfxFlip();
+    playWordAudio(c.word);
+    cardEl.classList.add('flipped');
+    flipped.push({ el: cardEl, word: c.word });
+    if (flipped.length === 2) {
+      moves++;
+      updateHud();
+      var a = flipped[0], b = flipped[1];
+      if (a.word.id === b.word.id) {
+        // Match!
+        setTimeout(function () {
+          a.el.classList.add('matched');
+          b.el.classList.add('matched');
+          flipped = [];
+          pairsFound++;
+          sfxMatch();
+          updateHud();
+          if (pairsFound === totalPairs) winGame();
+        }, 450);
+      } else {
+        lock = true;
+        setTimeout(function () {
+          a.el.classList.remove('flipped');
+          b.el.classList.remove('flipped');
+          flipped = [];
+          lock = false;
+          sfxNoMatch();
+        }, 900);
+      }
+    }
+  }
+
+  function winGame() {
+    over = true;
+    if (timerInt) { clearInterval(timerInt); timerInt = null; }
+    sfxWin();
+    confettiBurst();
+    var sharp = moves <= totalPairs + 3;
+    var xp = awardXp(sharp);
+    document.getElementById('win-stats').textContent =
+      DIFFS[diff].label + ' · ' + moves + ' moves · ' + fmtTime(elapsed) +
+      (sharp ? ' · 🌟 Sharp memory!' : '');
+    document.getElementById('win-xp').textContent = xp > 0 ? '⭐ +' + xp + ' XP' : 'No more XP for Memory Match today — come back tomorrow!';
+    var bestKey = 'ghar.memory.best.' + diff;
+    var best = parseInt(localStorage.getItem(bestKey) || '0', 10);
+    var bestMsg = '';
+    if (!best || moves < best) {
+      localStorage.setItem(bestKey, String(moves));
+      bestMsg = '🏆 New best for ' + DIFFS[diff].label + '!';
+    } else {
+      bestMsg = 'Best for ' + DIFFS[diff].label + ': ' + best + ' moves';
+    }
+    document.getElementById('win-best').textContent = bestMsg;
+    document.getElementById('mm-win').hidden = false;
+  }
+
+  function confettiBurst() {
+    var colors = ['#e53935', '#fdd835', '#43a047', '#1e88e5', '#fb8c00', '#7e57c2', '#ec407a'];
+    for (var i = 0; i < 40; i++) {
+      var d = document.createElement('div');
+      d.className = 'confetti';
+      d.style.left = (Math.random() * 100) + 'vw';
+      d.style.background = colors[i % colors.length];
+      d.style.animationDuration = (1.6 + Math.random() * 1.4) + 's';
+      d.style.animationDelay = (Math.random() * 0.4) + 's';
+      document.body.appendChild(d);
+      (function (el) { setTimeout(function () { el.remove(); }, 3600); })(d);
+    }
+  }
+
+  function awardXp(sharp) {
+    if (xpPaid) return 0;
+    xpPaid = true;
+    var today = new Date().toISOString().slice(0, 10);
+    var day = localStorage.getItem('ghar.memory.day');
+    var paid = parseInt(localStorage.getItem('ghar.memory.paid') || '0', 10);
+    if (day !== today) { day = today; paid = 0; }
+    if (paid >= 3) return 0;
+    var xp = sharp ? 15 : 10;
+    var total = parseInt(localStorage.getItem('ghar.xp.total') || '0', 10) + xp;
+    localStorage.setItem('ghar.xp.total', String(total));
+    localStorage.setItem('ghar.memory.day', day);
+    localStorage.setItem('ghar.memory.paid', String(paid + 1));
+    if (window.GharAuth) {
+      GharAuth.pushTotals().catch(function () {});
+      if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(function () {});
+    }
+    return xp;
+  }
+
+  function startGame(d) {
+    diff = d;
+    totalPairs = DIFFS[d].pairs;
+    flipped = [];
+    lock = false;
+    moves = 0; pairsFound = 0; elapsed = 0;
+    over = false; xpPaid = false;
+    document.getElementById('mm-win').hidden = true;
+    document.getElementById('mode-pick').hidden = true;
+    document.getElementById('game').hidden = false;
+    refreshToggles();
+    startMusic();
+    if (timerInt) clearInterval(timerInt);
+    startTime = Date.now();
+    timerInt = setInterval(function () {
+      elapsed = Math.floor((Date.now() - startTime) / 1000);
+      updateHud();
+    }, 1000);
+    updateHud();
+    if (!pack) {
+      loadingEl.hidden = false;
+      gridEl.innerHTML = '';
+      fetch('data/nepal-v1.json?v=2').then(function (r) { return r.json(); }).then(function (j) {
+        pack = j;
+        loadingEl.hidden = true;
+        buildGrid();
+      }).catch(function () {
+        loadingEl.textContent = 'Couldn\'t load the words. Check your connection and refresh.';
+      });
+    } else {
+      buildGrid();
+    }
+  }
+
+  document.getElementById('mode-easy').addEventListener('click', function () { startGame('easy'); });
+  document.getElementById('mode-med').addEventListener('click', function () { startGame('med'); });
+  document.getElementById('mode-hard').addEventListener('click', function () { startGame('hard'); });
+  document.getElementById('btn-new').addEventListener('click', function () { startGame(diff); });
+  document.getElementById('btn-again').addEventListener('click', function () { startGame(diff); });
+  function backToModes() {
+    if (timerInt) { clearInterval(timerInt); timerInt = null; }
+    document.getElementById('game').hidden = true;
+    document.getElementById('mm-win').hidden = true;
+    document.getElementById('mode-pick').hidden = false;
+  }
+  document.getElementById('btn-mode').addEventListener('click', backToModes);
+  document.getElementById('btn-win-mode').addEventListener('click', backToModes);
+  document.getElementById('btn-music').addEventListener('click', function () {
+    musicOn = !musicOn;
+    localStorage.setItem('ghar.memory.music', musicOn ? '1' : '0');
+    if (musicOn) startMusic(); else stopMusic();
+    refreshToggles();
+  });
+  document.getElementById('btn-sound').addEventListener('click', function () {
+    sfxOn = !sfxOn;
+    localStorage.setItem('ghar.memory.sounds', sfxOn ? '1' : '0');
+    refreshToggles();
+    if (sfxOn) sfxFlip();
+  });
+
+  if (window.GharAuth) GharAuth.pull().catch(function () {});
+})();
+</script>
+</body>
+</html>
