@@ -10,9 +10,8 @@
 // on a canvas tap, and celebrate()/pet() fire the triggers from code.
 //
 // State machine "Pet" — triggers: celebrate, pet.
-// Artboard background is cream (#FFF3E0), so the canvas is styled as a
-// cream rounded card — the same look whether the .riv carries the fill
-// or is transparent.
+// The artboard has no background fill, so the canvas is transparent and
+// Bhunte shows on the page behind it (the room), not in a card.
 (function () {
   var RIV_SRC = "assets/rive/bhunte.riv";
   var STATE_MACHINE = "Pet";
@@ -32,8 +31,9 @@
     canvas.height = 500;
     canvas.setAttribute("aria-label", img.getAttribute("alt") || "Bhunte the dog");
     canvas.style.cursor = "pointer";
-    canvas.style.background = "#fff3e0";
-    canvas.style.borderRadius = "16px";
+    // No background or border-radius: the .riv artboard is transparent,
+    // so Bhunte shows on the page behind the canvas (the room), not in
+    // a cream card.
     canvas.style.display = "none"; // shown only once the .riv has loaded
     img.parentNode.insertBefore(canvas, img.nextSibling);
 
