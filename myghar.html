@@ -409,25 +409,52 @@ function renderMysteryItems() {
 // (ghar.mystery.writingBoxes, incremented by the writing pages when they
 // land — the hook is here so the count flows in with no other change).
 // Opening a box reveals a random treasure the kid does not own yet.
+// Boxes opened so far. A box is consumed when it is OPENED, not when a
+// treasure is found — because once all 6 treasures are found, a box gives
+// +10 XP instead, and without this counter those boxes could never be spent
+// (and the button would show a count but stay gray). Older saves have no
+// counter yet, so the count starts at the treasures already owned (each one
+// came from an opened box).
+function mysteryOpenedCount() {
+  const stored = parseInt(localStorage.getItem("ghar.mystery.opened") || "0", 10) || 0;
+  return Math.max(stored, mysteryOwned().length);
+}
 function mysteryBoxesAvailable(state) {
   const fromDecks = Math.floor(state.decksDone / MYSTERY_DECKS_PER_BOX);
   const allLessonsBonus = state.decksDone >= 22 ? 1 : 0;
   const fromWriting = parseInt(localStorage.getItem("ghar.mystery.writingBoxes") || "0", 10) || 0;
-  return Math.max(0, fromDecks + allLessonsBonus + fromWriting - mysteryOwned().length);
+  return Math.max(0, fromDecks + allLessonsBonus + fromWriting - mysteryOpenedCount());
 }
 function renderMysteryButton(state) {
   const btn = document.getElementById("mystery-btn");
   const n = mysteryBoxesAvailable(state);
   const remaining = MYSTERY.filter(t => !mysteryOwned().includes(t.id)).length;
   btn.textContent = n > 0 ? `🎁 Mystery Box (${n})` : "🎁 Mystery Box";
-  btn.disabled = n === 0 || remaining === 0;
+  // A box is openable whenever you HAVE one. All 6 treasures found just
+  // means the box pays +10 XP instead — it must never sit gray with a count.
+  btn.disabled = n === 0;
   btn.title = n === 0
     ? `Complete ${MYSTERY_DECKS_PER_BOX} more decks to earn a Mystery Box`
-    : remaining === 0 ? "You found all the mystery treasures!" : "Open a Mystery Box!";
+    : remaining === 0 ? "You found all the treasures — this box pays +10 XP!" : "Open a Mystery Box!";
 }
 function openMysteryBox(state) {
+  if (mysteryBoxesAvailable(state) === 0) return;
+  // Consume one box (counted separately from treasures, so a box that pays
+  // XP still gets spent).
+  const opened = mysteryOpenedCount() + 1;
+  localStorage.setItem("ghar.mystery.opened", String(opened));
   const remaining = MYSTERY.filter(t => !mysteryOwned().includes(t.id));
-  if (mysteryBoxesAvailable(state) === 0 || remaining.length === 0) return;
+  if (remaining.length === 0) {
+    // All 6 treasures found — the box pays +10 XP instead (the app's
+    // gift-box fallback), so leftover boxes stay openable and useful.
+    const xp = (parseInt(localStorage.getItem("ghar.xp.total") || "0", 10) || 0) + 10;
+    localStorage.setItem("ghar.xp.total", String(xp));
+    document.getElementById("xp-label").textContent = xp;
+    if (window.GharAuth && GharAuth.pushTotals) GharAuth.pushTotals().catch(() => {});
+    renderMysteryButton(readState());
+    showCelebration("🎁 +10 XP!", "You found all the treasures — here's 10 XP!");
+    return;
+  }
   const pick = remaining[Math.floor(Math.random() * remaining.length)];
   const list = mysteryOwned();
   list.push(pick.id);
