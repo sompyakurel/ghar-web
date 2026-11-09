@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ghar — Songs</title>
-<link rel="stylesheet" href="style.css?v=25">
+<link rel="stylesheet" href="style.css?v=26">
 </head>
 <body>
 <div class="prayer-bunting" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span></div></div>
@@ -15,9 +15,11 @@
   <div id="content"></div>
   <p class="error" id="error" hidden>Couldn't load the songs.</p>
 </div>
+<script src="auth.js?v=8"></script>
 <script>
-// Songs doesn't load auth.js, so it has its own copy of the esc() helper:
-// escape & < > " ' for safe interpolation into innerHTML.
+// Songs keeps its own copy of the esc() helper (defined below) so it
+// works even if auth.js fails to load; auth.js also provides GharAuth
+// for the server unlock flag (Stripe $7.99).
 function esc(s) {
   return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
     return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
@@ -46,11 +48,16 @@ function playSong(audioUrl, btn) {
   player.play().catch(() => { btn.textContent = "▶️ Play"; currentBtn = null; });
   player.onended = () => { btn.textContent = "▶️ Play"; currentBtn = null; };
 }
-fetch("data/songs-v1.json")
+// Server unlock (Stripe $7.99) opens Premium songs, same as TEST.
+// refreshUnlock() re-reads the flag from GET /accounts/me first.
+// Guarded so the page still works if auth.js fails to load.
+const _refreshUnlock = (window.GharAuth && GharAuth.refreshUnlock) ? GharAuth.refreshUnlock().catch(() => false) : Promise.resolve(false);
+function _isUnlocked() { return !!(window.GharAuth && GharAuth.isUnlocked && GharAuth.isUnlocked()); }
+_refreshUnlock.then(() => fetch("data/songs-v1.json"))
   .then(r => { if (!r.ok) throw new Error("load failed"); return r.json(); })
   .then(pack => {
     const content = document.getElementById("content");
-    if (!TEST) {
+    if (!TEST && !_isUnlocked()) {
       content.innerHTML = `<div class="deck-head"><h1>🔒 Songs</h1><p>These songs unlock with Ghar Premium.</p></div>`;
       return;
     }

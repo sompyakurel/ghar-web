@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://backend-patient-wave-3724.fly.dev https://api.open-meteo.com; object-src 'none'; base-uri 'self';">
 <title>Ghar — Deck</title>
-<link rel="stylesheet" href="style.css?v=25">
+<link rel="stylesheet" href="style.css?v=26">
 </head>
 <body>
 <div class="prayer-bunting" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span></div></div>
@@ -217,7 +217,7 @@ function loadHeard() {
 }
 let heard = loadHeard();
 function saveHeard() { localStorage.setItem(storeKey, JSON.stringify([...heard])); }
-GharAuth.pull().catch(() => {}).then(() => fetch("data/nepal-v1.json"))
+GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => false)).then(() => fetch("data/nepal-v1.json"))
   .then(r => { if (!r.ok) throw new Error("load failed"); return r.json(); })
   .then(pack => {
     const deck = pack.decks.find(d => d.id === deckId);
@@ -226,8 +226,13 @@ GharAuth.pull().catch(() => {}).then(() => fetch("data/nepal-v1.json"))
     const isConvo = deck.kind === "convo";
     document.title = `Ghar — ${deck.title}`;
     const content = document.getElementById("content");
-    if (!FREE.has(deck.id) && !TEST) {
-      content.innerHTML = `<div class="deck-head"><h1>🔒 ${esc(deck.title)}</h1><p>This deck unlocks with Ghar Premium.</p></div>`;
+    // Server unlock (Stripe $7.99) opens Premium decks, same as TEST.
+    if (!FREE.has(deck.id) && !TEST && !GharAuth.isUnlocked()) {
+      content.innerHTML = `<div class="deck-head"><h1>🔒 ${esc(deck.title)}</h1><p>This deck unlocks with Ghar Premium.</p><p><button type="button" class="quiz-next" id="unlock-deck-btn">🔓 Unlock — $7.99</button></p><p class="section-sub">One-time payment for the whole family. Already paid? <a href="signin.html">Sign in</a> to restore it.</p></div>`;
+      document.getElementById("unlock-deck-btn").addEventListener("click", () => {
+        if (!GharAuth.signedIn()) { location.href = "signin.html"; return; }
+        GharAuth.startCheckout().catch(() => { content.insertAdjacentHTML("beforeend", `<p class="error">Could not start checkout — check your connection and try again.</p>`); });
+      });
       return;
     }
     const total = deck.words.length;

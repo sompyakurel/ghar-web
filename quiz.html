@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://backend-patient-wave-3724.fly.dev https://api.open-meteo.com; object-src 'none'; base-uri 'self';">
 <title>Ghar — Quiz</title>
-<link rel="stylesheet" href="style.css?v=25">
+<link rel="stylesheet" href="style.css?v=26">
 </head>
 <body>
 <div class="prayer-bunting" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span></div></div>
@@ -156,8 +156,10 @@ function playCurrent() {
   player.play().catch(() => {});
 }
 function newQuestion() {
-  if (!TEST && freeUsed >= FREE_LIMIT) { showLock(); return; }
-  if (!TEST) { freeUsed += 1; saveFree(); GharAuth.pushTotals().catch(() => {}); }
+  // The 5-free-question limit applies to the free tier only. A family
+  // unlocked via Stripe (server flag) has unlimited quiz questions.
+  if (!TEST && !GharAuth.isUnlocked() && freeUsed >= FREE_LIMIT) { showLock(); return; }
+  if (!TEST && !GharAuth.isUnlocked()) { freeUsed += 1; saveFree(); GharAuth.pushTotals().catch(() => {}); }
   const pool = section.words.filter(w => section.mode === "picture" ? w.image : (w.has_audio !== false));
   if (queue.length === 0) {
     queue = shuffle(pool.filter(w => !current || w.id !== current.id));
@@ -264,7 +266,7 @@ function answer(i, btn) {
     fb.className = "quiz-feedback bad";
   }
 }
-GharAuth.pull().catch(() => {}).then(() => fetch("data/nepal-v1.json"))
+GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => false)).then(() => fetch("data/nepal-v1.json"))
   .then(r => { if (!r.ok) throw new Error("load failed"); return r.json(); })
   .then(p => {
     xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
@@ -288,7 +290,7 @@ GharAuth.pull().catch(() => {}).then(() => fetch("data/nepal-v1.json"))
         const saved = parseInt(localStorage.getItem("ghar.quiz.lastSection") || "", 10);
         if (!isNaN(saved) && saved >= 0 && saved < sections.length) startIdx = saved;
       }
-      if (!TEST && freeUsed >= FREE_LIMIT) showMenu();
+      if (!TEST && !GharAuth.isUnlocked() && freeUsed >= FREE_LIMIT) showMenu();
       else startQuiz(sections[startIdx]);
     }
   })

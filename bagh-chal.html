@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bagh-Chal 🐯 — Ghar</title>
-<link rel="stylesheet" href="style.css?v=25">
+<link rel="stylesheet" href="style.css?v=26">
 </head>
 <body>
 <div class="prayer-bunting" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span></div></div>
@@ -57,6 +57,7 @@
       <button class="quiz-next bagh-btn" id="restart-btn" type="button">Restart</button>
       <button class="quiz-next bagh-btn" id="music-btn" type="button">🔊 Music</button>
     </div>
+    <div class="bagh-themes" id="theme-picker" role="group" aria-label="Piece theme"></div>
   </div>
 
   <!-- Done overlay -->
@@ -272,6 +273,25 @@ let tigerTimer = null; // pending tiger-move timeout (cleared on Restart)
 let passTimer = null; // pending pass-goats timeout (cleared on Restart)
 const MAX_PAID_PER_DAY = 3;
 
+// Piece themes. The emoji (🐯 / 🐐) is the primary identifier in every
+// theme, and the two colours in each theme are far apart, so a tiger and
+// a goat are never confused — the theme only changes the look.
+const THEMES = {
+  classic:  { name: "Classic",  tiger: { fill: "#fb8c00", stroke: "rgba(251,140,0,.6)" }, goat: { fill: "#ffffff", stroke: "rgba(0,0,0,.35)" } },
+  crimson:  { name: "Crimson",  tiger: { fill: "#c62828", stroke: "rgba(198,40,40,.6)" }, goat: { fill: "#ffca28", stroke: "rgba(0,0,0,.35)" } },
+  forest:   { name: "Forest",   tiger: { fill: "#2e7d32", stroke: "rgba(46,125,50,.6)" },  goat: { fill: "#d7ccc8", stroke: "rgba(0,0,0,.35)" } },
+  midnight: { name: "Midnight", tiger: { fill: "#37474f", stroke: "rgba(55,71,79,.6)" },  goat: { fill: "#ffb300", stroke: "rgba(0,0,0,.35)" } },
+};
+const THEME_KEY = "ghar.baghchal.theme";
+let theme = THEMES[localStorage.getItem(THEME_KEY)] ? localStorage.getItem(THEME_KEY) : "classic";
+function setTheme(name) {
+  if (!THEMES[name]) return;
+  theme = name;
+  try { localStorage.setItem(THEME_KEY, name); } catch (e) {}
+  document.querySelectorAll(".bagh-theme").forEach(b => b.classList.toggle("active", b.dataset.theme === name));
+  renderBoard();
+}
+
 function el(tag, attrs) {
   const n = document.createElementNS("http://www.w3.org/2000/svg", tag);
   for (const k in attrs) n.setAttribute(k, attrs[k]);
@@ -320,10 +340,11 @@ function renderBoard() {
     const [x, y] = xy(r, c);
     const g = el("g", {});
     const isTiger = piece === "tiger";
+    const col = isTiger ? THEMES[theme].tiger : THEMES[theme].goat;
     g.appendChild(el("circle", {
       cx: x, cy: y, r: STEP * 0.33,
-      fill: isTiger ? "#fb8c00" : "#ffffff",
-      stroke: isTiger ? "rgba(251,140,0,.6)" : "rgba(0,0,0,.35)", "stroke-width": 2,
+      fill: col.fill,
+      stroke: col.stroke, "stroke-width": 2,
     }));
     const t = el("text", { x, y: y + 11, "text-anchor": "middle", "font-size": 30 });
     t.textContent = isTiger ? "🐯" : "🐐";
@@ -584,6 +605,24 @@ document.getElementById("music-btn").addEventListener("click", () => {
   const muted = Music.toggleMute();
   document.getElementById("music-btn").textContent = muted ? "🔇 Unmute" : "🔊 Music";
 });
+
+// ---- Piece theme picker ----
+(function buildThemePicker() {
+  const picker = document.getElementById("theme-picker");
+  if (!picker) return;
+  Object.keys(THEMES).forEach(name => {
+    const t = THEMES[name];
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "bagh-theme" + (name === theme ? " active" : "");
+    b.dataset.theme = name;
+    b.title = t.name + " theme";
+    b.setAttribute("aria-label", t.name + " piece theme");
+    b.innerHTML = `<span class="bagh-theme-dot" style="background:${t.tiger.fill}">🐯</span><span class="bagh-theme-dot" style="background:${t.goat.fill}">🐐</span><span class="bagh-theme-name">${t.name}</span>`;
+    b.addEventListener("click", () => setTheme(name));
+    picker.appendChild(b);
+  });
+})();
 
 // ---- Adaptive music (simplified Web Audio port of BaghChalMusic) ----
 // A soft drone plus folk-scale plucks (Sa Re Ga tivra-Ma Pa Dha over C),

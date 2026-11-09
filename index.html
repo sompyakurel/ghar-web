@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://backend-patient-wave-3724.fly.dev https://api.open-meteo.com; object-src 'none'; base-uri 'self';">
 <title>Ghar — Learn Nepali</title>
-<link rel="stylesheet" href="style.css?v=25">
+<link rel="stylesheet" href="style.css?v=26">
 <script src="https://unpkg.com/@rive-app/webgl2@2.49.4/rive.js" integrity="sha384-RV9aehPhuWkr3poRCN7kYUCRgVmGp02K4UDD9mCdz+3WJC7iu76qMwbys1ctuK7T" crossorigin="anonymous"></script>
 <script src="assets/js/bhunte-rive.js"></script>
 <style>
@@ -57,6 +57,7 @@
       <span class="streak-flame">🔥 <span id="streak-count">0</span></span>
     </a>
     <a class="signin-btn" id="signin-btn" href="signin.html">👤 Sign in</a>
+    <a class="signin-btn" id="unlock-btn" href="#" hidden>🔓 Unlock — $7.99</a>
   </header>
   <nav class="subnav">
     <a href="#lessons">📚 Lessons</a>
@@ -242,6 +243,67 @@ if (TEST) {
   document.getElementById("songs-list").hidden = false;
   document.getElementById("rhymes-list").hidden = false;
 }
+// Server unlock (Stripe $7.99 one-time) opens the same Premium sections
+// as TEST. applyUnlockUI() runs on load (cached flag) and again after
+// refreshUnlock() resolves, so a just-completed payment unlocks the page
+// without a reload. ?test is kept as-is (launch decision to remove it).
+let homeMediaLoaded = false;
+function loadHomeMedia() {
+  if (homeMediaLoaded) return;
+  homeMediaLoaded = true;
+  fetch("data/songs-v1.json")
+    .then(r => { if (!r.ok) throw new Error("load failed"); return r.json(); })
+    .then(data => {
+      const list = document.getElementById("songs-list");
+      data.songs.forEach(s => {
+        const url = "assets/audio/songs/songs-v1_" + s.audio;
+        const card = document.createElement("div");
+        card.className = "home-media-card";
+        card.innerHTML = `<h3>${esc(s.title_ne)}</h3><p>${esc(s.title_en)}</p>`;
+        const btn = document.createElement("button");
+        btn.className = "play-btn";
+        btn.textContent = "▶️ Play";
+        btn.addEventListener("click", () => toggleHomeAudio(url, btn));
+        card.appendChild(btn);
+        list.appendChild(card);
+      });
+    })
+    .catch(() => {});
+  fetch("data/rhymes-v1.json")
+    .then(r => { if (!r.ok) throw new Error("load failed"); return r.json(); })
+    .then(data => {
+      const list = document.getElementById("rhymes-list");
+      data.songs.forEach(s => {
+        const url = "assets/audio/rhymes/" + s.audio;
+        const card = document.createElement("div");
+        card.className = "home-media-card";
+        const img = s.image ? `<img class="home-media-img" src="${esc(asset(s.image))}" alt="${esc(s.title_ne)}" onerror="this.remove()">` : "";
+        card.innerHTML = `${img}<h3>${esc(s.title_ne)}</h3><p>${esc(s.title_en)}</p>`;
+        const btn = document.createElement("button");
+        btn.className = "play-btn";
+        btn.textContent = "▶️ Play";
+        btn.addEventListener("click", () => toggleHomeAudio(url, btn));
+        card.appendChild(btn);
+        list.appendChild(card);
+      });
+    })
+    .catch(() => {});
+}
+function applyUnlockUI() {
+  if (!TEST && !GharAuth.isUnlocked()) return;
+  document.getElementById("badge-songs").textContent = TEST ? "TEST" : "✓ Unlocked";
+  document.getElementById("badge-songs").className = "badge free";
+  document.getElementById("badge-rhymes").textContent = TEST ? "TEST" : "✓ Unlocked";
+  document.getElementById("badge-rhymes").className = "badge free";
+  document.getElementById("badge-sentences").textContent = TEST ? "TEST" : "✓ Unlocked";
+  document.getElementById("badge-sentences").className = "badge free";
+  document.getElementById("songs-lock").hidden = true;
+  document.getElementById("rhymes-lock").hidden = true;
+  document.getElementById("songs-list").hidden = false;
+  document.getElementById("rhymes-list").hidden = false;
+  loadHomeMedia();
+}
+applyUnlockUI();
 function asset(u) {
   if (!u) return "";
   return u.replace(/^\/images\/nepal-v1\//, "assets/images/")
@@ -324,9 +386,39 @@ function heardList(deckId) {
 // fetch runs — so a slow or failed lessons load never leaves them at 0.
 document.getElementById("xp-total").textContent = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
 document.getElementById("streak-count").textContent = (window.GharStreak ? GharStreak.count() : parseInt(localStorage.getItem("ghar.streak.count") || "0", 10));
-GharAuth.pull().catch(() => {}).then(() => {
+GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => false)).then(() => {
   const btn = document.getElementById("signin-btn");
   if (GharAuth.signedIn()) { btn.textContent = "👤 My account"; btn.href = "dashboard.html"; }
+  // Unlock button: shown only to a signed-in parent whose family has not
+  // unlocked yet. Tapping it starts Stripe Checkout ($7.99 one-time).
+  const unlockBtn = document.getElementById("unlock-btn");
+  if (GharAuth.signedIn() && !GharAuth.isUnlocked()) {
+    unlockBtn.hidden = false;
+    unlockBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      GharAuth.startCheckout().catch(() => toast("Could not start checkout — check your connection and try again.", 4000));
+    });
+  } else {
+    unlockBtn.hidden = true;
+  }
+  // Returning from Stripe Checkout: ?unlocked=1 means the payment
+  // completed (the webhook marks the account unlocked); ?unlocked=0
+  // means it was cancelled. Re-read the server flag, confirm, and
+  // clean the param out of the URL.
+  const uq = new URLSearchParams(location.search);
+  if (uq.has("unlocked")) {
+    if (uq.get("unlocked") === "1") {
+      GharAuth.refreshUnlock().catch(() => {}).then(() => {
+        toast(GharAuth.isUnlocked() ? "🎉 Ghar Premium unlocked — welcome! All lessons are open." : "Payment received — your unlock is on its way. If lessons stay locked, refresh in a moment.", 5000);
+        applyUnlockUI();
+      });
+    } else {
+      toast("Checkout cancelled — nothing was charged.", 4000);
+    }
+    history.replaceState(null, "", location.pathname + location.hash);
+  }
+  // Server unlock also opens the Songs / Rhymes / Sentences sections.
+  applyUnlockUI();
   // pull() may have merged in a higher server total — refresh the header.
   document.getElementById("xp-total").textContent = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
   // One retry: a single network blip should not leave the lessons unloadable.
@@ -348,7 +440,9 @@ GharAuth.pull().catch(() => {}).then(() => {
     TIER_ORDER.forEach(tier => pack.decks.filter(d => d.difficulty === tier).forEach(d => ordered.push({ deck: d, tier })));
     const states = ordered.map(({ deck }) => {
       const heard = heardList(deck.id);
-      return { done: heard.length >= deck.words.length, open: FREE.has(deck.id) || TEST };
+      // Server unlock (Stripe $7.99) opens Premium decks, same as TEST.
+      // ?test is kept as-is (launch decision to remove it).
+      return { done: heard.length >= deck.words.length, open: FREE.has(deck.id) || TEST || GharAuth.isUnlocked() };
     });
     const currentIdx = states.findIndex(st => !st.done);
     let side = "left";
@@ -460,45 +554,6 @@ GharAuth.pull().catch(() => {}).then(() => {
     el.hidden = false;
     el.textContent = "Couldn't load the lessons. Check your connection and refresh. (" + (err && err.message ? err.message : "unknown error") + ")";
   });
-if (TEST) {
-  fetch("data/songs-v1.json")
-    .then(r => { if (!r.ok) throw new Error("load failed"); return r.json(); })
-    .then(data => {
-      const list = document.getElementById("songs-list");
-      data.songs.forEach(s => {
-        const url = "assets/audio/songs/songs-v1_" + s.audio;
-        const card = document.createElement("div");
-        card.className = "home-media-card";
-        card.innerHTML = `<h3>${esc(s.title_ne)}</h3><p>${esc(s.title_en)}</p>`;
-        const btn = document.createElement("button");
-        btn.className = "play-btn";
-        btn.textContent = "▶️ Play";
-        btn.addEventListener("click", () => toggleHomeAudio(url, btn));
-        card.appendChild(btn);
-        list.appendChild(card);
-      });
-    })
-    .catch(() => {});
-  fetch("data/rhymes-v1.json")
-    .then(r => { if (!r.ok) throw new Error("load failed"); return r.json(); })
-    .then(data => {
-      const list = document.getElementById("rhymes-list");
-      data.songs.forEach(s => {
-        const url = "assets/audio/rhymes/" + s.audio;
-        const card = document.createElement("div");
-        card.className = "home-media-card";
-        const img = s.image ? `<img class="home-media-img" src="${esc(asset(s.image))}" alt="${esc(s.title_ne)}" onerror="this.remove()">` : "";
-        card.innerHTML = `${img}<h3>${esc(s.title_ne)}</h3><p>${esc(s.title_en)}</p>`;
-        const btn = document.createElement("button");
-        btn.className = "play-btn";
-        btn.textContent = "▶️ Play";
-        btn.addEventListener("click", () => toggleHomeAudio(url, btn));
-        card.appendChild(btn);
-        list.appendChild(card);
-      });
-    })
-    .catch(() => {});
-}
 </script>
 <div class="prayer-bunting prayer-bottom" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span></div></div>
 <!-- First-visit tour: Bhunte shows new families where the basics are.
