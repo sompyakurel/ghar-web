@@ -5,6 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ghar — Missions</title>
 <link rel="stylesheet" href="style.css?v=13">
+<style>
+  /* All-missions celebration: Bhunte earned. Shows once. */
+  #dog-celebration { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 60; display: flex; align-items: center; justify-content: center; }
+  #dog-celebration[hidden] { display: none; }
+  .dog-celebration-card { background: #fff; border-radius: 20px; padding: 28px 24px; text-align: center; width: min(420px, calc(100vw - 32px)); box-shadow: 0 12px 40px rgba(0,0,0,.4); }
+  .dog-celebration-card .dog-emoji { font-size: 64px; line-height: 1; }
+  .dog-celebration-card h2 { margin: 12px 0 6px; font-size: 24px; }
+  .dog-celebration-card p { margin: 0 0 16px; color: #4a3f35; font-size: 16px; line-height: 1.5; }
+  .dog-celebration-card .quiz-next { display: inline-block; text-decoration: none; margin: 0 4px 8px; }
+  .dog-celebration-card .back { display: block; margin: 4px auto 0; background: none; border: none; color: #6b5d4f; cursor: pointer; font-size: 14px; }
+</style>
 </head>
 <body>
 <div class="prayer-bunting" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span></div></div>
@@ -55,6 +66,16 @@
       <button class="quiz-next" id="rerecord-btn" style="background:#e0e0e0;color:#333;">↻ Record again</button>
     </div>
     <button class="back" id="record-close" style="margin-top:12px;">Close</button>
+  </div>
+</div>
+<!-- All 10 pack missions done: Bhunte earned. Shows once. -->
+<div id="dog-celebration" hidden>
+  <div class="dog-celebration-card">
+    <div class="dog-emoji">🎉🐶</div>
+    <h2>You did it! All missions complete!</h2>
+    <p>You finished all 10 missions — Bhunte is yours now! He's waiting for you in My Ghar.</p>
+    <a href="myghar.html" class="quiz-next">See Bhunte in My Ghar →</a>
+    <button type="button" class="back" id="dog-celebration-close">Keep exploring</button>
   </div>
 </div>
 <script src="auth.js?v=7"></script>
@@ -129,6 +150,27 @@ function playDing() {
     });
   } catch (e) {}
 }
+// All 10 pack missions done: Bhunte earned. Shows once (flag), and also
+// fires on page load for kids who finished before this existed.
+const DOG_CELEBRATED_KEY = "ghar.dog.celebrated";
+function packDoneCount() {
+  if (!pack || !pack.missions) return 0;
+  return pack.missions.filter(m => completed.has(m.id) || verified.has(m.id)).length;
+}
+function maybeCelebrateDog() {
+  if (!pack || !pack.missions || pack.missions.length === 0) return;
+  let celebrated = false;
+  try { celebrated = localStorage.getItem(DOG_CELEBRATED_KEY) === "1"; } catch (e) {}
+  if (celebrated) return;
+  if (packDoneCount() < pack.missions.length) return;
+  try { localStorage.setItem(DOG_CELEBRATED_KEY, "1"); } catch (e) {}
+  playDing();
+  const el = document.getElementById("dog-celebration");
+  if (el) el.hidden = false;
+}
+document.getElementById("dog-celebration-close").addEventListener("click", () => {
+  document.getElementById("dog-celebration").hidden = true;
+});
 function asset(u) {
   if (!u) return "";
   return u.replace(/^\/images\/nepal-v1\//, "assets/images/")
@@ -136,11 +178,28 @@ function asset(u) {
 }
 async function syncMissionsFromServer() {
   if (!GharAuth.signedIn() || !GharAuth.childId()) return;
+  // Load the local sets FIRST. They start empty until loadSets() runs, and
+  // the old code replaced them with the server before ever reading
+  // localStorage — wiping missions earned before sign-in (or whose push
+  // failed). That is how Bhunte vanished for a kid who had finished all 10.
+  loadSets();
   try {
     const m = await GharAuth.api("/accounts/children/" + GharAuth.childId() + "/missions");
-    completed = new Set(Object.keys(m).filter(id => m[id] === "done" || m[id] === "verified"));
-    verified = new Set(Object.keys(m).filter(id => m[id] === "verified"));
+    const serverDone = new Set(Object.keys(m).filter(id => m[id] === "done" || m[id] === "verified"));
+    const serverVerified = new Set(Object.keys(m).filter(id => m[id] === "verified"));
+    // Merge, never overwrite: keep every local completion, add the
+    // server's. Verified outranks done on both sides.
+    serverDone.forEach(id => completed.add(id));
+    serverVerified.forEach(id => { verified.add(id); completed.add(id); });
     saveSets();
+    // Push local-only completions up so the server catches up (upsert).
+    const child = GharAuth.childId();
+    completed.forEach(id => {
+      if (!serverDone.has(id) && !serverVerified.has(id)) {
+        const status = verified.has(id) ? "verified" : "done";
+        GharAuth.api("/accounts/children/" + child + "/missions", "POST", { mission_id: id, status }).catch(() => {});
+      }
+    });
   } catch (e) { /* stay local */ }
 }
 async function pushMission(id, status) {
@@ -186,6 +245,7 @@ function render() {
       pushMission(m.id, "done");
       playDing();
       render();
+      maybeCelebrateDog();
     });
     const proveBtn = card.querySelector(".mission-prove");
     if (proveBtn) proveBtn.addEventListener("click", () => openRecord(m));
@@ -341,6 +401,7 @@ function markTeenDone(m) {
   play("assets/audio/nepal-v1/myghar_diyo_np.m4a");
   playDing();
   render();
+  maybeCelebrateDog();
 }
 // --- Prove it: record, grown-up listens and confirms ---
 let recorder = null, chunks = [], recordMission = null, recordBlob = null;
@@ -404,6 +465,7 @@ document.getElementById("confirm-btn").addEventListener("click", () => {
   playDing();
   document.getElementById("record-panel").hidden = true;
   render();
+  maybeCelebrateDog();
 });
 GharAuth.pull().catch(() => {}).then(async () => {
   xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
@@ -425,6 +487,9 @@ GharAuth.pull().catch(() => {}).then(async () => {
     GharAuth.pushTotals().catch(() => {});
   }
   render();
+  // Kids who already finished all 10 before this celebration existed
+  // see it on their next visit (once, via the flag).
+  maybeCelebrateDog();
 }).catch(() => { document.getElementById("error").hidden = false; });
 </script>
 <div class="prayer-bunting prayer-bottom" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span></div></div>

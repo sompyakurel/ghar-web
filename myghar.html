@@ -210,7 +210,12 @@ function readState() {
   try {
     const c = JSON.parse(localStorage.getItem("ghar.missions.completed") || "[]");
     const v = JSON.parse(localStorage.getItem("ghar.missions.verified") || "[]");
-    missionsDone = new Set([...c, ...v]).size;
+    // Bhunte unlocks on ALL 10 PACK missions (matches the app). Teen
+    // missions are counted separately (teenDone) and do NOT unlock him —
+    // the old code counted any 10 missions, so 8 teen + 2 pack would
+    // wrongly unlock him.
+    const PACK_IDS = ["tihar-greeting", "count-to-five", "dinner-words", "deusi-line", "tihar-smell", "fruit-market", "simon-says", "festival-story", "kitchen-helper", "color-hunt"];
+    missionsDone = PACK_IDS.filter(id => c.includes(id) || v.includes(id)).length;
     // Missions finished before the streak existed still count (one-time).
     if (typeof GharStreak !== "undefined") GharStreak.syncFromMissions(missionsDone);
     missionsVerified = v.length;
@@ -785,6 +790,17 @@ GharAuth.pull().catch(() => {}).then(async () => {
   renderMysteryItems();
   renderMysteryButton(state);
   renderDog(state.xp, state);
+  // All 10 pack missions done and the celebration hasn't been shown yet:
+  // Bhunte is earned — celebrate it here in the room (once, via the flag).
+  // The missions page sets the same flag, so whichever the kid sees first
+  // is the only one.
+  try {
+    if (state.missionsDone >= 10 && localStorage.getItem("ghar.dog.celebrated") !== "1") {
+      localStorage.setItem("ghar.dog.celebrated", "1");
+      const dogName = localStorage.getItem(DOG_NAME_KEY) || "Bhunte";
+      showCelebration(`🎉 You earned ${dogName}!`, "All 10 missions complete — Bhunte is yours!");
+    }
+  } catch (e) {}
   renderNames();
   renderDayNight();
   renderWeather();
