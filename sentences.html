@@ -80,6 +80,13 @@ function shuffle(a) {
   return a;
 }
 function current() { return questions[order[index]]; }
+// Ask "यो के हो?" (What is this?) in Som's Nepali voice when a question
+// is dealt — on open and on every new picture, since that is the question.
+function askYoKeHo() {
+  player.pause();
+  player.src = "assets/audio/bhunte/sent_yo_ke_ho_np.m4a";
+  player.play().catch(() => {});
+}
 function dealQuestion() {
   picked = null;
   wrongPicks = new Set();
@@ -88,6 +95,7 @@ function dealQuestion() {
   const distractors = shuffle([...pool]).slice(0, 2);
   options = shuffle([q.pictureWord, ...distractors]);
   render();
+  askYoKeHo();
 }
 function render() {
   const content = document.getElementById("content");
