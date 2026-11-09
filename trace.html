@@ -313,10 +313,17 @@
     // is for the letter sections, not the name).
     var boxEarned = false;
     if (currentDeck !== 'myname') {
-      var heard = new Set((localStorage.getItem('ghar.heard.' + currentDeck) || '').split(',').filter(Boolean));
+      // Heard lists are JSON arrays everywhere else (deck.html, auth.js,
+      // index.html, myghar.html) — read/write JSON here too, with a
+      // fallback that migrates any old comma-joined entry.
+      var heardRaw = localStorage.getItem('ghar.heard.' + currentDeck) || '[]';
+      var heardArr;
+      try { heardArr = JSON.parse(heardRaw); if (!Array.isArray(heardArr)) heardArr = []; }
+      catch (e) { heardArr = heardRaw.split(',').filter(Boolean); }
+      var heard = new Set(heardArr);
       if (!heard.has(currentId)) {
         heard.add(currentId);
-        localStorage.setItem('ghar.heard.' + currentDeck, Array.from(heard).sort().join(','));
+        localStorage.setItem('ghar.heard.' + currentDeck, JSON.stringify(Array.from(heard).sort()));
         if (window.GharAuth && GharAuth.signedIn()) GharAuth.push(currentDeck);
         if (window.GharAuth) { GharAuth.pushTotals(); GharAuth.shareLeaderboard(); }
       }

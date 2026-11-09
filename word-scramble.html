@@ -294,7 +294,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
     pack.decks.forEach(function (d) {
       d.words.forEach(function (w) {
         if (!w.image || !w.has_audio) return;
-        if (w.deck === 'alphabet') return;          // single letters can't scramble
+        if (d.id === 'alphabet') return;          // single letters can't scramble
         if (w.devanagari.indexOf(VIRAMA) >= 0) return;
         if (seenDev[w.devanagari]) return;          // same spelling = same puzzle
         var n = letterCount(w);

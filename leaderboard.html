@@ -177,6 +177,11 @@ async function joinGroup() {
     if (r.status === 404) { showError("That group code was not found. Check the code and try again."); return; }
     if (!r.ok) throw new Error("Could not join the group. Check your connection and try again.");
     const d = await r.json();
+    // Nicknames are unique per group (the server upserts on
+    // group_code + nickname, so joining with a taken name would silently
+    // overwrite that player's row). Match the app's case-insensitive check.
+    const taken = (d.players || []).some(p => (p.nickname || "").toLowerCase() === nick.toLowerCase());
+    if (taken) { showError("That nickname is already taken in this group — pick another one."); return; }
     localStorage.setItem(NICK_KEY, nick);
     localStorage.setItem(CODE_KEY, d.code);
     localStorage.setItem(NAME_KEY, d.name || "");

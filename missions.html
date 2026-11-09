@@ -237,6 +237,7 @@ function render() {
     });
     const doneBtn = card.querySelector(".mission-done");
     if (doneBtn) doneBtn.addEventListener("click", () => {
+      if (completed.has(m.id)) return; // already done — no double pay
       completed.add(m.id);
       xp += (m.xp || 10);
       xp += recordStreakAndDaily();
@@ -455,9 +456,13 @@ document.getElementById("rerecord-btn").addEventListener("click", () => {
 });
 document.getElementById("confirm-btn").addEventListener("click", () => {
   if (!recordMission) return;
+  if (verified.has(recordMission.id)) return; // already verified — no double pay
+  // App rule: Prove-it pays +25 XP in total. If "Done it" already paid
+  // +10, only the +15 difference is due here (not another +25).
+  const alreadyDone = completed.has(recordMission.id);
   verified.add(recordMission.id);
   completed.add(recordMission.id);
-  xp += (recordMission.verified_xp || 25);
+  xp += alreadyDone ? ((recordMission.verified_xp || 25) - (recordMission.xp || 10)) : (recordMission.verified_xp || 25);
   xp += recordStreakAndDaily();
   saveSets(); saveXP();
   if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
