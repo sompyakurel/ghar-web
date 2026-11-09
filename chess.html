@@ -134,8 +134,10 @@
   }
 
   function pieceImg(type, color) {
-    // Cburnett set: Chess_<type><l|d>45.svg  (l = white, d = black)
-    return 'assets/images/chess/Chess_' + type + (color === 'w' ? 'l' : 'd') + '45.svg';
+    // Cburnett set: Chess_<type><l|d>t45.svg  (l = white, d = black).
+    // NOTE: the "t" before 45 is part of the filename — without it every
+    // piece 404s and only the alt text shows.
+    return 'assets/images/chess/Chess_' + type + (color === 'w' ? 'l' : 'd') + 't45.svg';
   }
 
   function squares() {
