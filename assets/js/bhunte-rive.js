@@ -1,19 +1,25 @@
 // GharBhunte — one interactive Rive Bhunte, shared by every page.
 //
-// The live pet lives in a single published file, assets/rive/bhunte.riv.
-// Each page mounts its own independent copy of him into a <canvas> placed
-// next to its static <img> (the img is the fallback). When the .riv loads,
-// the canvas shows and the img hides; when it fails (no .riv published
-// yet, offline, runtime blocked), the static image stays and nothing
-// breaks. The page's own tap behaviour (voice, bark) is passed in as
-// onTap; the Rive state machine ("Pet") already fires its Pet animation
-// on a canvas tap, and celebrate()/pet() fire the triggers from code.
+// The live pet lives in a published .riv file (assets/rive/bhunte.riv for
+// the Young dog, assets/rive/puppy.riv for the Puppy stage). Each page
+// mounts its own independent copy of him into a <canvas> placed next to
+// its static <img> (the img is the fallback). When the .riv loads, the
+// canvas shows and the img hides; when it fails (no .riv published yet,
+// offline, runtime blocked), the static image stays and nothing breaks.
+// The page's own tap behaviour (voice, bark) is passed in as onTap; the
+// Rive state machine ("Pet") already fires its Pet animation on a canvas
+// tap, and celebrate()/pet() fire the triggers from code.
+//
+// Options: src (the .riv URL, default bhunte.riv), canvasId (default
+// imgId + "-rive"), deferShow (if true, onLoad only marks ready and calls
+// onReady — the page controls canvas/img visibility itself, e.g. My Ghar
+// which swaps between two .riv files by dog stage).
 //
 // State machine "Pet" — triggers: celebrate, pet.
 // The artboard has no background fill, so the canvas is transparent and
 // Bhunte shows on the page behind it (the room), not in a card.
 (function () {
-  var RIV_SRC = "assets/rive/bhunte.riv";
+  var DEFAULT_SRC = "assets/rive/bhunte.riv";
   var STATE_MACHINE = "Pet";
 
   function mount(imgId, opts) {
@@ -25,7 +31,7 @@
     if (!window.rive || !window.rive.Rive) return api;
 
     var canvas = document.createElement("canvas");
-    canvas.id = imgId + "-rive";
+    canvas.id = opts.canvasId || (imgId + "-rive");
     canvas.className = img.className; // same sizing/positioning as the img
     canvas.width = 500;
     canvas.height = 500;
@@ -63,22 +69,24 @@
 
     try {
       r = new window.rive.Rive({
-        src: RIV_SRC,
+        src: opts.src || DEFAULT_SRC,
         canvas: canvas,
         stateMachine: STATE_MACHINE,
         autoplay: true,
         autoBind: true,
         onLoad: function () {
           api.ready = true;
-          // Show the canvas only if the img is currently visible (a page
-          // may hide its dog, e.g. My Ghar's mission lock), then hide
-          // the img so only the live dog shows.
-          canvas.style.display = img.style.display === "none" ? "none" : "";
-          img.style.display = "none";
-          // Resize AFTER the canvas is visible and has a size. Resizing
-          // while it is display:none gives a 0x0 surface and the dog
-          // never draws (the canvas stays blank).
-          try { r.resizeDrawingSurfaceToCanvas(); } catch (e) {}
+          if (!opts.deferShow) {
+            // Show the canvas only if the img is currently visible (a page
+            // may hide its dog, e.g. My Ghar's mission lock), then hide
+            // the img so only the live dog shows.
+            canvas.style.display = img.style.display === "none" ? "none" : "";
+            img.style.display = "none";
+            // Resize AFTER the canvas is visible and has a size. Resizing
+            // while it is display:none gives a 0x0 surface and the dog
+            // never draws (the canvas stays blank).
+            try { r.resizeDrawingSurfaceToCanvas(); } catch (e) {}
+          }
           if (pendingCelebrate) { pendingCelebrate = false; fire("celebrate"); }
           if (opts.onReady) opts.onReady(api);
         },
