@@ -1132,6 +1132,26 @@ GharAuth.pull().catch(() => {}).then(async () => {
   renderDog(state.xp, state);
   // The dog lives here now: it wanders the rug on its own (see roamStep).
   startRoam();
+  // Prayer flags are tappable, like the spirit row on the home page:
+  // tap any string of flags and it says "Prayer flag!" (Jessica) and
+  // shows the words in the hint line. They were decorative (aria-hidden)
+  // before; now they teach the word.
+  document.querySelectorAll(".prayer-bunting, .prayer-side").forEach(el => {
+    el.removeAttribute("aria-hidden");
+    el.setAttribute("role", "button");
+    el.setAttribute("aria-label", "Prayer flags");
+    el.setAttribute("tabindex", "0");
+    el.style.cursor = "pointer";
+    const sayIt = () => {
+      play("assets/audio/bhunte/prayer_flag.m4a");
+      const hint = document.getElementById("hint");
+      if (hint) hint.textContent = "🙏 Prayer flag!";
+    };
+    el.addEventListener("click", sayIt);
+    el.addEventListener("keydown", e => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); sayIt(); }
+    });
+  });
   // All 10 pack missions done and the celebration hasn't been shown yet:
   // Bhunte is earned — celebrate it here in the room (once, via the flag).
   // The missions page sets the same flag, so whichever the kid sees first
