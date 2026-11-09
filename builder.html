@@ -103,6 +103,26 @@ const ROUNDS = [
     { english: "I eat sweets", emoji: "🍬", wordIDs: ["sent_ma", "mithai", "khaanchhu"] },
     { english: "I watch the fish", emoji: "🐟", wordIDs: ["sent_ma", "maachha", "herchhu"] },
   ],
+  [
+    { english: "I eat pineapple", emoji: "🍍", wordIDs: ["sent_ma", "bhuinkatahar", "khaanchhu"] },
+    { english: "I eat oranges", emoji: "🍊", wordIDs: ["sent_ma", "suntala", "khaanchhu"] },
+    { english: "I eat pears", emoji: "🍐", wordIDs: ["sent_ma", "nasapati", "khaanchhu"] },
+    { english: "I eat lemons", emoji: "🍋", wordIDs: ["sent_ma", "kagati", "khaanchhu"] },
+    { english: "I eat lychee", emoji: "🍒", wordIDs: ["sent_ma", "lichi", "khaanchhu"] },
+    { english: "I eat papaya", emoji: "🍈", wordIDs: ["sent_ma", "mewa", "khaanchhu"] },
+    { english: "I eat jalebi", emoji: "🍩", wordIDs: ["sent_ma", "jalebi", "khaanchhu"] },
+    { english: "I eat barfi", emoji: "🍫", wordIDs: ["sent_ma", "barfi", "khaanchhu"] },
+  ],
+  [
+    { english: "I eat halwa", emoji: "🍮", wordIDs: ["sent_ma", "halwa", "khaanchhu"] },
+    { english: "I eat malpua", emoji: "🥞", wordIDs: ["sent_ma", "malpua", "khaanchhu"] },
+    { english: "I eat peda", emoji: "🧁", wordIDs: ["sent_ma", "peda", "khaanchhu"] },
+    { english: "I eat yomari", emoji: "🍙", wordIDs: ["sent_ma", "yomari", "khaanchhu"] },
+    { english: "I eat sel roti", emoji: "🥯", wordIDs: ["sent_ma", "selroti", "khaanchhu"] },
+    { english: "I watch the goat", emoji: "🐐", wordIDs: ["sent_ma", "bakhra", "herchhu"] },
+    { english: "I watch the buffalo", emoji: "🐃", wordIDs: ["sent_ma", "bhainsi", "herchhu"] },
+    { english: "I watch the cow", emoji: "🐄", wordIDs: ["sent_ma", "gaai", "herchhu"] },
+  ],
 ];
 let byID = {};
 let sessionRounds = [];
@@ -126,12 +146,24 @@ function shuffle(a) {
 function round() { return sessionRounds[roundIndex]; }
 function sentence() { return round()[sentenceIndex]; }
 function startRound() {
-  sessionRounds = ROUNDS.map(r => shuffle([...r]));
   sentenceIndex = 0;
   roundCorrect = 0;
   roundEarnedXP = 0;
   phase = "build";
   dealSentence();
+}
+// A new session shuffles ALL sentences together and deals them into
+// rounds of 8, so every session has different sentences in each round —
+// not the same fixed sets in the same order. (startRound only begins
+// the current round; it must not re-shuffle mid-session.)
+function startSession() {
+  const all = shuffle(ROUNDS.flat());
+  sessionRounds = [];
+  for (let i = 0; i < all.length; i += 8) sessionRounds.push(all.slice(i, i + 8));
+  roundIndex = 0;
+  correctCount = 0;
+  totalEarnedXP = 0;
+  startRound();
 }
 function dealSentence() {
   placedIDs = [];
@@ -228,7 +260,7 @@ function render() {
         <button class="quiz-next" id="again">Play again</button>
       </div>`;
     document.getElementById("again").addEventListener("click", () => {
-      roundIndex = 0; correctCount = 0; totalEarnedXP = 0; startRound();
+      startSession();
     });
     return;
   }
@@ -290,7 +322,7 @@ GharAuth.pull().catch(() => {}).then(() => fetch("data/nepal-v1.json"))
     pack.decks.forEach(d => d.words.forEach(w => { byID[w.id] = w; }));
     const missing = ROUNDS.flat().flatMap(s => s.wordIDs).filter(id => !byID[id]);
     if (missing.length) throw new Error("missing words: " + missing.join(","));
-    startRound();
+    startSession();
   })
   .catch(() => { document.getElementById("error").hidden = false; });
 </script>
