@@ -271,20 +271,25 @@ GharAuth.pull().catch(() => {}).then(() => fetch("data/nepal-v1.json"))
     pack = p;
     sections = buildSections();
     document.title = "Ghar — Quiz";
-    // Jump straight into a quiz instead of a menu: resume the last section,
-    // or the first one. ("← Quiz menu" inside the quiz changes sections.)
-    // A ?section=<index> link can force a specific one.
-    let startIdx = 0;
+    // ?menu=1 (top-nav Quiz pill) opens the picker instead of jumping
+    // straight into a quiz. Otherwise jump straight in: resume the last
+    // section, or the first one. ("← Quiz menu" inside the quiz changes
+    // sections.) A ?section=<index> link can force a specific one.
     const q = new URLSearchParams(location.search);
-    if (q.has("section")) {
-      const pi = parseInt(q.get("section"), 10);
-      if (!isNaN(pi) && pi >= 0 && pi < sections.length) startIdx = pi;
+    if (q.has("menu")) {
+      showMenu();
     } else {
-      const saved = parseInt(localStorage.getItem("ghar.quiz.lastSection") || "", 10);
-      if (!isNaN(saved) && saved >= 0 && saved < sections.length) startIdx = saved;
+      let startIdx = 0;
+      if (q.has("section")) {
+        const pi = parseInt(q.get("section"), 10);
+        if (!isNaN(pi) && pi >= 0 && pi < sections.length) startIdx = pi;
+      } else {
+        const saved = parseInt(localStorage.getItem("ghar.quiz.lastSection") || "", 10);
+        if (!isNaN(saved) && saved >= 0 && saved < sections.length) startIdx = saved;
+      }
+      if (!TEST && freeUsed >= FREE_LIMIT) showMenu();
+      else startQuiz(sections[startIdx]);
     }
-    if (!TEST && freeUsed >= FREE_LIMIT) showMenu();
-    else startQuiz(sections[startIdx]);
   })
   .catch(() => { document.getElementById("error").hidden = false; });
 </script>

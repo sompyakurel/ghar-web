@@ -948,14 +948,20 @@
       if (!deckWords[W.deck]) { deckWords[W.deck] = []; deckTitles[W.deck] = W.deckTitle; }
       deckWords[W.deck].push(id);
     });
-    // Jump straight into the last section's word list (Alphabets the first
-    // time) instead of the section picker — "← All sections" gets you back.
-    var lastDeck = null;
-    try { lastDeck = localStorage.getItem('ghar.trace.lastDeck'); } catch (e) {}
-    if (lastDeck && TRACE_DECKS.indexOf(lastDeck) >= 0 && lastDeck !== 'myname') {
-      pickerDeck = lastDeck;
-    } else if (!lastDeck) {
-      pickerDeck = 'alphabet';
+    // ?pick=1 (top-nav Writing pill) opens the section picker (all sections)
+    // instead of jumping into a section. Otherwise jump straight into the
+    // last section's word list (Alphabets the first time) — "← All sections"
+    // gets you back.
+    var qs = new URLSearchParams(location.search);
+    var forcePicker = qs.has("pick");
+    if (!forcePicker) {
+      var lastDeck = null;
+      try { lastDeck = localStorage.getItem('ghar.trace.lastDeck'); } catch (e) {}
+      if (lastDeck && TRACE_DECKS.indexOf(lastDeck) >= 0 && lastDeck !== 'myname') {
+        pickerDeck = lastDeck;
+      } else if (!lastDeck) {
+        pickerDeck = 'alphabet';
+      }
     }
     renderPicker();
     if (window.GharAuth) GharAuth.pull();
