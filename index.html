@@ -397,6 +397,21 @@ GharAuth.pull().catch(() => {}).then(() => {
       bhunteDog.classList.add("celebrating");
       setTimeout(() => bhunteDog.classList.remove("celebrating"), 2600);
       if (homeBhunte) homeBhunte.celebrate();
+      // Bhunte guides to the next lesson: name it in the bubble and in his voice.
+      const nextDeck = pack.decks.find(d => heardList(d.id).length < d.words.length);
+      if (nextDeck) {
+        ne.textContent = "तिमीले यो पाठ पूरा गर्‍यौ! अब " + nextDeck.title + " मा जाऔं!";
+        en.textContent = "You've completed this lesson! Now let's move to " + nextDeck.title + "!";
+        bhunteLine = "assets/audio/bhunte/guide_next_" + nextDeck.id + ".m4a";
+      } else {
+        ne.textContent = "तिमीले यो पाठ पूरा गर्‍यौ! सबै २२ पाठ सकियो — अब प्रमाणपत्र लिऔं!";
+        en.textContent = "You've completed this lesson! That's all 22 lessons — let's get your certificate!";
+        bhunteLine = "assets/audio/bhunte/guide_next_certificate.m4a";
+      }
+      // Speak the guidance now if the browser allows it; otherwise tap Bhunte to hear it.
+      bhuntePlayer.pause();
+      bhuntePlayer.src = bhunteLine;
+      bhuntePlayer.play().catch(() => {});
     }
   })
   .catch((err) => {
