@@ -279,15 +279,16 @@ function el(tag, attrs) {
 }
 function renderBoard() {
   boardSvg.innerHTML = "";
-  // Board lines (each segment once).
+  // Board lines (each segment once). Thicker so the empty board reads
+  // clearly — the old 2-unit lines looked thin next to the pieces.
   segments().forEach(([[r1, c1], [r2, c2]]) => {
     const [x1, y1] = xy(r1, c1), [x2, y2] = xy(r2, c2);
-    boardSvg.appendChild(el("line", { x1, y1, x2, y2, stroke: "rgba(121,85,45,.7)", "stroke-width": 2 }));
+    boardSvg.appendChild(el("line", { x1, y1, x2, y2, stroke: "rgba(121,85,45,.85)", "stroke-width": 5 }));
   });
   // Intersection points.
   for (let r = 0; r < 5; r++) for (let c = 0; c < 5; c++) {
     const [x, y] = xy(r, c);
-    boardSvg.appendChild(el("circle", { cx: x, cy: y, r: 3.5, fill: "rgba(121,85,45,.9)" }));
+    boardSvg.appendChild(el("circle", { cx: x, cy: y, r: 6, fill: "rgba(121,85,45,.9)" }));
   }
   // Placement-phase targets: faint dots on empty points.
   if (engine.goatsInHand > 0 && phase === "playing") {
