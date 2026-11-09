@@ -275,12 +275,18 @@ function runFetchSequence() {
   if (!ball) return;
   const startLeft = dogRoamX;
   const landLeft = Math.min(startLeft + 16, 70);
-  const mouthOff = 4; // ball sits this far from the dog's centre, at its mouth
+  // The mouth is at the FRONT of the head, ~31% of the dog's width out
+  // from his centre — not 4%. A fixed 4% put the ball on his chest.
+  // Scale it to the stage so it lands on the mouth at every size.
+  const stageW = STAGE_WIDTH[dogStageFor(readState().xp)] || 25;
+  const mouthOff = 0.31 * stageW;
   const mouthBottom = dogMouthBottomPct(); // ball height at the mouth
+  // The ball starts at the mouth on whichever side he is facing.
+  const startSide = dogFacingLeft ? -mouthOff : mouthOff;
   clearFetchTimers();
   // Ball starts at the dog's mouth, then arcs out to the right and lands.
   ball.style.transition = "left 0.7s ease-out, bottom 0.35s ease-out";
-  ball.style.left = (startLeft + mouthOff) + "%";
+  ball.style.left = (startLeft + startSide) + "%";
   ball.style.bottom = mouthBottom + "%";
   ball.hidden = false;
   fetchLater(() => {
@@ -753,11 +759,14 @@ async function renderWeather() {
     el.textContent = "";
   }
 }
-// Suga's voice (matches the app's buddyTalk). The two staples ship as
-// pre-pitched parrot-voice files (rendered once, perfectly); taught words
-// are the word's own clip played pitch-shifted (playbackRate) so Suga
-// squawks them back like a parrot. The myghar name clips are Som's normal
-// voice — never used for Suga talking.
+// Suga's voice (matches the app's buddyTalk). The staples ship as
+// pre-pitched parrot-voice files (rendered once, perfectly): namaste and
+// ramro are both ~538 Hz, mitho ~594 Hz. Taught words, teach playbacks
+// and mimic playbacks are the word's own clip played pitch-shifted
+// (playbackRate) so Suga squawks them back like a parrot — at 1.8x they
+// reach ~538 Hz too, matching namaste. (1.5x only reached ~446 Hz, which
+// is why they sounded normal next to namaste.) The myghar name clips are
+// Som's normal voice — never used for Suga talking.
 const SUGA_STAPLES = [
   { ne: "राम्रो छ!", en: "Ramro chha!", url: "assets/audio/nepal-v1/suga_praise_ramro_np.m4a" },
   { ne: "नमस्ते!", en: "Namaste!", url: "assets/audio/nepal-v1/suga_convo_namaste_np.m4a" },
@@ -785,7 +794,7 @@ function sugaTalk() {
     const w = PACK_WORDS[id];
     if (w && w.has_audio && w.audio_url) {
       const url = asset(w.audio_url);
-      if (url) options.push({ ne: w.devanagari, en: w.romanized, url, rate: 1.5 });
+      if (url) options.push({ ne: w.devanagari, en: w.romanized, url, rate: 1.8 });
     }
   });
   if (!options.length) return;
@@ -1004,7 +1013,7 @@ document.getElementById("suga-teach-btn").addEventListener("click", () => {
   document.getElementById("xp-label").textContent = xp;
   openSugaDialog();
   // Suga squawks the new word back in his parrot voice.
-  playSuga(asset(w.audio_url), 1.5);
+  playSuga(asset(w.audio_url), 1.8);
 });
 // --- Feed Suga (matches the app): 5 XP. A treat pops up at his beak, he
 // hops and eats it, and says "mitho chha!" in his parrot voice.
@@ -1075,7 +1084,7 @@ document.getElementById("suga-mimic-rec").addEventListener("click", async () => 
       document.getElementById("suga-mimic-play").hidden = false;
       document.getElementById("suga-mimic-status").textContent = "Got it! Tap to hear Suga squawk it back.";
       // Play it back right away, pitched up like a parrot.
-      playSuga(mimicURL, 1.5);
+      playSuga(mimicURL, 1.8);
     };
     mimicRec.start();
     recBtn.textContent = "⏹ Stop recording";
@@ -1086,7 +1095,7 @@ document.getElementById("suga-mimic-rec").addEventListener("click", async () => 
 });
 document.getElementById("suga-mimic-play").addEventListener("click", () => {
   if (!mimicURL) return;
-  playSuga(mimicURL, 1.5);
+  playSuga(mimicURL, 1.8);
 });
 GharAuth.pull().catch(() => {}).then(async () => {
   try {
