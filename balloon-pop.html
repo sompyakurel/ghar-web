@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Balloon Pop 🎈 — Ghar</title>
-<link rel="stylesheet" href="style.css?v=13">
+<link rel="stylesheet" href="style.css?v=25">
 </head>
 <body>
 <div class="prayer-bunting" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span></div></div>
@@ -13,7 +13,7 @@
 <div class="wrap">
   <p><a href="index.html#games">← Back to Games</a></p>
   <h1>Balloon Pop 🎈</h1>
-  <p class="section-sub">Hear the Nepali word. Pop its balloon! 60-second rounds, +2 XP a pop.</p>
+  <p class="section-sub">Hear the Nepali word. Pop its balloon! 60-second rounds, +2 XP a pop · max 3 paid games/day.</p>
 
   <!-- Ready screen -->
   <div id="ready" class="balloon-ready">
@@ -44,6 +44,7 @@
     <p class="balloon-done-score">🎈 <span id="done-pops">0</span> pops</p>
     <p id="done-best" class="balloon-done-best"></p>
     <p class="balloon-done-xp">+<span id="done-xp">0</span> XP</p>
+    <p id="done-note" class="balloon-done-best"></p>
     <p>
       <button class="quiz-next" id="again-btn">Play again</button>
       <button class="quiz-next" id="done-btn">Done</button>
@@ -51,7 +52,7 @@
   </div>
 </div>
 
-<script src="auth.js?v=7"></script>
+<script src="auth.js?v=8"></script>
 <script>
 function asset(u) {
   if (!u) return "";
@@ -59,6 +60,10 @@ function asset(u) {
           .replace(/^\/audio\/nepal-v1\//, "assets/audio/nepal-v1/");
 }
 const BEST_KEY = "ghar.balloon.best";
+const PAID_DAY_KEY = "ghar.balloon.day";
+const PAID_COUNT_KEY = "ghar.balloon.paid";
+const MAX_PAID_GAMES = 3; // same daily cap pattern as chess / bagh-chal
+let gamePaid = true; // whether this round pays XP (first 3 games a day)
 let xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
 let best = parseInt(localStorage.getItem(BEST_KEY) || "0", 10);
 function saveXP() { localStorage.setItem("ghar.xp.total", String(xp)); }
@@ -138,7 +143,7 @@ function balloonEl(b) {
   const img = b.word.image
     ? `<img class="balloon-pic" src="${asset(b.word.image)}" alt="">`
     : "";
-  el.innerHTML = `${img}<span class="balloon-word">${b.word.devanagari}</span><span class="balloon-knot" style="border-top-color:${b.color}"></span><span class="balloon-string"></span>`;
+  el.innerHTML = `${img}<span class="balloon-word">${esc(b.word.devanagari)}</span><span class="balloon-knot" style="border-top-color:${b.color}"></span><span class="balloon-string"></span>`;
   el.addEventListener("click", () => tapBalloon(b.id));
   return el;
 }
@@ -175,7 +180,7 @@ function renderBalloonWord(b) {
   const img = b.word.image
     ? `<img class="balloon-pic" src="${asset(b.word.image)}" alt="">`
     : "";
-  b.el.innerHTML = `${img}<span class="balloon-word">${b.word.devanagari}</span><span class="balloon-knot" style="border-top-color:${b.color}"></span><span class="balloon-string"></span>`;
+  b.el.innerHTML = `${img}<span class="balloon-word">${esc(b.word.devanagari)}</span><span class="balloon-knot" style="border-top-color:${b.color}"></span><span class="balloon-string"></span>`;
 }
 function newTarget() {
   if (!playable.length) return;
@@ -216,7 +221,7 @@ function tapBalloon(id) {
     popSound();
     burst(b);
     score += 1;
-    const earned = targetMissed ? 1 : XP_PER_POP;
+    const earned = gamePaid ? (targetMissed ? 1 : XP_PER_POP) : 0;
     xpEarned += earned;
     xp += earned;
     saveXP();
@@ -253,6 +258,18 @@ function tick(ts) {
 }
 function startGame() {
   score = 0; xpEarned = 0; timeLeft = ROUND_SECONDS; secondsSinceTarget = 0;
+  // Daily cap (same pattern as chess / bagh-chal): the first 3 games a
+  // day pay XP. A started game uses one paid slot, so quitting mid-game
+  // can't farm extra paid games. Later games still play, pops pay 0.
+  const today = new Date().toISOString().slice(0, 10);
+  const paidDay = localStorage.getItem(PAID_DAY_KEY) || "";
+  let paidCount = parseInt(localStorage.getItem(PAID_COUNT_KEY) || "0", 10);
+  if (paidDay !== today) { localStorage.setItem(PAID_DAY_KEY, today); paidCount = 0; }
+  gamePaid = paidCount < MAX_PAID_GAMES;
+  if (gamePaid) {
+    paidCount += 1;
+    localStorage.setItem(PAID_COUNT_KEY, String(paidCount));
+  }
   balloons.forEach(b => { if (b.el && b.el.parentNode) b.el.parentNode.removeChild(b.el); });
   balloons = [];
   field.innerHTML = "";
@@ -295,6 +312,7 @@ function endGame() {
   document.getElementById("done").style.display = "";
   document.getElementById("done-pops").textContent = score;
   document.getElementById("done-xp").textContent = xpEarned;
+  document.getElementById("done-note").textContent = gamePaid ? "" : "Daily game rewards used up — still counts for glory!";
   document.getElementById("done-best").textContent =
     isNewBest ? "New best! 🏆"
     : (best > 0 ? "Best: " + best + " pops" : "");

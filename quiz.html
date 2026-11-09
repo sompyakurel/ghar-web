@@ -3,8 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://backend-patient-wave-3724.fly.dev https://api.open-meteo.com; object-src 'none'; base-uri 'self';">
 <title>Ghar — Quiz</title>
-<link rel="stylesheet" href="style.css?v=13">
+<link rel="stylesheet" href="style.css?v=25">
 </head>
 <body>
 <div class="prayer-bunting" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span></div></div>
@@ -15,7 +16,7 @@
   <div id="content"></div>
   <p class="error" id="error" hidden>Couldn't load the quiz.</p>
 </div>
-<script src="auth.js?v=7"></script>
+<script src="auth.js?v=8"></script>
 <script>
 const TIERS = { beginner: "🌱 Beginner", intermediate: "🌿 Intermediate", hard: "🌳 Hard", teen: "🔥 Teen" };
 function isTestUnlock() {
@@ -127,7 +128,7 @@ function showMenu() {
     html += `<h2 class="quiz-tier">${TIERS[tier] || tier}</h2><div class="quiz-sections">`;
     secs.forEach((s, i) => {
       const idx = sections.indexOf(s);
-      html += `<button type="button" class="quiz-card" data-idx="${idx}"><div class="icon">${s.icon}</div><h3>${s.title}</h3><p>${s.words.length} words${s.mode === "picture" ? " · picture quiz" : ""}</p></button>`;
+      html += `<button type="button" class="quiz-card" data-idx="${idx}"><div class="icon">${s.icon}</div><h3>${esc(s.title)}</h3><p>${s.words.length} words${s.mode === "picture" ? " · picture quiz" : ""}</p></button>`;
     });
     html += `</div>`;
   });
@@ -173,13 +174,13 @@ function newQuestion() {
 }
 function optionHTML(opt) {
   if (opt.color_hex) {
-    return `<div class="quiz-swatch" style="background:${opt.color_hex}"></div>`;
+    return `<div class="quiz-swatch" style="background:${esc(opt.color_hex)}"></div>`;
   }
   if (section.mode === "picture") {
-    return `<div><div class="opt-deva">${opt.devanagari}</div><div class="opt-sub">${opt.english}</div></div>`;
+    return `<div><div class="opt-deva">${esc(opt.devanagari)}</div><div class="opt-sub">${esc(opt.english)}</div></div>`;
   }
-  const img = opt.image ? `<img src="${asset(opt.image)}" alt="" onerror="this.style.display='none'">` : "";
-  return `${img}<div class="opt-eng">${opt.english}</div>`;
+  const img = opt.image ? `<img src="${esc(asset(opt.image))}" alt="" onerror="this.style.display='none'">` : "";
+  return `${img}<div class="opt-eng">${esc(opt.english)}</div>`;
 }
 function renderPlayer() {
   const content = document.getElementById("content");
@@ -188,8 +189,8 @@ function renderPlayer() {
   const stakeClass = wrongIDs.size === 0 ? "good" : "low";
   let questionHTML = "";
   if (isPicture) {
-    const img = current.image ? `<img class="quiz-picture" src="${asset(current.image)}" alt="">` : "";
-    const hint = current.quiz_hint ? `<p class="quiz-hint">${current.quiz_hint}</p>` : "";
+    const img = current.image ? `<img class="quiz-picture" src="${esc(asset(current.image))}" alt="">` : "";
+    const hint = current.quiz_hint ? `<p class="quiz-hint">${esc(current.quiz_hint)}</p>` : "";
     questionHTML = `${img}${hint}`;
   } else {
     questionHTML = `<button type="button" class="quiz-play" id="play-word">🔊 Play word</button>`;
@@ -201,7 +202,7 @@ function renderPlayer() {
   content.innerHTML = `
     <div class="quiz-player">
       <button type="button" class="quiz-back" id="quiz-back">← Quiz menu</button>
-      <h1>${section.icon} ${section.title}</h1>
+      <h1>${section.icon} ${esc(section.title)}</h1>
       <p class="quiz-xp">⭐ ${xp} XP · ${freeLeft()}</p>
       <p class="quiz-prompt">${isPicture ? "What is this?" : "What did you hear?"}</p>
       ${questionHTML}

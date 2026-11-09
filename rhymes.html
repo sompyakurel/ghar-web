@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ghar — Rhymes</title>
-<link rel="stylesheet" href="style.css?v=13">
+<link rel="stylesheet" href="style.css?v=25">
 </head>
 <body>
 <div class="prayer-bunting" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span></div></div>
@@ -16,6 +16,13 @@
   <p class="error" id="error" hidden>Couldn't load the rhymes.</p>
 </div>
 <script>
+// Rhymes doesn't load auth.js, so it has its own copy of the esc() helper:
+// escape & < > " ' for safe interpolation into innerHTML.
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
 function isTestUnlock() {
   const q = new URLSearchParams(location.search);
   if (q.has("test")) localStorage.setItem("ghar.testUnlock", q.get("test") === "off" ? "" : "1");
@@ -59,12 +66,12 @@ fetch("data/rhymes-v1.json")
       const card = document.createElement("div");
       card.className = "song-card";
       const audioUrl = "assets/audio/rhymes/" + rhyme.audio;
-      const img = rhyme.image ? `<img class="rhyme-img" src="${asset(rhyme.image)}" alt="" onerror="this.style.display='none'">` : "";
+      const img = rhyme.image ? `<img class="rhyme-img" src="${esc(asset(rhyme.image))}" alt="" onerror="this.style.display='none'">` : "";
       const lines = rhyme.lyrics_ne.map((ne, i) => `
-        <div class="lyric-line"><div class="deva">${ne}</div><div class="roma">${rhyme.lyrics_en[i] || ""}</div></div>`).join("");
+        <div class="lyric-line"><div class="deva">${esc(ne)}</div><div class="roma">${esc(rhyme.lyrics_en[i] || "")}</div></div>`).join("");
       card.innerHTML = `
         ${img}
-        <div class="song-head"><h2>${rhyme.title_ne}</h2><p>${rhyme.title_en}</p></div>
+        <div class="song-head"><h2>${esc(rhyme.title_ne)}</h2><p>${esc(rhyme.title_en)}</p></div>
         <button type="button" class="play-btn">▶️ Play</button>
         <div class="lyrics">${lines}</div>`;
       card.querySelector(".play-btn").addEventListener("click", e => {

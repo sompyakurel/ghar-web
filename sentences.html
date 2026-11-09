@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ghar — Sentences</title>
-<link rel="stylesheet" href="style.css?v=13">
+<link rel="stylesheet" href="style.css?v=25">
 </head>
 <body>
 <div class="prayer-bunting" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span></div></div>
@@ -15,7 +15,7 @@
   <div id="content"></div>
   <p class="error" id="error" hidden>Couldn't load the sentences. Check your connection and refresh.</p>
 </div>
-<script src="auth.js?v=7"></script>
+<script src="auth.js?v=8"></script>
 <script>
 function isTestUnlock() {
   const q = new URLSearchParams(location.search);
@@ -117,15 +117,15 @@ function render() {
   }
   const q = current();
   const pic = q.pictureWord.image
-    ? `<img class="sent-picture" src="${asset(q.pictureWord.image)}" alt="${q.pictureWord.english}" onerror="this.style.display='none'">`
-    : `<div class="sent-picture sent-picture-fallback">${q.pictureWord.devanagari}</div>`;
+    ? `<img class="sent-picture" src="${esc(asset(q.pictureWord.image))}" alt="${esc(q.pictureWord.english)}" onerror="this.style.display='none'">`
+    : `<div class="sent-picture sent-picture-fallback">${esc(q.pictureWord.devanagari)}</div>`;
   content.innerHTML = `
     <div class="quiz-player">
       <h1>📝 This Is a Thing</h1>
       <p class="quiz-xp">⭐ ${xp} XP · ${index + 1} / ${questions.length}</p>
       <div class="progress"><div style="width:${(index / questions.length * 100)}%"></div></div>
       ${pic}
-      <p class="sent-line"><span>यो</span> ${picked ? `<span class="sent-filled">${picked.devanagari}</span>` : `<span class="sent-blank">___</span>`} <span>हो।</span></p>
+      <p class="sent-line"><span>यो</span> ${picked ? `<span class="sent-filled">${esc(picked.devanagari)}</span>` : `<span class="sent-blank">___</span>`} <span>हो।</span></p>
       ${picked ? "" : `<p class="sent-hint">Tap the missing word</p>`}
       <p class="quiz-stake ${wrongPicks.size === 0 ? "good" : "low"}">${wrongPicks.size === 0 ? "⭐ +5 XP" : "😅 +2 XP now"}</p>
       <div class="sent-options" id="opts"></div>
@@ -137,7 +137,7 @@ function render() {
     const btn = document.createElement("button");
     btn.className = "sent-option" + (isWrong ? " wrong" : "");
     btn.disabled = picked !== null || isWrong;
-    btn.innerHTML = `<span class="opt-deva">${w.devanagari}</span><span class="opt-sub">${w.romanized}</span>`;
+    btn.innerHTML = `<span class="opt-deva">${esc(w.devanagari)}</span><span class="opt-sub">${esc(w.romanized)}</span>`;
     btn.addEventListener("click", () => pick(w));
     optsEl.appendChild(btn);
   });

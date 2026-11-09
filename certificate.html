@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ghar — Certificate</title>
-<link rel="stylesheet" href="style.css?v=13">
+<link rel="stylesheet" href="style.css?v=25">
 </head>
 <body>
 <div class="prayer-bunting" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span></div></div>
@@ -15,7 +15,7 @@
   <div id="content"></div>
   <p class="error" id="error" hidden>Couldn't load the certificate. Check your connection and refresh.</p>
 </div>
-<script src="auth.js"></script>
+<script src="auth.js?v=8"></script>
 <script>
 const NAME_KEY = "ghar.cert.name";
 const DATE_KEY = "ghar.cert.date";
@@ -50,8 +50,8 @@ function renderLock(content, done, total) {
 }
 function renderCert(content, name, dateStr, total, nameEditable) {
   const nameBlock = nameEditable
-    ? `<input class="cert-name" id="cert-name" type="text" placeholder="Type your name here" value="${name.replace(/"/g, "&quot;")}" maxlength="60">`
-    : `<p class="cert-name-text">${name.replace(/</g, "&lt;")}</p>`;
+    ? `<input class="cert-name" id="cert-name" type="text" placeholder="Type your name here" value="${esc(name)}" maxlength="60">`
+    : `<p class="cert-name-text">${esc(name)}</p>`;
   content.innerHTML = `
     <div class="cert-wrap">
       <div class="confetti" id="cert-confetti"></div>

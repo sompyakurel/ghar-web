@@ -3,8 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://backend-patient-wave-3724.fly.dev https://api.open-meteo.com; object-src 'none'; base-uri 'self';">
 <title>Ghar — Deck</title>
-<link rel="stylesheet" href="style.css?v=13">
+<link rel="stylesheet" href="style.css?v=25">
 </head>
 <body>
 <div class="prayer-bunting" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span></div></div>
@@ -15,7 +16,7 @@
   <div id="content"></div>
   <p class="error" id="error" hidden>Couldn't load this deck.</p>
 </div>
-<script src="auth.js?v=7"></script>
+<script src="auth.js?v=8"></script>
 <div class="celebration" id="celebration" hidden>
   <div class="confetti" id="confetti"></div>
   <div class="celebration-card">
@@ -81,7 +82,7 @@ function setSpeaker(speaker, word) {
   }, 320);
   const slot = document.getElementById("bubble-slot");
   if (slot && word) {
-    slot.innerHTML = `<div class="speak-bubble ${speaker === "A" ? "a" : "b"}"><div class="deva">${word.devanagari}</div><div class="roma">${word.romanized}</div></div>`;
+    slot.innerHTML = `<div class="speak-bubble ${speaker === "A" ? "a" : "b"}"><div class="deva">${esc(word.devanagari)}</div><div class="roma">${esc(word.romanized)}</div></div>`;
   }
 }
 function clearSpeaker() {
@@ -206,19 +207,27 @@ document.getElementById("celebration").addEventListener("click", () => {
   document.getElementById("celebration").hidden = true;
 });
 const storeKey = `ghar.heard.${deckId}`;
-let heard = new Set(JSON.parse(localStorage.getItem(storeKey) || "[]"));
+function loadHeard() {
+  // Guarded like index.html: a corrupt or non-array saved value must not
+  // kill the page — fall back to an empty set.
+  try {
+    const v = JSON.parse(localStorage.getItem(storeKey) || "[]");
+    return new Set(Array.isArray(v) ? v : []);
+  } catch (e) { return new Set(); }
+}
+let heard = loadHeard();
 function saveHeard() { localStorage.setItem(storeKey, JSON.stringify([...heard])); }
 GharAuth.pull().catch(() => {}).then(() => fetch("data/nepal-v1.json"))
   .then(r => { if (!r.ok) throw new Error("load failed"); return r.json(); })
   .then(pack => {
     const deck = pack.decks.find(d => d.id === deckId);
     if (!deck) throw new Error("no deck");
-    heard = new Set(JSON.parse(localStorage.getItem(storeKey) || "[]"));
+    heard = loadHeard();
     const isConvo = deck.kind === "convo";
     document.title = `Ghar — ${deck.title}`;
     const content = document.getElementById("content");
     if (!FREE.has(deck.id) && !TEST) {
-      content.innerHTML = `<div class="deck-head"><h1>🔒 ${deck.title}</h1><p>This deck unlocks with Ghar Premium.</p></div>`;
+      content.innerHTML = `<div class="deck-head"><h1>🔒 ${esc(deck.title)}</h1><p>This deck unlocks with Ghar Premium.</p></div>`;
       return;
     }
     const total = deck.words.length;
@@ -240,7 +249,7 @@ GharAuth.pull().catch(() => {}).then(() => fetch("data/nepal-v1.json"))
         </div>
       </div>` : "";
     content.innerHTML = `
-      <div class="deck-head"><h1>${deck.title}</h1><p>${total} words · tap a card to hear it, tap ✓ when you've heard it</p></div>
+      <div class="deck-head"><h1>${esc(deck.title)}</h1><p>${total} words · tap a card to hear it, tap ✓ when you've heard it</p></div>
       ${stage}
       <div class="progress"><div id="bar"></div></div>
       <p class="progress-label" id="prog-label"></p>
@@ -270,15 +279,15 @@ GharAuth.pull().catch(() => {}).then(() => fetch("data/nepal-v1.json"))
         const card = document.createElement("div");
         card.className = "word" + (heard.has(w.id) ? " heard" : "");
         const media = w.color_hex
-          ? `<div class="swatch" style="background:${BRIGHT[w.id] || w.color_hex}"></div>`
-          : (w.image ? `<img src="${asset(w.image)}" alt="" onerror="this.style.display='none'">` : "");
+          ? `<div class="swatch" style="background:${esc(BRIGHT[w.id] || w.color_hex)}"></div>`
+          : (w.image ? `<img src="${esc(asset(w.image))}" alt="" onerror="this.style.display='none'">` : "");
         card.innerHTML = `
           ${media}
           <button type="button" class="heard" aria-label="Mark as heard">✓</button>
           <div class="word-body">
-            <div class="deva">${w.devanagari}</div>
-            <div class="roma">${w.romanized}</div>
-            <div class="eng">${w.english}</div>
+            <div class="deva">${esc(w.devanagari)}</div>
+            <div class="roma">${esc(w.romanized)}</div>
+            <div class="eng">${esc(w.english)}</div>
           </div>`;
         card.addEventListener("click", e => {
           stopSequence();

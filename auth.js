@@ -7,6 +7,16 @@ const GHAR_API = "https://backend-patient-wave-3724.fly.dev";
 const SESSION_KEY = "ghar.session";
 const CHILD_KEY = "ghar.childId";
 
+// Escape text for safe interpolation into innerHTML (pack data, child
+// names, nicknames). Escapes & < > " ' — safe in both text and attribute
+// contexts. Shared by every page that loads auth.js; pages that don't
+// load it (songs.html, rhymes.html) define their own copy.
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
+
 const GharAuth = {
   session() { return localStorage.getItem(SESSION_KEY) || ""; },
   childId() { return localStorage.getItem(CHILD_KEY) || ""; },
@@ -95,7 +105,10 @@ const GharAuth = {
     } catch (e) { missions = 0; }
     await fetch(GHAR_API + "/leaderboard/score", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(this.session() ? { "Authorization": "Bearer " + this.session() } : {}),
+      },
       body: JSON.stringify({
         group_code: code,
         nickname: nickname,
@@ -113,7 +126,8 @@ const GharAuth = {
   async carryOver() {
     if (!this.signedIn() || !this.childId()) return false;
     const p = await this.api("/accounts/children/" + this.childId() + "/progress");
-    const serverEmpty = p.xp === 0 && Object.keys(p.heard).length === 0;
+    const heard = p.heard || {};
+    const serverEmpty = p.xp === 0 && Object.keys(heard).length === 0;
     if (!serverEmpty) return false;
     const localDecks = [];
     for (let i = 0; i < localStorage.length; i++) {

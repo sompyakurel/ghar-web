@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ghar — Sentence Builder</title>
-<link rel="stylesheet" href="style.css?v=13">
+<link rel="stylesheet" href="style.css?v=25">
 </head>
 <body>
 <div class="prayer-bunting" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span></div></div>
@@ -15,7 +15,7 @@
   <div id="content"></div>
   <p class="error" id="error" hidden>Couldn't load the sentence builder. Check your connection and refresh.</p>
 </div>
-<script src="auth.js?v=7"></script>
+<script src="auth.js?v=8"></script>
 <script>
 function isTestUnlock() {
   const q = new URLSearchParams(location.search);
@@ -111,6 +111,7 @@ let sentenceIndex = 0;
 let placedIDs = [];
 let poolIDs = [];
 let attempts = 0;
+let solved = false; // true once this sentence is answered correctly — blocks re-pay
 let correctCount = 0;
 let roundCorrect = 0;
 let roundEarnedXP = 0;
@@ -148,6 +149,7 @@ function startSession() {
 function dealSentence() {
   placedIDs = [];
   attempts = 0;
+  solved = false;
   poolIDs = shuffle([...sentence().wordIDs]);
   render();
 }
@@ -167,6 +169,7 @@ function place(id) {
   if (placedIDs.length === sentence().wordIDs.length) checkAnswer();
 }
 function unplace(id) {
+  if (solved) return; // answer already paid — tiles are locked until next sentence
   placedIDs = placedIDs.filter(x => x !== id);
   poolIDs.push(id);
   render();
@@ -186,8 +189,10 @@ function playFullSentence() {
   playNext();
 }
 function checkAnswer() {
+  if (solved) return; // already paid for this sentence — no double-pay
   const s = sentence();
   if (JSON.stringify(placedIDs) === JSON.stringify(s.wordIDs)) {
+    solved = true; // lock the tiles before paying, so the 1.6s window can't re-pay
     correctCount += 1;
     roundCorrect += 1;
     const earned = attempts === 0 ? 5 : 2;
@@ -199,6 +204,7 @@ function checkAnswer() {
     if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
     playDing();
     playFullSentence();
+    render(); // re-render so the placed tiles show disabled during the window
     setTimeout(() => {
       if (sentenceIndex + 1 < round().length) { sentenceIndex += 1; dealSentence(); }
       else { phase = "roundDone"; render(); }
@@ -261,7 +267,7 @@ function render() {
       <div class="progress"><div style="width:${(sentenceIndex / round().length * 100)}%"></div></div>
       <div class="builder-prompt">
         <div class="builder-emoji">${s.emoji}</div>
-        <div class="builder-english">${s.english}</div>
+        <div class="builder-english">${esc(s.english)}</div>
         <p class="sent-hint">Tap the words in order</p>
         <p class="quiz-stake ${attempts === 0 ? "good" : "low"}">${attempts === 0 ? "⭐ +5 XP" : "😅 +2 XP now"}</p>
       </div>
@@ -277,8 +283,9 @@ function render() {
       if (!w) return;
       const tile = document.createElement("button");
       tile.className = "builder-tile placed";
-      tile.innerHTML = `<span class="opt-deva">${w.devanagari}</span><span class="opt-sub">${w.romanized}</span>`;
-      tile.addEventListener("click", () => unplace(id));
+      tile.innerHTML = `<span class="opt-deva">${esc(w.devanagari)}</span><span class="opt-sub">${esc(w.romanized)}</span>`;
+      tile.disabled = solved;
+      if (!solved) tile.addEventListener("click", () => unplace(id));
       row.appendChild(tile);
     });
     if (placedIDs.length === s.wordIDs.length) {
@@ -294,7 +301,7 @@ function render() {
     if (!w) return;
     const tile = document.createElement("button");
     tile.className = "builder-tile";
-    tile.innerHTML = `<span class="opt-deva">${w.devanagari}</span><span class="opt-sub">${w.romanized}</span>`;
+    tile.innerHTML = `<span class="opt-deva">${esc(w.devanagari)}</span><span class="opt-sub">${esc(w.romanized)}</span>`;
     tile.addEventListener("click", () => place(id));
     pool.appendChild(tile);
   });

@@ -3,8 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://backend-patient-wave-3724.fly.dev https://api.open-meteo.com; object-src 'none'; base-uri 'self';">
 <title>Leaderboard — Ghar</title>
-<link rel="stylesheet" href="style.css?v=13">
+<link rel="stylesheet" href="style.css?v=25">
 <style>
 .lb-card { background: #fff; border: 1px solid #e5e0d8; border-radius: 16px; padding: 20px; margin: 16px 0; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
 .lb-card h2 { margin: 0 0 8px; font-size: 20px; }
@@ -69,12 +70,23 @@
 
   <p class="error" id="error" hidden></p>
 </div>
-<script src="auth.js?v=7"></script>
+<script src="auth.js?v=8"></script>
 <script>
 const LB_API = "https://backend-patient-wave-3724.fly.dev/leaderboard";
 const CODE_KEY = "ghar.lb.code";
 const NAME_KEY = "ghar.lb.groupName";
 const NICK_KEY = "ghar.lb.nickname";
+// Leaderboard writes (create group, share score, delete score) require
+// the parent session token (security fix 2026-11-09). Reading the board
+// stays open. A guest without a session is asked to sign in first.
+function authHeaders() {
+  const t = (window.GharAuth && GharAuth.session()) || localStorage.getItem("ghar.session") || "";
+  return t ? { "Authorization": "Bearer " + t } : null;
+}
+function needSignIn() {
+  showError("Please sign in first (a parent account is needed for the leaderboard).");
+  return false;
+}
 const BOARDS = {
   xp: { title: "⭐ XP", label: "XP" },
   quiz_streak_best: { title: "🔥 Best quiz streak", label: "" },
@@ -115,7 +127,7 @@ function renderSetup() {
       <h2>👋 Pick your nickname</h2>
       <p>This is the name everyone in your group will see.</p>
       <div class="lb-row">
-        <input class="lb-input" id="setup-nickname" maxlength="20" placeholder="Pick a fun nickname — not your real name" value="${nickname().replace(/"/g, "&quot;")}">
+        <input class="lb-input" id="setup-nickname" maxlength="20" placeholder="Pick a fun nickname — not your real name" value="${esc(nickname())}">
       </div>
     </div>
     <div class="lb-card">
@@ -150,12 +162,15 @@ async function createGroup() {
   if (!nick) { showError("Pick a nickname first — something fun, not your real name."); return; }
   localStorage.setItem(NICK_KEY, nick);
   const name = (document.getElementById("group-name").value || "").trim();
+  const auth = authHeaders();
+  if (!auth) return needSignIn();
   try {
     const r = await fetch(LB_API + "/group", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...auth },
       body: JSON.stringify({ name }),
     });
+    if (r.status === 401) { showError("Your sign-in expired — please sign in again."); return; }
     if (!r.ok) throw new Error("Could not create the group. Check your connection and try again.");
     const d = await r.json();
     localStorage.setItem(CODE_KEY, d.code);
@@ -244,7 +259,7 @@ function renderPlayers() {
       const li = document.createElement("li");
       if (me && p.nickname === me) li.className = "me";
       const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : (i + 1);
-      li.innerHTML = `<span class="lb-rank">${medal}</span><span class="lb-name"></span><span class="lb-stat">${p[board] || 0}${b.label ? " " + b.label : ""}</span>`;
+      li.innerHTML = `<span class="lb-rank">${medal}</span><span class="lb-name"></span><span class="lb-stat">${Number(p[board]) || 0}${b.label ? " " + b.label : ""}</span>`;
       li.querySelector(".lb-name").textContent = p.nickname + (me && p.nickname === me ? " (you)" : "");
       ul.appendChild(li);
     });
@@ -260,12 +275,16 @@ async function shareScore() {
   const nick = nickname();
   if (!c || !nick) { showError("Pick a nickname and join a group first."); return; }
   const stats = myStats();
+  const auth = authHeaders();
+  if (!auth) return needSignIn();
   try {
     const r = await fetch(LB_API + "/score", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...auth },
       body: JSON.stringify({ group_code: c, nickname: nick, ...stats }),
     });
+    if (r.status === 401) { showError("Your sign-in expired — please sign in again."); return; }
+    if (r.status === 409) { showError("That nickname is already taken in this group — pick another one."); return; }
     if (r.status === 404) { showError("That group no longer exists."); return; }
     if (!r.ok) throw new Error("Could not share your score.");
     await loadBoard();
@@ -279,8 +298,15 @@ async function deleteScore() {
   const nick = nickname();
   if (!c || !nick) return;
   if (!confirm("Delete your score from this group?")) return;
+  const auth = authHeaders();
+  if (!auth) return needSignIn();
   try {
-    const r = await fetch(LB_API + "/" + encodeURIComponent(c) + "/score?nickname=" + encodeURIComponent(nick), { method: "DELETE" });
+    const r = await fetch(LB_API + "/" + encodeURIComponent(c) + "/score?nickname=" + encodeURIComponent(nick), {
+      method: "DELETE",
+      headers: { ...auth },
+    });
+    if (r.status === 401) { showError("Your sign-in expired — please sign in again."); return; }
+    if (r.status === 403) { showError("Only the parent who posted this score can delete it."); return; }
     if (!r.ok && r.status !== 404) throw new Error("Could not delete your score.");
     await loadBoard();
   } catch (e) {

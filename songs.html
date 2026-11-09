@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ghar — Songs</title>
-<link rel="stylesheet" href="style.css?v=13">
+<link rel="stylesheet" href="style.css?v=25">
 </head>
 <body>
 <div class="prayer-bunting" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span></div></div>
@@ -16,6 +16,13 @@
   <p class="error" id="error" hidden>Couldn't load the songs.</p>
 </div>
 <script>
+// Songs doesn't load auth.js, so it has its own copy of the esc() helper:
+// escape & < > " ' for safe interpolation into innerHTML.
+function esc(s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+}
 function isTestUnlock() {
   const q = new URLSearchParams(location.search);
   if (q.has("test")) localStorage.setItem("ghar.testUnlock", q.get("test") === "off" ? "" : "1");
@@ -55,9 +62,9 @@ fetch("data/songs-v1.json")
       card.className = "song-card";
       const audioUrl = "assets/audio/songs/songs-v1_" + song.audio;
       const lines = song.lyrics_ne.map((ne, i) => `
-        <div class="lyric-line"><div class="deva">${ne}</div><div class="roma">${song.lyrics_en[i] || ""}</div></div>`).join("");
+        <div class="lyric-line"><div class="deva">${esc(ne)}</div><div class="roma">${esc(song.lyrics_en[i] || "")}</div></div>`).join("");
       card.innerHTML = `
-        <div class="song-head"><h2>${song.title_ne}</h2><p>${song.title_en}</p></div>
+        <div class="song-head"><h2>${esc(song.title_ne)}</h2><p>${esc(song.title_en)}</p></div>
         <button type="button" class="play-btn">▶️ Play</button>
         <div class="lyrics">${lines}</div>`;
       card.querySelector(".play-btn").addEventListener("click", e => {

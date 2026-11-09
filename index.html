@@ -3,9 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://backend-patient-wave-3724.fly.dev https://api.open-meteo.com; object-src 'none'; base-uri 'self';">
 <title>Ghar — Learn Nepali</title>
-<link rel="stylesheet" href="style.css?v=24">
-<script src="https://unpkg.com/@rive-app/webgl2@2.49.4/rive.js"></script>
+<link rel="stylesheet" href="style.css?v=25">
+<script src="https://unpkg.com/@rive-app/webgl2@2.49.4/rive.js" integrity="sha384-RV9aehPhuWkr3poRCN7kYUCRgVmGp02K4UDD9mCdz+3WJC7iu76qMwbys1ctuK7T" crossorigin="anonymous"></script>
 <script src="assets/js/bhunte-rive.js"></script>
 <style>
   /* First-visit tour: Bhunte shows new families where the basics are. */
@@ -204,7 +205,7 @@
   </section>
 </div>
 <div id="toast"></div>
-<script src="auth.js?v=7"></script>
+<script src="auth.js?v=8"></script>
 <script>
 const FREE = new Set(["alphabet", "numbers"]);
 const TIERS = { beginner: "🌱 Beginner", intermediate: "🌿 Intermediate", hard: "🌳 Hard", teen: "🔥 Teen" };
@@ -368,19 +369,19 @@ GharAuth.pull().catch(() => {}).then(() => {
       if (st.open) row.href = `deck.html?deck=${deck.id}`;
       let stoneInner = "";
       if (deck.id === "colors") {
-        stoneInner = `<span class="stone-strip">${deck.words.map(w => `<span style="background:${BRIGHT[w.id] || w.color_hex || "#ccc"}"></span>`).join("")}</span>`;
+        stoneInner = `<span class="stone-strip">${deck.words.map(w => `<span style="background:${esc(BRIGHT[w.id] || w.color_hex || "#ccc")}"></span>`).join("")}</span>`;
       } else {
         const coverUrl = COVER_OVERRIDES[deck.id] || deck.cover_image;
         stoneInner = coverUrl
-          ? `<img src="${asset(coverUrl)}" alt="" onerror="this.remove()">`
-          : `<span class="stone-fallback">${deck.title.charAt(0)}</span>`;
+          ? `<img src="${esc(asset(coverUrl))}" alt="" onerror="this.remove()">`
+          : `<span class="stone-fallback">${esc(deck.title.charAt(0))}</span>`;
       }
       const badge = st.done ? "✓" : !st.open ? "🔒" : isCurrent ? "▶" : "";
       const meta = st.done ? `${deck.words.length} words · ✓ Done`
         : isCurrent ? `${deck.words.length} words · Up next`
         : st.open ? `${deck.words.length} words`
         : `${deck.words.length} words · 🔒 Premium`;
-      const card = `<span class="path-card ${side}">${isCurrent ? `<span class="upnext">▶ UP NEXT</span>` : ""}<h3>${deck.title}</h3><p>${meta}</p></span>`;
+      const card = `<span class="path-card ${side}">${isCurrent ? `<span class="upnext">▶ UP NEXT</span>` : ""}<h3>${esc(deck.title)}</h3><p>${meta}</p></span>`;
       const stone = `<span class="path-stone">${stoneInner}${badge ? `<span class="path-badge">${badge}</span>` : ""}</span>`;
       const guide = isCurrent
         ? `<img class="path-guide ${side === "left" ? "right" : "left"}" src="assets/images/bhunte.svg" alt="Bhunte waits here">`
@@ -468,7 +469,7 @@ if (TEST) {
         const url = "assets/audio/songs/songs-v1_" + s.audio;
         const card = document.createElement("div");
         card.className = "home-media-card";
-        card.innerHTML = `<h3>${s.title_ne}</h3><p>${s.title_en}</p>`;
+        card.innerHTML = `<h3>${esc(s.title_ne)}</h3><p>${esc(s.title_en)}</p>`;
         const btn = document.createElement("button");
         btn.className = "play-btn";
         btn.textContent = "▶️ Play";
@@ -486,8 +487,8 @@ if (TEST) {
         const url = "assets/audio/rhymes/" + s.audio;
         const card = document.createElement("div");
         card.className = "home-media-card";
-        const img = s.image ? `<img class="home-media-img" src="${asset(s.image)}" alt="${s.title_ne}" onerror="this.remove()">` : "";
-        card.innerHTML = `${img}<h3>${s.title_ne}</h3><p>${s.title_en}</p>`;
+        const img = s.image ? `<img class="home-media-img" src="${esc(asset(s.image))}" alt="${esc(s.title_ne)}" onerror="this.remove()">` : "";
+        card.innerHTML = `${img}<h3>${esc(s.title_ne)}</h3><p>${esc(s.title_en)}</p>`;
         const btn = document.createElement("button");
         btn.className = "play-btn";
         btn.textContent = "▶️ Play";

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bagh-Chal 🐯 — Ghar</title>
-<link rel="stylesheet" href="style.css?v=13">
+<link rel="stylesheet" href="style.css?v=25">
 </head>
 <body>
 <div class="prayer-bunting" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span></div></div>
@@ -71,7 +71,7 @@
   </div>
 </div>
 
-<script src="auth.js?v=7"></script>
+<script src="auth.js?v=8"></script>
 <script>
 // Bagh-Chal — the classic Nepali tiger-and-goats game, ported from the
 // app's BaghChalView.swift (which mirrors ~/workspace/baghchal/baghchal.py).
@@ -267,6 +267,9 @@ let hint = null;
 let hintsLeft = 3;
 let result = "playing";
 let xpEarned = 0;
+let xpPaid = false; // this terminal outcome already settled — never pay twice
+let tigerTimer = null; // pending tiger-move timeout (cleared on Restart)
+let passTimer = null; // pending pass-goats timeout (cleared on Restart)
 const MAX_PAID_PER_DAY = 3;
 
 function el(tag, attrs) {
@@ -374,9 +377,13 @@ function currentLevel() {
 }
 
 function startGame() {
+  // Clear any pending tiger/pass timers from the previous game, or they
+  // would fire moveTiger()/passGoats() on this fresh engine mid-game.
+  clearTimeout(tigerTimer); tigerTimer = null;
+  clearTimeout(passTimer); passTimer = null;
   engine = newEngine();
   selected = null; dests = []; hint = null; result = "playing";
-  xpEarned = 0; tigerThinking = false; hintsLeft = 3;
+  xpEarned = 0; xpPaid = false; tigerThinking = false; hintsLeft = 3;
   document.getElementById("pass-notice").style.display = "none";
   document.getElementById("ready").style.display = "none";
   document.getElementById("done").style.display = "none";
@@ -391,6 +398,7 @@ function startGame() {
 function checkDone() {
   const o = outcome(engine);
   if (o === "playing") return false;
+  if (xpPaid) return true; // already settled this terminal outcome — don't re-pay or re-render
   result = o;
   phase = "done";
   Music.playStinger(o === "goatsWin");
@@ -429,6 +437,7 @@ function checkDone() {
     ? "Just for fun — no XP in 2-player 🤝"
     : (xpEarned > 0 ? `+${xpEarned} XP` : "Daily game rewards used up — still counts for glory!");
   Music.stop();
+  xpPaid = true;
   return true;
 }
 function afterGoatTurn() {
@@ -437,7 +446,7 @@ function afterGoatTurn() {
   if (twoPlayer) return;
   tigerThinking = true;
   renderStatus();
-  setTimeout(() => {
+  tigerTimer = setTimeout(() => {
     const m = tigerAIMove(engine);
     if (!m) { tigerThinking = false; checkDone(); return; }
     moveTiger(engine, m);
@@ -448,7 +457,7 @@ function afterGoatTurn() {
     if (engine.goatsInHand === 0 && goatMoves(engine).length === 0) {
       const notice = document.getElementById("pass-notice");
       notice.style.display = "";
-      setTimeout(() => {
+      passTimer = setTimeout(() => {
         notice.style.display = "none";
         passGoats(engine);
         if (!checkDone()) afterGoatTurn();
@@ -461,7 +470,7 @@ function afterTigerTurn() {
   if (engine.goatsInHand === 0 && goatMoves(engine).length === 0 && result === "playing") {
     const notice = document.getElementById("pass-notice");
     notice.style.display = "";
-    setTimeout(() => {
+    passTimer = setTimeout(() => {
       notice.style.display = "none";
       passGoats(engine);
       checkDone();

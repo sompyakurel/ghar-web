@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ghar — Missions</title>
-<link rel="stylesheet" href="style.css?v=13">
+<link rel="stylesheet" href="style.css?v=25">
 <style>
   /* All-missions celebration: Bhunte earned. Shows once. */
   #dog-celebration { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 60; display: flex; align-items: center; justify-content: center; }
@@ -78,7 +78,7 @@
     <button type="button" class="back" id="dog-celebration-close">Keep exploring</button>
   </div>
 </div>
-<script src="auth.js?v=7"></script>
+<script src="auth.js?v=8"></script>
 <script>
 let pack = null;
 let completed = new Set();
@@ -220,13 +220,13 @@ function render() {
     card.innerHTML = `
       <div class="mission-head">
         <div>
-          <span class="mission-title-ne">${m.title_ne}</span>
-          <span class="mission-title-en">${m.title_en}</span>
+          <span class="mission-title-ne">${esc(m.title_ne)}</span>
+          <span class="mission-title-en">${esc(m.title_en)}</span>
         </div>
-        <span class="mission-badge">${isVerified ? "⭐ Verified" : isDone ? "✅ Done" : m.difficulty}</span>
+        <span class="mission-badge">${isVerified ? "⭐ Verified" : isDone ? "✅ Done" : esc(m.difficulty)}</span>
       </div>
-      <p class="mission-prompt">${m.prompt_en}</p>
-      <p class="mission-prompt-ne">${m.prompt_ne}</p>
+      <p class="mission-prompt">${esc(m.prompt_en)}</p>
+      <p class="mission-prompt-ne">${esc(m.prompt_ne)}</p>
       <div class="mission-actions">
         <button class="quiz-next mission-play">▶️ Hear it</button>
         ${isVerified ? "" : `<button class="quiz-next mission-done">Done it! +${m.xp || 10} XP</button>
@@ -341,13 +341,13 @@ function renderTeen() {
     card.innerHTML = `
       <div class="mission-head">
         <div>
-          <span class="mission-title-ne">${m.titleNe}</span>
-          <span class="mission-title-en">${m.titleEn}</span>
+          <span class="mission-title-ne">${esc(m.titleNe)}</span>
+          <span class="mission-title-en">${esc(m.titleEn)}</span>
         </div>
         <span class="mission-badge">${isVerified ? "⭐ Verified" : isDone ? "✅ Done" : "teen"}</span>
       </div>
-      <p class="mission-prompt">${m.promptEn}</p>
-      <p class="mission-prompt-ne">${m.promptNe}</p>
+      <p class="mission-prompt">${esc(m.promptEn)}</p>
+      <p class="mission-prompt-ne">${esc(m.promptNe)}</p>
       <div class="mission-actions">
         <button class="quiz-next mission-play">▶️ Hear it</button>
         ${isDone ? "" : `<button class="quiz-next teen-hold">✋ Press &amp; hold to confirm (+25 XP)</button>`}
