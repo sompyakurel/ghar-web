@@ -701,8 +701,8 @@ EOF'
 /* Lessons: Bhunte's guide panel on one side, the learning path on the
    other. The panel sticks while the path scrolls, so Bhunte stays beside
    the journey. */
-.lessons-layout { display: flex; gap: 56px; align-items: flex-start; }
-.lessons-layout .motivation { flex: 0 0 300px; flex-direction: column; align-items: center; text-align: center; margin-bottom: 0; position: sticky; top: 64px; }
+.lessons-layout { display: flex; gap: 96px; align-items: flex-start; }
+.lessons-layout .motivation { flex: 0 0 340px; flex-direction: column; align-items: center; text-align: center; margin-bottom: 0; position: sticky; top: 64px; }
 .lessons-layout .motivation-body { width: 100%; }
 .lessons-layout .motivation-dog { width: 120px; height: 120px; margin-bottom: 4px; }
 .lessons-layout .lessons-right { flex: 1; min-width: 0; }
