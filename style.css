@@ -609,13 +609,21 @@ EOF'
 .trace-section h2 { font-family: "Noto Sans Devanagari", sans-serif; font-size: 1.25rem; margin: 0 0 10px; }
 .trace-count { color: #8d6e63; font-size: 1rem; }
 .trace-section-done { color: #2e7d32; font-size: 0.95rem; }
-.trace-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 10px; }
-.trace-letter { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px 6px 10px; background: #fff; border: 2px solid #e8ddd3; border-radius: 14px; cursor: pointer; font-family: inherit; }
+.trace-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); gap: 10px; }
+.trace-letter { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px 6px 10px; background: #fff; border: 2px solid #e8ddd3; border-radius: 14px; cursor: pointer; font-family: inherit; min-width: 0; }
 .trace-letter:hover { border-color: #d4a017; }
 .trace-letter.traced { border-color: #43a047; background: #f1f8e9; }
-.trace-letter-dev { font-family: "Noto Sans Devanagari", sans-serif; font-size: 2rem; line-height: 1.1; }
-.trace-letter-roman { font-size: 0.8rem; color: #8d6e63; }
+/* Long Devanagari words (Fruits: भुइँकटहर, खरबुजा…) overflowed the old
+   84px columns and overlapped their neighbours. Wider columns + wrapping
+   keep every word inside its own button. */
+.trace-letter-dev { font-family: "Noto Sans Devanagari", sans-serif; font-size: 1.75rem; line-height: 1.2; overflow-wrap: anywhere; word-break: break-word; text-align: center; max-width: 100%; }
+.trace-letter-roman { font-size: 0.8rem; color: #8d6e63; overflow-wrap: anywhere; text-align: center; max-width: 100%; }
 .trace-star { position: absolute; top: 4px; right: 6px; font-size: 0.85rem; }
+/* Try-It mode toggle + closeness meter (trace.html). */
+.trace-mode { display: flex; gap: 8px; margin: 14px 0 4px; flex-wrap: wrap; }
+.trace-mode-btn { flex: 1; min-width: 150px; padding: 10px 12px; border: 2px solid #e8ddd3; background: #fff; border-radius: 999px; font: inherit; font-weight: 700; cursor: pointer; color: #6d4c41; }
+.trace-mode-btn.active { border-color: #d4a017; background: #fff8e1; color: #4e342e; }
+.trace-tryit-score { color: #6d4c41; font-weight: 700; margin: 6px 0 0; }
 .trace-board { background: #fff; border: 2px solid #e8ddd3; border-radius: 20px; padding: 18px; margin-bottom: 24px; }
 .trace-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
 .trace-dev { font-family: "Noto Sans Devanagari", sans-serif; font-size: 3.5rem; line-height: 1; }

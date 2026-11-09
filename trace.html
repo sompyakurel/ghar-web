@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>✍️ Trace the letters — Ghar</title>
-<link rel="stylesheet" href="style.css?v=18">
+<link rel="stylesheet" href="style.css?v=19">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;700&display=swap" rel="stylesheet">
@@ -18,7 +18,7 @@
 <div class="wrap">
   <p><a href="index.html#writing">← Writing</a></p>
   <h1>✍️ Trace the letters</h1>
-  <p class="trace-sub">Trace each word one stroke at a time — follow the glowing dots, stroke by stroke. Works with a finger or a mouse. Finish a whole deck to earn a Mystery Box 🎁</p>
+  <p class="trace-sub">Trace each word one stroke at a time (+2 XP) — or switch to "Try it yourself" and write it from memory (+5 XP). Works with a finger or a mouse. Finish a whole deck to earn a Mystery Box 🎁</p>
 
   <div id="trace-picker"></div>
 
@@ -69,8 +69,14 @@
       <div class="trace-progress-bar"><div id="trace-progress-fill"></div></div>
       <span id="trace-progress-pct">0%</span>
     </div>
-    <p class="trace-hint-line">Trace with your finger or mouse — practice, no XP yet</p>
+    <p id="trace-hint-line" class="trace-hint-line">Trace with your finger or mouse — +2 XP when you finish it</p>
+    <p id="trace-tryit-score" class="trace-tryit-score" hidden>Draw the word, then lift your finger to check it</p>
     <p id="trace-hint" class="trace-hint" hidden>Follow the glowing dots — trace this stroke first ✏️</p>
+
+    <div class="trace-mode" role="group" aria-label="Writing mode">
+      <button id="trace-mode-trace" type="button" class="trace-mode-btn active">✏️ Trace · +2 XP</button>
+      <button id="trace-mode-tryit" type="button" class="trace-mode-btn">✍️ Try it yourself · +5 XP</button>
+    </div>
 
     <div class="trace-controls">
       <button id="trace-watch" type="button">👀 Watch</button>
@@ -83,16 +89,19 @@
 <div class="prayer-bunting bottom" aria-hidden="true"><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span></div>
 
 <script>
-/* Trace the letters — Samio-style per-stroke tracing.
+/* Trace the letters — Samio-style per-stroke tracing, plus "Try it
+   yourself" freehand writing (the app's gradeTryIt, ported).
    Only the sections the app makes traceable: Alphabets, My Name,
    Numbers, Fruits, Body Parts, Animals. A word is split into its
    pen-strokes in writing order; only the current stroke's dots glow
    gold and count; a stroke completes at >=75% of its dots, then the
    next unlocks. A dot only counts if the finger/mouse moved here
    continuously from the last dot it lit (the app's maxJump rule) —
-   teleporting across a curve lights almost nothing. Trace is
-   practice — no XP. A finished word is marked traced (star) and
-   heard (counts toward its deck). Finishing a whole deck earns a
+   teleporting across a curve lights almost nothing.
+   XP (web rule, Som 2026-11-08): Trace +2 XP, Try-It +5 XP — once
+   per word each (tracked in ghar.writing.traceXP / ghar.writing.done),
+   so re-tracing can't farm XP. A finished word is marked traced (star)
+   and heard (counts toward its deck). Finishing a whole deck earns a
    Mystery Box. My Name generates its dots in the browser, the same
    way the app renders its LetterGuide at runtime. */
 (function () {
@@ -127,6 +136,18 @@
   function saveTraced(set) {
     localStorage.setItem('ghar.writing.traced', Array.from(set).sort().join(','));
   }
+  function traceXPSet() {
+    return new Set((localStorage.getItem('ghar.writing.traceXP') || '').split(',').filter(Boolean));
+  }
+  function doneSet() {
+    return new Set((localStorage.getItem('ghar.writing.done') || '').split(',').filter(Boolean));
+  }
+  function addXP(n) {
+    var t = (parseInt(localStorage.getItem('ghar.xp.total') || '0', 10) || 0) + n;
+    localStorage.setItem('ghar.xp.total', String(t));
+    if (window.GharAuth) { GharAuth.pushTotals(); GharAuth.shareLeaderboard(); }
+    return t;
+  }
   function boxGrantedSet() {
     return new Set((localStorage.getItem('ghar.writing.boxGranted') || '').split(',').filter(Boolean));
   }
@@ -138,7 +159,7 @@
   }
 
   var words = {};           // id -> {dev,en,roman,deck,deckTitle,section,audio,strokes}
-  var picData = {};         // id -> {outline, imgRect, image} for Fruits/Body Parts
+  var picData = {};         // id -> {outline, imgRect, image} for Fruits/Body Parts/Animals
   var mode = 'word';        // 'picture' (trace the shape) or 'word' (trace the letters)
   var picImg = null;        // the loaded picture Image for picture mode
   var deckWords = {};       // deck id -> [word ids] (traceable decks only)
@@ -152,6 +173,8 @@
   var ink = [];             // finished strokes' ink, each [[x,y],...]
   var cur = [];             // current stroke's ink
   var celebrated = false;
+  var tryIt = false;        // true = "Try it yourself" freehand mode
+  var tryItScore = 0;       // last grader coverage (0..1), shown as "how close"
   var audio = new Audio();
   var template = null;
   var watching = false, watchRaf = 0, watchStart = 0, watchDur = 5000;
@@ -236,7 +259,9 @@
       ctx.stroke();
     }
     ink.forEach(paintStroke); paintStroke(cur);
-    for (var si = 0; si < strokes.length; si++) {
+    // In Try-It mode there are no dots to follow — the kid writes from
+    // memory, so only the faint word (above) and their ink show.
+    if (!tryIt) for (var si = 0; si < strokes.length; si++) {
       for (var di = 0; di < strokes[si].length; di++) {
         var p = strokes[si][di];
         ctx.beginPath(); ctx.arc(p[0], p[1], 5.5, 0, Math.PI * 2);
@@ -249,13 +274,22 @@
       }
     }
     ctx.restore();
-    var frac = totalDots() ? hitDots() / totalDots() : 0;
+    // Progress bar: in Trace mode it's the dots hit; in Try-It mode it's
+    // the grader's coverage ("how close is my writing").
+    var frac, label;
+    if (tryIt) {
+      frac = tryItScore;
+      label = celebrated ? 'All done! 🎉' : 'Write it yourself — how close: ' + Math.round(tryItScore * 100) + '%';
+    } else {
+      frac = totalDots() ? hitDots() / totalDots() : 0;
+      if (celebrated) label = 'All strokes done! 🎉';
+      else if (mode === 'picture') label = 'Step 1 of 2 · Trace the picture 🖼️';
+      else if (picData[currentId]) label = 'Step 2 of 2 · Stroke ' + (strokeIdx + 1) + ' of ' + strokes.length;
+      else label = 'Stroke ' + (strokeIdx + 1) + ' of ' + strokes.length;
+    }
     $('trace-progress-fill').style.width = Math.round(frac * 100) + '%';
     $('trace-progress-pct').textContent = Math.round(frac * 100) + '%';
-    if (celebrated) $('trace-stroke-label').textContent = 'All strokes done! 🎉';
-    else if (mode === 'picture') $('trace-stroke-label').textContent = 'Step 1 of 2 · Trace the picture 🖼️';
-    else if (picData[currentId]) $('trace-stroke-label').textContent = 'Step 2 of 2 · Stroke ' + (strokeIdx + 1) + ' of ' + strokes.length;
-    else $('trace-stroke-label').textContent = 'Stroke ' + (strokeIdx + 1) + ' of ' + strokes.length;
+    $('trace-stroke-label').textContent = label;
   }
 
   function hitTestSegment(a, b) {
@@ -291,7 +325,7 @@
       startWordStep();
       return;
     }
-    if (strokeIdx >= strokes.length - 1) { celebrateCompletion(); return; }
+    if (strokeIdx >= strokes.length - 1) { celebrateCompletion('trace'); return; }
     strokeIdx++;
     ding();
     draw();
@@ -304,11 +338,157 @@
     }
   }
 
-  function celebrateCompletion() {
+  /* ---- "Try it yourself": freehand writing, graded like the app ----
+     Port of the app's gradeTryIt (ContentView.swift) — $1-recognizer
+     style, lab-validated: sample the ink evenly, normalize BOTH the ink
+     and the word's skeleton checkpoints by center + RMS spread, compare
+     as point clouds (mean nearest-neighbour distance both ways + the
+     template's 90th-percentile distance). Guards: total ink length must
+     be 0.5–2.7x the skeleton's normalized length (kills blobs, stripes
+     and half-words) and >=18% of the ink must run vertically-ish (kills
+     line cheats). Checkpoints = the word's Trace dots, flattened. */
+  function gradeTryIt() {
+    var cps = [];
+    strokes.forEach(function (st) { st.forEach(function (p) { cps.push(p); }); });
+    if (!cps.length) return { coverage: 0, passed: false };
+    var allInk = ink.slice();
+    if (cur.length) allInk.push(cur);
+    var samples = [], inkLen = 0, vertLen = 0;
+    allInk.forEach(function (st) {
+      var prev = null;
+      st.forEach(function (p) {
+        if (prev) {
+          var dx = p[0] - prev[0], dy = p[1] - prev[1];
+          var d = Math.hypot(dx, dy);
+          inkLen += d;
+          if (Math.abs(dy) > Math.abs(dx)) vertLen += d;
+          var steps = Math.max(1, Math.floor(d / 5));
+          for (var i = 1; i <= steps; i++) {
+            var t = i / steps;
+            samples.push([prev[0] + dx * t, prev[1] + dy * t]);
+          }
+        }
+        prev = p;
+      });
+    });
+    if (samples.length <= 4 || inkLen <= 0) return { coverage: 0, passed: false };
+    function centroid(ps) {
+      var sx = 0, sy = 0;
+      ps.forEach(function (p) { sx += p[0]; sy += p[1]; });
+      return [sx / ps.length, sy / ps.length];
+    }
+    function spread(ps, c) {
+      var s = 0;
+      ps.forEach(function (p) { var dx = p[0] - c[0], dy = p[1] - c[1]; s += dx * dx + dy * dy; });
+      return Math.sqrt(s / ps.length);
+    }
+    var ic = centroid(samples), kc = centroid(cps);
+    var ispr = spread(samples, ic), kspr = spread(cps, kc);
+    if (ispr <= 2 || kspr <= 2) return { coverage: 0, passed: false };
+    var A = samples.map(function (p) { return [(p[0] - ic[0]) / ispr, (p[1] - ic[1]) / ispr]; });
+    var B = cps.map(function (p) { return [(p[0] - kc[0]) / kspr, (p[1] - kc[1]) / kspr]; });
+    function nnDist(a, b) {
+      return a.map(function (p) {
+        var best = Infinity;
+        for (var i = 0; i < b.length; i++) {
+          var d = Math.hypot(p[0] - b[i][0], p[1] - b[i][1]);
+          if (d < best) best = d;
+        }
+        return best;
+      });
+    }
+    var dT = nnDist(B, A), dI = nnDist(A, B);
+    function mean(arr) { return arr.reduce(function (s, v) { return s + v; }, 0) / arr.length; }
+    var m = (mean(dT) + mean(dI)) / 2;
+    var srt = dT.slice().sort(function (a, b) { return a - b; });
+    var p90 = srt[Math.min(srt.length - 1, Math.floor(0.9 * srt.length))];
+    var coverage = dT.filter(function (d) { return d <= 0.30; }).length / dT.length;
+    // Skeleton length: greedy nearest-neighbour chain over the checkpoints.
+    var skelLen = 0;
+    if (cps.length > 1) {
+      var unvisited = {};
+      for (var i = 0; i < cps.length; i++) unvisited[i] = true;
+      var curIdx = 0; delete unvisited[curIdx];
+      var remaining = cps.length - 1;
+      while (remaining > 0) {
+        var bestD = Infinity, bestI = -1;
+        for (var j in unvisited) {
+          var d = Math.hypot(cps[j][0] - cps[curIdx][0], cps[j][1] - cps[curIdx][1]);
+          if (d < bestD) { bestD = d; bestI = +j; }
+        }
+        skelLen += bestD; curIdx = bestI; delete unvisited[curIdx]; remaining--;
+      }
+    }
+    if (skelLen <= 0) return { coverage: coverage, passed: false };
+    var nratio = (inkLen / ispr) / (skelLen / kspr);
+    var vert = vertLen / inkLen;
+    var passed = m <= 0.24 && p90 <= 0.50 && nratio >= 0.50 && nratio <= 2.7 && vert >= 0.18;
+    return { coverage: coverage, passed: passed, mean: m, p90: p90, nratio: nratio, vert: vert };
+  }
+  function checkTryIt() {
+    // Runs on finger lift in Try-It mode (like the app's checkDone).
+    // A fail costs nothing — the score just updates and the kid keeps drawing.
+    if (celebrated || !tryIt) return;
+    var r = gradeTryIt();
+    tryItScore = r.coverage;
+    if (r.passed) { celebrateCompletion('tryit'); return; }
+    var el = $('trace-tryit-score');
+    if (r.coverage > 0.05) el.textContent = 'How close: ' + Math.round(r.coverage * 100) + '% — ' + (r.coverage < 0.5 ? 'draw the whole word, then lift your finger' : 'almost there — keep going!');
+    else el.textContent = 'Draw the word, then lift your finger to check it';
+    draw();
+  }
+  function setTryIt(on) {
+    // Switch Trace <-> Try-It for the current word. Try-It is about the
+    // WORD, not the picture, so it jumps to the word step; Trace restarts
+    // the word from its first step (picture first, when it has one).
+    tryIt = !!on;
+    $('trace-mode-trace').classList.toggle('active', !tryIt);
+    $('trace-mode-tryit').classList.toggle('active', tryIt);
+    $('trace-watch').style.display = tryIt ? 'none' : '';
+    $('trace-hint-line').textContent = tryIt
+      ? 'Write it yourself from memory — no dots! +5 XP when it looks right'
+      : 'Trace with your finger or mouse — +2 XP when you finish it';
+    $('trace-tryit-score').hidden = !tryIt;
+    if (!currentId) return;
+    if (tryIt) {
+      tryItScore = 0;
+      $('trace-tryit-score').textContent = 'Draw the word, then lift your finger to check it';
+      if (mode !== 'word') startWordStep(); else resetBoard();
+      draw();
+    } else {
+      openWord(currentId);
+    }
+  }
+
+  function celebrateCompletion(xpKind) {
     celebrated = true;
     var W = words[currentId];
     var traced = tracedSet();
     if (!traced.has(currentId)) { traced.add(currentId); saveTraced(traced); }
+    // XP (web rule, Som 2026-11-08): Trace +2, Try-It +5 — once per word
+    // each, so re-doing a word can't farm XP.
+    var xpLine;
+    if (xpKind === 'tryit') {
+      var done = doneSet();
+      if (!done.has(currentId)) {
+        done.add(currentId);
+        localStorage.setItem('ghar.writing.done', Array.from(done).sort().join(','));
+        addXP(5);
+        xpLine = 'You wrote ' + (W.roman || W.en) + ' yourself! +5 XP ⭐';
+      } else {
+        xpLine = 'You wrote ' + (W.roman || W.en) + ' yourself!';
+      }
+    } else {
+      var txp = traceXPSet();
+      if (!txp.has(currentId)) {
+        txp.add(currentId);
+        localStorage.setItem('ghar.writing.traceXP', Array.from(txp).sort().join(','));
+        addXP(2);
+        xpLine = 'You traced ' + (W.roman || W.en) + '! +2 XP ⭐';
+      } else {
+        xpLine = 'You traced ' + (W.roman || W.en) + '!';
+      }
+    }
     // My Name has no deck to count toward and no Mystery Box (app: the box
     // is for the letter sections, not the name).
     var boxEarned = false;
@@ -338,7 +518,7 @@
       }
     }
     $('trace-celebrate-dev').textContent = W.dev;
-    $('trace-celebrate-line').textContent = 'You traced ' + (W.roman || W.en) + '!';
+    $('trace-celebrate-line').textContent = xpLine;
     $('trace-box-note').hidden = !boxEarned;
     $('trace-next').style.display = nextWordId() ? '' : 'none';
     $('trace-celebrate').hidden = false;
@@ -358,6 +538,7 @@
     ink = []; cur = []; strokeIdx = 0; lastHit = null;
     strokeHits = strokes.map(function () { return new Set(); });
     celebrated = false;
+    tryItScore = 0;
     $('trace-hint').hidden = true;
     $('trace-celebrate').hidden = true;
     stopWatch();
@@ -402,8 +583,9 @@
     $('trace-picker').hidden = true;
     $('trace-name-setup').hidden = true;
     $('trace-board').hidden = false;
-    // Fruits + Body Parts trace the picture first, then the word (the app's
-    // TraceView two-step flow). Everything else goes straight to the word.
+    // Fruits + Body Parts + Animals trace the picture first, then the
+    // word (the app's TraceView two-step flow). Everything else goes
+    // straight to the word.
     if (picData[id]) startPictureStep();
     else startWordStep();
     hearWord();
@@ -693,7 +875,7 @@
     ev.preventDefault();
     var p = toBox(ev);
     cur.push(p);
-    if (lastPt) hitTestSegment(lastPt, p);
+    if (!tryIt && lastPt) hitTestSegment(lastPt, p);
     lastPt = p;
     draw();
   }
@@ -704,7 +886,7 @@
     lastPt = null;
     lastHit = null;   // pointer lifted: the next touch may start anywhere
     draw();
-    checkStrokeOnLift();
+    if (tryIt) checkTryIt(); else checkStrokeOnLift();
   }
   canvas.addEventListener('pointerdown', function (ev) { downViaPointer = true; beginDraw(ev); });
   canvas.addEventListener('pointermove', function (ev) { if (downViaPointer) moveDraw(ev); });
@@ -719,6 +901,8 @@
   $('trace-hear').addEventListener('click', hearWord);
   $('trace-clear').addEventListener('click', resetBoard);
   $('trace-watch').addEventListener('click', startWatch);
+  $('trace-mode-trace').addEventListener('click', function () { setTryIt(false); });
+  $('trace-mode-tryit').addEventListener('click', function () { setTryIt(true); });
   $('trace-back').addEventListener('click', function () {
     stopWatch();
     $('trace-board').hidden = true;
@@ -747,7 +931,17 @@
     renderPicker();
   });
 
-  fetch('data/writing-dots.json').then(function (r) { return r.json(); }).then(function (data) {
+  // Load BOTH dot files before the picker renders, so a fast tap on a
+  // Fruits / Body Parts / Animals word always gets its picture step.
+  // (Before this, picture-dots loaded separately and a tap in the first
+  // ~100ms silently fell back to word-only — which is why Body Parts
+  // looked like it had no picture traces.)
+  Promise.all([
+    fetch('data/writing-dots.json').then(function (r) { return r.json(); }),
+    fetch('data/picture-dots.json').then(function (r) { return r.json(); }).catch(function () { return {}; })
+  ]).then(function (pair) {
+    var data = pair[0];
+    picData = pair[1] || {};
     words = data;
     Object.keys(data).forEach(function (id) {
       var W = data[id];
@@ -768,10 +962,6 @@
   }).catch(function () {
     $('trace-picker').innerHTML = '<p>Could not load the tracing dots. Check your connection and reload.</p>';
   });
-  // picture outlines for Fruits + Body Parts (trace the shape first, then the word)
-  fetch('data/picture-dots.json').then(function (r) { return r.json(); }).then(function (data) {
-    picData = data || {};
-  }).catch(function () { picData = {}; });
   if (document.fonts && document.fonts.load) {
     document.fonts.load('220px "Noto Sans Devanagari"', 'अ').catch(function () {});
   }
