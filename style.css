@@ -705,7 +705,7 @@ EOF'
 .lessons-layout .motivation { flex: 0 0 300px; flex-direction: column; align-items: center; text-align: center; margin-bottom: 0; position: sticky; top: 64px; }
 .lessons-layout .motivation-body { width: 100%; }
 .lessons-layout .motivation-dog { width: 120px; height: 120px; margin-bottom: 4px; }
-.lessons-layout #decks { flex: 1; min-width: 0; }
+.lessons-layout .lessons-right { flex: 1; min-width: 0; }
 @media (max-width: 760px) {
   .lessons-layout { flex-direction: column; }
   .lessons-layout .motivation { flex: none; width: 100%; position: static; }
@@ -730,3 +730,8 @@ EOF'
 @media (max-width: 640px) {
   header h1 { font-size: 40px; }
 }
+
+/* Bhunte's bubble: the English line under the Nepali is bigger now so it
+   reads clearly (was 13px grey; the "You're doing great! Keep going." line
+   was getting lost). */
+.bubble-en { font-size: 16px; color: #555; font-weight: 600; margin-top: 4px; }

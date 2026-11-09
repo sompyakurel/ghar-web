@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ghar — Learn Nepali</title>
-<link rel="stylesheet" href="style.css?v=21">
+<link rel="stylesheet" href="style.css?v=22">
 </head>
 <body>
 <div class="prayer-bunting" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span></div></div>
@@ -42,8 +42,6 @@
   <p class="testmode" id="testmode" hidden>🧪 Test mode — all decks unlocked. <a href="index.html?test=off">Turn off</a></p>
 
   <section class="home-section" id="lessons">
-    <h2>📚 Lessons</h2>
-    <p class="section-sub">Follow the path — finish each lesson to walk to the next one. Bhunte waits at your next step.</p>
     <div class="lessons-layout">
       <div class="motivation" id="motivation">
         <img class="motivation-dog" id="bhunte-dog" src="assets/images/bhunte.svg" alt="Bhunte the dog" title="Tap me to hear me talk!">
@@ -57,7 +55,11 @@
           <p class="motivation-cert-link" id="cert-link" hidden><a href="certificate.html">🏆 View your certificate →</a></p>
         </div>
       </div>
-      <div id="decks"></div>
+      <div class="lessons-right">
+        <h2>📚 Lessons</h2>
+        <p class="section-sub">Follow the path — finish each lesson to walk to the next one. Bhunte waits at your next step.</p>
+        <div id="decks"></div>
+      </div>
     </div>
     <p class="error" id="error" hidden>Couldn't load the lessons. Check your connection and refresh.</p>
   </section>
