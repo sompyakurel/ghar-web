@@ -39,11 +39,22 @@ const GharAuth = {
   async pull() {
     if (!this.signedIn() || !this.childId()) return false;
     const p = await this.api("/accounts/children/" + this.childId() + "/progress");
-    localStorage.setItem("ghar.xp.total", String(p.xp));
-    localStorage.setItem("ghar.quiz.freeUsed", String(p.quiz_free_used));
-    Object.keys(p.heard).forEach(deckId => {
-      localStorage.setItem("ghar.heard." + deckId, JSON.stringify(p.heard[deckId]));
+    // Merge, never wipe: the server can be stale (or 0) while this device
+    // holds newer progress earned offline or before sign-in. Keep the best
+    // of both, then push it back so the server catches up instead of
+    // clobbering the local progress on the next load.
+    const mergedXp = Math.max(this.xp(), p.xp || 0);
+    localStorage.setItem("ghar.xp.total", String(mergedXp));
+    const mergedQuiz = Math.max(this.quizFreeUsed(), p.quiz_free_used || 0);
+    localStorage.setItem("ghar.quiz.freeUsed", String(mergedQuiz));
+    const heard = p.heard || {};
+    Object.keys(heard).forEach(deckId => {
+      const merged = Array.from(new Set([...(this.heard(deckId) || []), ...(heard[deckId] || [])]));
+      localStorage.setItem("ghar.heard." + deckId, JSON.stringify(merged));
     });
+    if (mergedXp !== (p.xp || 0) || mergedQuiz !== (p.quiz_free_used || 0)) {
+      try { await this.pushTotals(); } catch (e) {}
+    }
     return true;
   },
   // Push one deck's heard list plus the child's XP and quiz counter up to

@@ -150,7 +150,7 @@
   </section>
 </div>
 <div id="toast"></div>
-<script src="auth.js?v=6"></script>
+<script src="auth.js?v=7"></script>
 <script>
 const FREE = new Set(["alphabet", "numbers"]);
 const TIERS = { beginner: "🌱 Beginner", intermediate: "🌿 Intermediate", hard: "🌳 Hard", teen: "🔥 Teen" };
@@ -228,10 +228,17 @@ function toggleHomeAudio(url, btn) {
   homePlayingBtn = btn;
   homePlayer.onended = () => { btn.textContent = "▶️ Play"; homePlayingBtn = null; };
 }
+// Show the XP straight away from this device, before any fetch runs — so
+// a slow or failed lessons load never leaves the header reading 0.
+document.getElementById("xp-total").textContent = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
 GharAuth.pull().catch(() => {}).then(() => {
   const btn = document.getElementById("signin-btn");
   if (GharAuth.signedIn()) { btn.textContent = "👤 My account"; btn.href = "dashboard.html"; }
-  return fetch("data/nepal-v1.json");
+  // pull() may have merged in a higher server total — refresh the header.
+  document.getElementById("xp-total").textContent = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
+  // One retry: a single network blip should not leave the lessons unloadable.
+  return fetch("data/nepal-v1.json").then(r => { if (!r.ok) throw new Error("load failed"); return r; })
+    .catch(() => new Promise(res => setTimeout(() => res(fetch("data/nepal-v1.json")), 1200)));
 })
   .then(r => { if (!r.ok) throw new Error("load failed"); return r.json(); })
   .then(pack => {
