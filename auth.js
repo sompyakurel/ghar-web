@@ -195,6 +195,12 @@ const GharAuth = {
     return true;
   },
 };
+// Top-level const does NOT attach to window, so expose it explicitly — the
+// pages' guards read window.GharAuth (57 places). This was the real cause of
+// the "no child selected" / "auth.js didn't load" failures: GharAuth itself
+// was fine, but window.GharAuth was undefined, so every guard bailed out.
+// (GharStreak got this line already; GharAuth was missed.)
+window.GharAuth = GharAuth;
 
 // Daily streak + daily challenge — mirrors the app (Streak + DailyChallenge
 // + DailyQuiz). All localStorage, on-device, COPPA-safe, no backend.
