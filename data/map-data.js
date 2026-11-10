@@ -34,7 +34,7 @@
 // never GADM (non-commercial licence only). Do not draw or label
 // Kalapani–Limpiyadhura as a separate area.
 
-const GHAR_MAP_DATA = {
+window.GHAR_MAP_DATA = {
   provinces: [
     {
       id: "sudurpashchim",

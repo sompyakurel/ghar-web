@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://backend-patient-wave-3724.fly.dev https://api.open-meteo.com https://unpkg.com https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self';">
 <title>Danfe's Map of Nepal — Ghar</title>
-<link rel="stylesheet" href="style.css?v=28">
+<link rel="stylesheet" href="style.css?v=29">
 <script src="auth.js?v=8"></script>
 <script src="data/map-data.js"></script>
 <style>
@@ -147,7 +147,7 @@
 
 <script>
 (function () {
-  var DATA = window.GHAR_MAP_DATA;
+  var DATA = (typeof window !== 'undefined' && window.GHAR_MAP_DATA) || (typeof GHAR_MAP_DATA !== 'undefined' ? GHAR_MAP_DATA : null);
   if (!DATA) { document.querySelector('.map-intro').textContent = 'The map data could not load. Please refresh.'; return; }
   var POS = {"kathmandu": [641, 369], "pokhara": [476, 304], "chitwan": [542, 395], "rara": [251, 140], "janaki": [713, 493], "sagarmatha": [835, 332], "kanchenjunga": [955, 365], "ilam": [950, 465], "koshitappu": [845, 500], "janakpurponds": [690, 515], "parsa": [590, 425], "saptari": [800, 520], "swayambhu": [618, 348], "pashupatinath": [662, 352], "bhaktapur": [668, 392], "phewa": [455, 328], "annapurna": [467, 255], "muktinath": [495, 228], "lumbini": [395, 384], "mayadevi": [418, 402], "bardiya": [169, 282], "phoksundo": [323, 177], "karnaliriver": [217, 200], "sinja": [193, 167], "khaptad": [139, 185], "shuklaphanta": [60, 211], "ghodaghodi": [108, 255]};
   var TEST = new URLSearchParams(location.search).has('test');
