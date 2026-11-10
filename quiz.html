@@ -15,6 +15,15 @@
   <a class="back" href="index.html">← All decks</a>
   <div id="content"></div>
   <p class="error" id="error" hidden>Couldn't load the quiz.</p>
+  <div class="celebration" id="blitz-celebration" hidden>
+    <div class="celebration-card">
+      <div class="celebration-emoji">⚡</div>
+      <div class="celebration-title">Quiz Blitz complete!</div>
+      <div class="celebration-sub" id="blitz-celebration-sub"></div>
+      <a class="celebration-next" href="missions.html" style="display:inline-block;margin-top:16px;padding:12px 24px;background:#43a047;color:#fff;border-radius:999px;font-weight:700;font-size:17px;text-decoration:none;">Back to Missions →</a>
+      <button type="button" class="quiz-next" id="blitz-keep-going" style="display:block;margin:12px auto 0;">Keep quizzing</button>
+    </div>
+  </div>
 </div>
 <script src="auth.js?v=10"></script>
 <script>
@@ -166,6 +175,9 @@ function showLock() {
   const content = document.getElementById("content");
   content.innerHTML = `<div class="quiz-lock"><div class="big">🔒</div><h1>You've used your 5 free questions!</h1><p>Unlock unlimited quizzes with Ghar Premium.</p><button type="button" class="quiz-next" id="lock-menu">← Back to quiz menu</button></div>`;
   document.getElementById("lock-menu").addEventListener("click", showMenu);
+  document.getElementById("blitz-keep-going").addEventListener("click", () => {
+    document.getElementById("blitz-celebration").hidden = true;
+  });
 }
 function startQuiz(sec) {
   section = sec;
@@ -264,10 +276,19 @@ function answer(i, btn) {
     }
     // Daily Quiz Blitz: 5 correct answers in one day finishes the daily
     // challenge (+15 XP) and keeps the streak alive. (Matches the app.)
+    // When it completes, show a celebration overlay that STOPS the quiz —
+    // before this, the quiz just carried on to the next question and the
+    // daily challenge never visibly ended.
     let blitz = false;
     if (typeof GharStreak !== "undefined") {
       GharStreak.recordQuizSolve();
-      if (GharStreak.checkBlitzComplete()) { blitz = true; xp += 15; saveXP(); }
+      if (GharStreak.checkBlitzComplete()) {
+        blitz = true; xp += 15; saveXP();
+        const n = GharStreak.count();
+        document.getElementById("blitz-celebration-sub").textContent =
+          `Daily challenge done! +15 XP · 🔥 ${n} day${n === 1 ? "" : "s"} streak`;
+        document.getElementById("blitz-celebration").hidden = false;
+      }
     }
     GharAuth.pushTotals().catch(() => {});
     if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
