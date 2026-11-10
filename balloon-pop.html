@@ -91,6 +91,17 @@ function syncBalloonGames() {
       localStorage.setItem(BEST_KEY, String(best));
       document.getElementById("ready-best").textContent = "Best: " + best + " pops";
     }
+    // First-sync: if the local state is ahead of the server's (built
+    // before the sync existed), push it up so the dashboard and the
+    // database browser see it. Re-posting is safe — the server max-merges.
+    var mergedDay = localStorage.getItem(PAID_DAY_KEY) || "";
+    var mergedPaid = parseInt(localStorage.getItem(PAID_COUNT_KEY) || "0", 10) || 0;
+    var serverDay = (entry && entry.day) || "";
+    var serverPaid = (entry && entry.paid) || 0;
+    var serverBestVal = (typeof serverBest === "number") ? serverBest : 0;
+    if (mergedDay > serverDay || (mergedDay === serverDay && mergedPaid > serverPaid) || best > serverBestVal) {
+      pushBalloonGames();
+    }
   }).catch(function () {});
 }
 function pushBalloonGames() {

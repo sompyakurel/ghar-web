@@ -444,6 +444,24 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
         var local = parseInt(localStorage.getItem(key) || '0', 10) || 0;
         if (byDiff[d] > local) localStorage.setItem(key, String(byDiff[d]));
       });
+      // First-sync: push the local state up when it is ahead of the
+      // server's (built before the sync existed), so the dashboard and the
+      // database browser see it. Re-posting is safe — the server
+      // max-merges the daily xp and the per-difficulty bests.
+      var mergedDay = localStorage.getItem('ghar.scramble.day') || '';
+      var mergedUsed = parseInt(localStorage.getItem('ghar.scramble.xpToday') || '0', 10) || 0;
+      var serverDay = (entry && entry.day) || '';
+      var serverUsed = (entry && entry.xp_today) || 0;
+      if (mergedDay > serverDay || (mergedDay === serverDay && mergedUsed > serverUsed)) {
+        pushScrambleGames();
+      }
+      ['easy', 'med', 'hard'].forEach(function (d) {
+        var localBest = parseInt(localStorage.getItem('ghar.scramble.best.' + d) || '0', 10) || 0;
+        var serverBest = byDiff[d];
+        if (localBest && (serverBest === undefined || serverBest === null || localBest > serverBest)) {
+          pushScrambleGames({ difficulty: d, best: localBest });
+        }
+      });
     }).catch(function () {});
   }
   function pushScrambleGames(extra) {

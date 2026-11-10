@@ -547,14 +547,26 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
     if (!window.GharAuth || !GharAuth.signedIn() || !GharAuth.childId()) return;
     GharAuth.api('/accounts/children/' + GharAuth.childId() + '/games').then(function (g) {
       var entry = g && g.daily && g.daily.chess;
-      if (!entry || !entry.day) return;
       var localDay = localStorage.getItem('ghar.chess.day') || '';
       var localPaid = parseInt(localStorage.getItem('ghar.chess.paid') || '0', 10) || 0;
-      if (!localDay || entry.day > localDay) {
-        localStorage.setItem('ghar.chess.day', entry.day);
-        localStorage.setItem('ghar.chess.paid', String(entry.paid || 0));
-      } else if (entry.day === localDay) {
-        localStorage.setItem('ghar.chess.paid', String(Math.max(localPaid, entry.paid || 0)));
+      if (entry && entry.day) {
+        if (!localDay || entry.day > localDay) {
+          localStorage.setItem('ghar.chess.day', entry.day);
+          localStorage.setItem('ghar.chess.paid', String(entry.paid || 0));
+        } else if (entry.day === localDay) {
+          localStorage.setItem('ghar.chess.paid', String(Math.max(localPaid, entry.paid || 0)));
+        }
+      }
+      // First-sync: if the local state is ahead of the server's (built
+      // before the sync existed), push it up so the dashboard and the
+      // database browser see it. Re-posting is safe — the server max-merges
+      // (latest day wins, same day max).
+      var mergedDay = localStorage.getItem('ghar.chess.day') || '';
+      var mergedPaid = parseInt(localStorage.getItem('ghar.chess.paid') || '0', 10) || 0;
+      var serverDay = (entry && entry.day) || '';
+      var serverPaid = (entry && entry.paid) || 0;
+      if (mergedDay > serverDay || (mergedDay === serverDay && mergedPaid > serverPaid)) {
+        pushChessGames();
       }
     }).catch(function () {});
   }

@@ -231,8 +231,13 @@ async function pullDeckRewards() {
     try { rewarded = new Set(JSON.parse(localStorage.getItem(REWARDED_KEY) || "[]")); }
     catch (e) { rewarded = new Set(); }
     let changed = false;
+    const serverRewarded = new Set(r.rewarded);
     r.rewarded.forEach(id => { if (!rewarded.has(id)) { rewarded.add(id); changed = true; } });
     if (changed) localStorage.setItem(REWARDED_KEY, JSON.stringify([...rewarded]));
+    // First-sync upload: decks completed in this browser before the sync
+    // existed live only in localStorage — post them so the server (and the
+    // dashboard) sees them. The POST is idempotent server-side.
+    rewarded.forEach(id => { if (!serverRewarded.has(id)) pushDeckReward(id); });
   } catch (e) {}
 }
 function pushDeckReward(id) {

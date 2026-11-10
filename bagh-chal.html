@@ -94,14 +94,26 @@ function syncBaghchalGames() {
   if (!window.GharAuth || !GharAuth.signedIn() || !GharAuth.childId()) return Promise.resolve();
   return GharAuth.api("/accounts/children/" + GharAuth.childId() + "/games").then((g) => {
     const entry = g && g.daily && g.daily.baghchal;
-    if (!entry || !entry.day) return;
     const localDay = localStorage.getItem("ghar.baghchal.day") || "";
     const localPaid = parseInt(localStorage.getItem("ghar.baghchal.paid") || "0", 10) || 0;
-    if (!localDay || entry.day > localDay) {
-      localStorage.setItem("ghar.baghchal.day", entry.day);
-      localStorage.setItem("ghar.baghchal.paid", String(entry.paid || 0));
-    } else if (entry.day === localDay) {
-      localStorage.setItem("ghar.baghchal.paid", String(Math.max(localPaid, entry.paid || 0)));
+    if (entry && entry.day) {
+      if (!localDay || entry.day > localDay) {
+        localStorage.setItem("ghar.baghchal.day", entry.day);
+        localStorage.setItem("ghar.baghchal.paid", String(entry.paid || 0));
+      } else if (entry.day === localDay) {
+        localStorage.setItem("ghar.baghchal.paid", String(Math.max(localPaid, entry.paid || 0)));
+      }
+    }
+    // First-sync: if the local state is ahead of the server's (built
+    // before the sync existed), push it up so the dashboard and the
+    // database browser see it. Re-posting is safe — the server max-merges
+    // (latest day wins, same day max).
+    const mergedDay = localStorage.getItem("ghar.baghchal.day") || "";
+    const mergedPaid = parseInt(localStorage.getItem("ghar.baghchal.paid") || "0", 10) || 0;
+    const serverDay = (entry && entry.day) || "";
+    const serverPaid = (entry && entry.paid) || 0;
+    if (mergedDay > serverDay || (mergedDay === serverDay && mergedPaid > serverPaid)) {
+      pushBaghchalGames();
     }
   }).catch(() => {});
 }

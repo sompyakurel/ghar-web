@@ -439,6 +439,24 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
         var local = parseInt(localStorage.getItem(key) || '0', 10) || 0;
         if (!local || byDiff[d] < local) localStorage.setItem(key, String(byDiff[d]));
       });
+      // First-sync: push the local state up when it is ahead of the
+      // server's (built before the sync existed), so the dashboard and the
+      // database browser see it. Re-posting is safe — the server
+      // max-merges the daily and min-merges Memory bests.
+      var mergedDay = localStorage.getItem('ghar.memory.day') || '';
+      var mergedPaid = parseInt(localStorage.getItem('ghar.memory.paid') || '0', 10) || 0;
+      var serverDay = (entry && entry.day) || '';
+      var serverPaid = (entry && entry.paid) || 0;
+      if (mergedDay > serverDay || (mergedDay === serverDay && mergedPaid > serverPaid)) {
+        pushMemoryGames();
+      }
+      ['easy', 'med', 'hard'].forEach(function (d) {
+        var localBest = parseInt(localStorage.getItem('ghar.memory.best.' + d) || '0', 10) || 0;
+        var serverBest = byDiff[d];
+        if (localBest && (serverBest === undefined || serverBest === null || localBest < serverBest)) {
+          pushMemoryGames({ difficulty: d, best: localBest });
+        }
+      });
     }).catch(function () {});
   }
   function pushMemoryGames(extra) {

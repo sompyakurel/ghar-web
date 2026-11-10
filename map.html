@@ -632,9 +632,11 @@
       if (!window.GharAuth || !GharAuth.signedIn || !GharAuth.signedIn() || !GharAuth.childId || !GharAuth.childId()) return Promise.resolve();
       return GharAuth.api('/accounts/children/' + GharAuth.childId() + '/map', 'GET').then(function (m) {
         if (!m) return;
+        var serverFound = {};
         var changed = false;
         if (Array.isArray(m.found)) {
           m.found.forEach(function (id) {
+            serverFound[id] = true;
             if (!found[id]) { found[id] = true; changed = true; }
           });
         }
@@ -642,6 +644,17 @@
           try { localStorage.setItem('ghar.map.completed', '1'); } catch (e) {}
         }
         if (changed) saveState();
+        // First-sync upload: places found in this browser before the sync
+        // existed live only in localStorage — post them so the server (and
+        // the dashboard) sees them. The POST is idempotent server-side.
+        Object.keys(found).forEach(function (id) {
+          if (found[id] && !serverFound[id]) pushMapPlace(id);
+        });
+        // Same for the Explorer badge: if this browser already completed
+        // the map but the server doesn't know yet, tell it.
+        var localCompleted = false;
+        try { localCompleted = localStorage.getItem('ghar.map.completed') === '1'; } catch (e) {}
+        if (localCompleted && !m.explorer_awarded) pushMapExplorer();
       }).catch(function () {});
     } catch (e) { return Promise.resolve(); }
   }

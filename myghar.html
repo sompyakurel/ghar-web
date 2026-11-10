@@ -1148,6 +1148,12 @@ GharAuth.pull().catch(() => {}).then(async () => {
     if (m && Array.isArray(m.items)) {
       const merged = [...new Set([...mysteryOwned(), ...m.items])];
       mysterySaveOwned(merged);
+      // First-sync push-back: treasures earned before the sync existed
+      // live only in this browser — POST each one the server didn't list
+      // (idempotent server-side) so they show on other devices too.
+      mysteryOwned().forEach(id => {
+        if (!m.items.includes(id)) syncPost("/mystery", { item_id: id });
+      });
     }
   } catch (e) { /* guest or offline -- local list stands */ }
   try {
@@ -1190,6 +1196,16 @@ GharAuth.pull().catch(() => {}).then(async () => {
       layout = serverLayout;
       localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout));
     }
+    // First-sync push-back: names/layout set before the sync existed live
+    // only in this browser — POST them up when the server has none.
+    const localDog = localStorage.getItem(DOG_NAME_KEY) || "";
+    const localHouse = localStorage.getItem(HOUSE_NAME_KEY) || "";
+    if (localDog && !mg.dog_name) syncPost("/myghar", { dog_name: localDog });
+    if (localHouse && !mg.house_name) syncPost("/myghar", { house_name: localHouse });
+    const serverLayoutEmpty = !serverLayout || typeof serverLayout !== "object" || Object.keys(serverLayout).length === 0;
+    if (serverLayoutEmpty && Object.keys(layout).length > 0) {
+      syncPost("/myghar", { layout_json: JSON.stringify(layout) });
+    }
   }
   const sg = await syncGet("/suga");
   if (sg && typeof sg === "object") {
@@ -1210,17 +1226,43 @@ GharAuth.pull().catch(() => {}).then(async () => {
         }
       }
     }
+    // First-sync push-back: words taught / feedings from before the sync
+    // existed live only in this browser — POST each one the server lacks.
+    // (Server inserts taught words idempotently and max-merges fed state.)
+    const serverTaught = Array.isArray(sg.taught) ? sg.taught : [];
+    sugaTaught().forEach(id => {
+      if (!serverTaught.includes(id)) syncPost("/suga", { word_id: id });
+    });
+    const mergedFedDate = localStorage.getItem(SUGA_FED_DATE_KEY) || "";
+    const mergedFedCount = sugaFedCount();
+    const serverFedDate = (typeof sg.fed_date === "string") ? sg.fed_date : "";
+    const serverFedCount = sg.fed_count || 0;
+    if ((mergedFedDate && mergedFedDate > serverFedDate) || mergedFedCount > serverFedCount) {
+      syncPost("/suga", { fed_date: mergedFedDate, fed_count: mergedFedCount });
+    }
   }
   const gm = await syncGet("/games");
-  if (gm && gm.daily && gm.daily.fetch) {
-    const f = gm.daily.fetch;
-    const localDay = localStorage.getItem("ghar.fetch.day") || "";
-    const localCount = parseInt(localStorage.getItem("ghar.fetch.count") || "0", 10) || 0;
-    if (f.day && f.day > localDay) {
+  const localFetchDay = localStorage.getItem("ghar.fetch.day") || "";
+  const localFetchCount = parseInt(localStorage.getItem("ghar.fetch.count") || "0", 10) || 0;
+  const serverFetch = (gm && gm.daily) ? gm.daily.fetch : null;
+  if (serverFetch) {
+    const f = serverFetch;
+    if (f.day && f.day > localFetchDay) {
       localStorage.setItem("ghar.fetch.day", f.day);
       localStorage.setItem("ghar.fetch.count", String(f.paid || 0));
-    } else if (f.day && f.day === localDay) {
-      localStorage.setItem("ghar.fetch.count", String(Math.max(localCount, f.paid || 0)));
+    } else if (f.day && f.day === localFetchDay) {
+      localStorage.setItem("ghar.fetch.count", String(Math.max(localFetchCount, f.paid || 0)));
+    }
+  }
+  // First-sync push-back: throws from before the sync existed live only
+  // in this browser — POST them up when the server has no entry for
+  // today, or a smaller count for today. (Server max-merges same-day.)
+  const mergedFetchDay = localStorage.getItem("ghar.fetch.day") || "";
+  const mergedFetchCount = parseInt(localStorage.getItem("ghar.fetch.count") || "0", 10) || 0;
+  if (mergedFetchDay && mergedFetchCount > 0) {
+    const serverPaidToday = (serverFetch && serverFetch.day === mergedFetchDay) ? (serverFetch.paid || 0) : 0;
+    if (mergedFetchCount > serverPaidToday) {
+      syncPost("/games", { game: "fetch", day: mergedFetchDay, paid: mergedFetchCount, xp_today: mergedFetchCount * 2 });
     }
   }
   // Cache the pack so the deck count (for the Mukut) can be read locally,

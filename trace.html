@@ -205,6 +205,35 @@
       var serverBoxes = parseInt(w.boxes || '0', 10) || 0;
       if (serverBoxes > boxes) { localStorage.setItem('ghar.mystery.writingBoxes', String(serverBoxes)); changed = true; }
       if (changed) maybeRerenderPicker();
+      // Push back local-only state so words traced before the sync existed
+      // reach the server (first-sync gap: the pull above unions the server
+      // into local for display, but nothing uploaded local-only rows, so
+      // the dashboard/db-browser showed 0). Every POST here is idempotent
+      // or forward-only server-side, so re-posting is safe; pushWriting is
+      // already guarded (signed-in + child) and fire-and-forget.
+      var serverTraced = new Set(w.traced || []);
+      var serverDone = new Set(w.done || []);
+      var serverTexp = new Set(w.tracexp || []);
+      var serverGranted = new Set(w.boxes_granted || []);
+      // Done outranks traced: post 'done' for local passes first, then
+      // 'traced' only for words that are traced but not passed.
+      done.forEach(function (id) {
+        if (id && !serverDone.has(id)) pushWriting({ word_id: id, status: 'done' });
+      });
+      traced.forEach(function (id) {
+        if (id && !done.has(id) && !serverTraced.has(id) && !serverDone.has(id)) pushWriting({ word_id: id, status: 'traced' });
+      });
+      txp.forEach(function (id) {
+        if (id && !serverTexp.has(id)) pushWriting({ word_id: id, trace_xp: id });
+      });
+      // Boxes: if the local count is ahead of the server's, post each
+      // locally-granted section the server doesn't have yet, with the
+      // local count (same shape as the box-grant post; server max-merges).
+      if (boxes > serverBoxes) {
+        granted.forEach(function (s) {
+          if (s && !serverGranted.has(s)) pushWriting({ section: s, boxes: boxes });
+        });
+      }
     }).catch(function () {});
     // My Name: fill the local name from the server only if nothing is saved here.
     GharAuth.api("/accounts/children/" + child + "/myname").then(function (m) {
@@ -213,6 +242,12 @@
       var filled = false;
       if (!cur.en && m.english) { localStorage.setItem('ghar.myname.english', m.english); filled = true; }
       if (!cur.dev && m.devanagari) { localStorage.setItem('ghar.myname.devanagari', m.devanagari); filled = true; }
+      // Push back a local-only name: if this browser has a name the server
+      // doesn't, upload it (pre-sync names never reached the server).
+      // pushMyName posts the merged local name; the server upsert keeps any
+      // field the post leaves empty, so this can never blank a server value.
+      var cur2 = myName();
+      if ((cur2.en && !m.english) || (cur2.dev && !m.devanagari)) pushMyName();
       if (!filled) return;
       // If the name setup form is open, fill its fields too.
       if (!$('trace-name-setup').hidden) {

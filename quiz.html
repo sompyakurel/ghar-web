@@ -52,12 +52,20 @@ async function pullQuizStats() {
   try {
     const s = await GharAuth.api("/accounts/children/" + GharAuth.childId() + "/quiz-stats");
     if (!s) return;
-    const best = Math.max(quizStreakBest, parseInt(s.streak_best || "0", 10) || 0);
-    const total = Math.max(quizCorrect, parseInt(s.correct_total || "0", 10) || 0);
+    const serverBest = parseInt(s.streak_best || "0", 10) || 0;
+    const serverTotal = parseInt(s.correct_total || "0", 10) || 0;
+    const best = Math.max(quizStreakBest, serverBest);
+    const total = Math.max(quizCorrect, serverTotal);
     localStorage.setItem("ghar.quiz.streakBest", String(best));
     localStorage.setItem("ghar.quiz.correctTotal", String(total));
     quizStreakBest = best;
     quizCorrect = total;
+    // Push the merged state back when the local side is ahead — a best streak
+    // / correct total built before the sync existed (server empty or lower)
+    // otherwise never reaches the database, and the dashboard keeps showing 0.
+    if (best > serverBest || total > serverTotal) {
+      GharAuth.api("/accounts/children/" + GharAuth.childId() + "/quiz-stats", "POST", { streak_best: best, correct_total: total }).catch(() => {});
+    }
   } catch (e) { /* guest or offline — local stats stand */ }
 }
 const player = new Audio();

@@ -116,6 +116,14 @@ async function pullIdentity() {
     if (!code() && id.group_code) localStorage.setItem(CODE_KEY, id.group_code);
     if (!nickname() && id.nickname) localStorage.setItem(NICK_KEY, id.nickname);
     if (!(localStorage.getItem(NAME_KEY) || "").trim() && id.group_name) localStorage.setItem(NAME_KEY, id.group_name);
+    // Push the local identity up when the server is missing a field the
+    // browser has — a group + nickname set before the sync existed
+    // otherwise never reaches the database, and the dashboard keeps
+    // showing no leaderboard identity.
+    if ((code() && !id.group_code) || (nickname() && !id.nickname) ||
+        ((localStorage.getItem(NAME_KEY) || "").trim() && !id.group_name)) {
+      pushIdentity();
+    }
   } catch (e) { /* guest or offline — local identity stands */ }
 }
 function pushIdentity() {
