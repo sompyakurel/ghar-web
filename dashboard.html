@@ -31,6 +31,7 @@
 </div>
 <script src="auth.js?v=9"></script>
 <script src="shop-data.js"></script>
+<script src="data/map-data.js"></script>
 <script>
 if (!GharAuth.signedIn()) location.href = "signin.html";
 // Teen missions live in missions.html, not in the pack JSON — same 8 as the
@@ -81,7 +82,7 @@ async function load() {
 
     list.innerHTML = "";
     for (const child of me.children) {
-      const [p, missions, shop, mystery, streak, quizStats] = await Promise.all([
+      const [p, missions, shop, mystery, streak, quizStats, mapState, deckRewards, writing, suga, myghar, games, lbIdentity, myname] = await Promise.all([
         GharAuth.api("/accounts/children/" + child.id + "/progress"),
         GharAuth.api("/accounts/children/" + child.id + "/missions"),
         GharAuth.api("/accounts/children/" + child.id + "/shop"),
@@ -89,7 +90,17 @@ async function load() {
         // Streak + quiz stats are synced per child (auth.js GharStreak and
         // quiz.html) — a missing row just means no activity yet.
         GharAuth.api("/accounts/children/" + child.id + "/streak").catch(() => ({})),
-        GharAuth.api("/accounts/children/" + child.id + "/quiz-stats").catch(() => ({}))
+        GharAuth.api("/accounts/children/" + child.id + "/quiz-stats").catch(() => ({})),
+        // The rest of the synced data — same pattern, a missing row just
+        // means nothing saved there yet.
+        GharAuth.api("/accounts/children/" + child.id + "/map").catch(() => ({})),
+        GharAuth.api("/accounts/children/" + child.id + "/deck-rewards").catch(() => ({})),
+        GharAuth.api("/accounts/children/" + child.id + "/writing").catch(() => ({})),
+        GharAuth.api("/accounts/children/" + child.id + "/suga").catch(() => ({})),
+        GharAuth.api("/accounts/children/" + child.id + "/myghar").catch(() => ({})),
+        GharAuth.api("/accounts/children/" + child.id + "/games").catch(() => ({})),
+        GharAuth.api("/accounts/children/" + child.id + "/leaderboard-identity").catch(() => ({})),
+        GharAuth.api("/accounts/children/" + child.id + "/myname").catch(() => ({}))
       ]);
       // Lessons done: a deck is done when every word in it has been heard.
       const doneDecks = pack.decks.filter(deck => (p.heard[deck.id] || []).length >= deck.words.length);
@@ -144,6 +155,52 @@ async function load() {
             const s = MYSTERY_BY_ID[id];
             return s ? s.emoji + " " + esc(s.ne) + " — " + esc(s.en) : esc(id);
           }), "No Mystery Box treasures yet — one box is earned per 3 lessons.")}`;
+      // Everything else that syncs across devices, straight from the
+      // server — this is the backend's record for this child, not just
+      // what this browser remembers.
+      const placeName = {};
+      if (window.GHAR_MAP_DATA) {
+        (GHAR_MAP_DATA.pins || []).forEach(pl => placeName[pl.id] = pl.name + (pl.nepali ? " · " + pl.nepali : ""));
+        (GHAR_MAP_DATA.landmarks || []).forEach(lm => placeName[lm.id] = lm.name + (lm.nepali ? " · " + lm.nepali : ""));
+      }
+      const wordName = {};
+      pack.decks.forEach(d => d.words.forEach(w => wordName[w.id] = (w.devanagari || w.id) + (w.roman ? " (" + w.roman + ")" : "")));
+      const deckTitle = {};
+      pack.decks.forEach(d => deckTitle[d.id] = d.title);
+      const foundPlaces = mapState.found || [];
+      const rewardedDecks = deckRewards.rewarded || [];
+      const tracedWords = writing.traced || [];
+      const doneWords = writing.done || [];
+      const taughtWords = suga.taught || [];
+      const daily = games.daily || {};
+      const bestOverall = games.best || {};
+      const bestByDiff = games.best_by_diff || {};
+      const gameLabel = { balloon: "Balloon Pop", baghchal: "Bagh-Chal", chess: "Chess", memory: "Memory Match", scramble: "Word Scramble", fetch: "Fetch" };
+      const diffLabel = { easy: "Easy", med: "Medium", hard: "Hard" };
+      const gameRows = Object.keys(gameLabel).map(g => {
+        const d = daily[g];
+        const parts = [];
+        if (d && d.day) parts.push("today: " + (d.paid ? d.paid + " paid" : "") + (d.xp_today ? (d.paid ? " · " : "") + d.xp_today + " XP" : "") + (d.day ? " (" + d.day + ")" : ""));
+        if (bestOverall[g] !== undefined && bestOverall[g] !== null) parts.push("best: " + bestOverall[g]);
+        const diffs = bestByDiff[g] || {};
+        Object.keys(diffs).forEach(df => parts.push("best " + (diffLabel[df] || df) + ": " + diffs[df] + (g === "memory" ? " moves" : "")));
+        return parts.length ? statRow(gameLabel[g], parts.join(" · ")) : "";
+      }).filter(Boolean).join("");
+      html += `
+          <h3>Synced across devices</h3>
+          <p class="device-note">This is what's stored on the server for ${esc(child.name)} — the same on every device they sign in on.</p>
+          ${statRow("Danfe map places found", foundPlaces.length + " of 27" + (mapState.explorer_awarded ? " · 🏆 Nepal Explorer badge earned" : ""))}
+          ${chips(foundPlaces.map(id => "📍 " + esc(placeName[id] || id)), "No places found on the map yet.")}
+          ${statRow("Decks that paid +25 XP", rewardedDecks.length + " of " + pack.decks.length)}
+          ${chips(rewardedDecks.map(id => "⭐ " + esc(deckTitle[id] || id)), "No deck completion bonus paid yet.")}
+          ${statRow("Writing — traced / Try-It passed", tracedWords.length + " traced · " + doneWords.length + " passed" + ((writing.boxes || 0) ? " · " + writing.boxes + " Mystery Box" + (writing.boxes === 1 ? "" : "es") + " from writing" : ""))}
+          ${chips(doneWords.map(id => "✍️ " + esc(wordName[id] || id)), "No words passed Try-It yet.")}
+          ${statRow("Suga the parrot", "taught " + taughtWords.length + " word" + (taughtWords.length === 1 ? "" : "s") + " · fed " + (suga.fed_count || 0) + " time" + ((suga.fed_count || 0) === 1 ? "" : "s") + (suga.fed_date ? " · last fed " + suga.fed_date : ""))}
+          ${chips(taughtWords.map(w => "🦜 " + esc(w)), "Suga hasn't been taught any words yet.")}
+          ${statRow("My Ghar", "dog: " + (myghar.dog_name || "—") + " · house: " + (myghar.house_name || "—") + (myghar.layout ? " · " + Object.keys(myghar.layout).length + " room item" + (Object.keys(myghar.layout).length === 1 ? "" : "s") + " placed" : ""))}
+          ${statRow("Leaderboard", (lbIdentity.nickname || "—") + (lbIdentity.group_name ? " · " + lbIdentity.group_name : "") + (lbIdentity.group_code ? " (" + lbIdentity.group_code + ")" : ""))}
+          ${statRow("My Name", (myname.english || "—") + (myname.devanagari ? " · " + myname.devanagari : ""))}
+          ${gameRows ? `<h4>Games</h4>${gameRows}` : ""}`;
       if (p.cert_earned_at) {
         const d = new Date(p.cert_earned_at * 1000).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
         html += `<p class="cert-line">📜 Certificate earned ${d}</p>`;
