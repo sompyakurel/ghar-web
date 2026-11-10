@@ -344,8 +344,10 @@ function syncChildId() {
 }
 function syncPost(path, body) {
   const cid = syncChildId();
-  if (!cid) return;
-  GharAuth.api("/accounts/children/" + cid + path, "POST", body).catch(() => {});
+  if (!cid) return Promise.resolve({ ok: false, reason: "no child selected in this browser" });
+  return GharAuth.api("/accounts/children/" + cid + path, "POST", body)
+    .then(() => ({ ok: true }))
+    .catch((e) => ({ ok: false, reason: String((e && e.message) || e) }));
 }
 async function syncGet(path) {
   const cid = syncChildId();
@@ -1047,7 +1049,10 @@ document.getElementById("suga-teach-btn").addEventListener("click", () => {
   localStorage.setItem("ghar.xp.total", String(xp));
   taught.push(id);
   localStorage.setItem(SUGA_TAUGHT_KEY, JSON.stringify(taught));
-  syncPost("/suga", { word_id: id });
+  syncPost("/suga", { word_id: id }).then((r) => {
+    const el = document.getElementById("suga-teach-status");
+    if (el) el.textContent += r.ok ? " ✅ Synced to server." : " ⚠️ Not synced: " + r.reason;
+  });
   if (window.GharAuth) GharAuth.pushTotals().catch(() => {});
   if (window.GharAuth && GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
   document.getElementById("suga-teach-status").textContent = `🎉 Suga learned "${w.devanagari}"!`;
