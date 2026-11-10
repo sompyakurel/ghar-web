@@ -109,15 +109,24 @@
     var st = $('sync-status');
     st.textContent = 'Syncing…';
     try {
-      // Pull + push the streak (auth.js does the merge + push-back).
-      await GharAuth.pull().catch(function () {});
-      // Visit the pages' own push paths by POSTing each local set directly.
+      // Push the streak EXPLICITLY (not just via GharAuth.pull()): the
+      // dashboard reads it via /streak but the db-browser reads it via
+      // /admin/tables, and the two must agree. Report both counts so we
+      // can see if they disagree.
       var cid = GharAuth.childId();
       var posted = 0, failed = 0;
       async function post(path, body) {
         try { await GharAuth.api('/accounts/children/' + cid + path, 'POST', body); posted++; }
         catch (e) { failed++; }
       }
+      var streakState = null;
+      try {
+        if (window.GharStreak && GharStreak._streakState) streakState = GharStreak._streakState();
+      } catch (e) {}
+      if (streakState) await post('/streak', streakState);
+      // Pull + push the streak (auth.js does the merge + push-back).
+      await GharAuth.pull().catch(function () {});
+      // Visit the pages' own push paths by POSTing each local set directly.
       var mapFound = lsJSON('ghar.map.found', {});
       for (var id in mapFound) { if (mapFound[id]) await post('/map', { place_id: id }); }
       if (ls('ghar.map.completed') === '1') await post('/map', { explorer_awarded: true });
@@ -133,7 +142,16 @@
       for (var j = 0; j < suga.length; j++) { await post('/suga', { word_id: suga[j] }); }
       st.textContent = 'Done — pushed ' + posted + ' item(s)' + (failed ? ', ' + failed + ' failed' : '') + '. Re-checking…';
       await check();
-      st.textContent = 'Done — pushed ' + posted + ' item(s)' + (failed ? ', ' + failed + ' failed' : '') + '.';
+      // Verify the streak agrees between the two ways of reading it.
+      var verify = '';
+      try {
+        var s1 = await GharAuth.api('/accounts/children/' + cid + '/streak');
+        var tabs = await GharAuth.api('/accounts/admin/tables?t=' + Date.now());
+        var stRow = null;
+        (tabs.tables || []).forEach(function (t) { if (t.name === 'streaks') stRow = t; });
+        verify = ' Streak: /streak says ' + (s1.count || 0) + ', /admin/tables says ' + (stRow ? stRow.count : '?') + ' row(s).';
+      } catch (e) { verify = ' (streak check failed: ' + (e && e.message || e) + ')'; }
+      st.textContent = 'Done — pushed ' + posted + ' item(s)' + (failed ? ', ' + failed + ' failed' : '') + '.' + verify;
     } catch (e) {
       st.textContent = 'Sync failed: ' + (e && e.message || e);
     }
