@@ -92,7 +92,7 @@
   </div>
   <p class="auth-note" id="suga-teach-status"></p>
 </dialog>
-<script src="auth.js?v=10"></script>
+<script src="auth.js?v=11"></script>
 <script src="shop-data.js"></script>
 <script>
 // My Ghar -- ONE ROOM PICTURE (v8).
@@ -339,18 +339,21 @@ function saveLayout() {
 // local progress is never wiped.
 function syncChildId() {
   try {
-    return (window.GharAuth && GharAuth.signedIn && GharAuth.signedIn() && GharAuth.childId()) ? GharAuth.childId() : "";
-  } catch (e) { return ""; }
+    if (!window.GharAuth) return { id: "", reason: "auth.js didn't load in this browser" };
+    if (!GharAuth.signedIn || !GharAuth.signedIn()) return { id: "", reason: "not signed in in this browser" };
+    const id = GharAuth.childId() || "";
+    return { id, reason: id ? "" : "no child selected in this browser — open the dashboard and tap “Learn as Rej”" };
+  } catch (e) { return { id: "", reason: String((e && e.message) || e) }; }
 }
 function syncPost(path, body) {
-  const cid = syncChildId();
-  if (!cid) return Promise.resolve({ ok: false, reason: "no child selected in this browser" });
-  return GharAuth.api("/accounts/children/" + cid + path, "POST", body)
+  const c = syncChildId();
+  if (!c.id) return Promise.resolve({ ok: false, reason: c.reason });
+  return GharAuth.api("/accounts/children/" + c.id + path, "POST", body)
     .then(() => ({ ok: true }))
     .catch((e) => ({ ok: false, reason: String((e && e.message) || e) }));
 }
 async function syncGet(path) {
-  const cid = syncChildId();
+  const cid = syncChildId().id;
   if (!cid) return null;
   try { return await GharAuth.api("/accounts/children/" + cid + path, "GET"); }
   catch (e) { return null; }

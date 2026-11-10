@@ -79,7 +79,23 @@ const GharAuth = {
   // Pull the active child's server progress into localStorage (so every
   // page shows the account's progress). Called on page load when signed in.
   async pull() {
-    if (!this.signedIn() || !this.childId()) return false;
+    if (!this.signedIn()) return false;
+    // Auto-select the child when there is exactly one: the child choice is
+    // stored per browser (localStorage), so a second browser/session that
+    // never clicked "Learn as…" has no child selected and every sync push
+    // silently does nothing ("no child selected"). If the family has a
+    // single child there is nothing to choose — pick them automatically.
+    if (!this.childId()) {
+      try {
+        const me = await this.api("/accounts/me");
+        const kids = (me && me.children) || [];
+        if (kids.length === 1 && kids[0].id) {
+          localStorage.setItem(CHILD_KEY, kids[0].id);
+        } else {
+          return false;
+        }
+      } catch (e) { return false; }
+    }
     const p = await this.api("/accounts/children/" + this.childId() + "/progress");
     // Merge, never wipe: the server can be stale (or 0) while this device
     // holds newer progress earned offline or before sign-in. Keep the best
