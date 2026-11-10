@@ -6,6 +6,10 @@
 const GHAR_API = "https://backend-patient-wave-3724.fly.dev";
 const SESSION_KEY = "ghar.session";
 const CHILD_KEY = "ghar.childId";
+// Cached copy of the server's unlock flag (GET /accounts/me). The SERVER
+// is the source of truth — this is only a display hint so pages can gate
+// without waiting on a fetch. refreshUnlock() re-reads it from the server.
+const UNLOCK_KEY = "ghar.unlocked";
 
 // Escape text for safe interpolation into innerHTML (pack data, child
 // names, nicknames). Escapes & < > " ' — safe in both text and attribute
@@ -24,7 +28,35 @@ const GharAuth = {
   signOut() {
     localStorage.removeItem(SESSION_KEY);
     localStorage.removeItem(CHILD_KEY);
+    localStorage.removeItem(UNLOCK_KEY);
     location.href = "signin.html";
+  },
+  // True if the server has marked this family unlocked (Stripe $7.99
+  // one-time payment). Reads the cached flag; refreshUnlock() re-reads
+  // it from the server. Guests (never signed in) are never unlocked.
+  isUnlocked() { return localStorage.getItem(UNLOCK_KEY) === "1"; },
+  // Re-read the unlock flag from GET /accounts/me and cache it. Returns
+  // the server value. Never throws — on any failure it returns the
+  // cached value so a network blip never locks a paying family out.
+  async refreshUnlock() {
+    if (!this.signedIn()) return false;
+    try {
+      const me = await this.api("/accounts/me");
+      const unlocked = !!me.unlocked;
+      localStorage.setItem(UNLOCK_KEY, unlocked ? "1" : "0");
+      return unlocked;
+    } catch (e) { return this.isUnlocked(); }
+  },
+  // Start the Stripe Checkout flow for the $7.99 one-time family unlock.
+  // Returns false when not signed in (the caller prompts sign-in first).
+  // On success the browser leaves for Stripe Checkout; on return the
+  // site re-reads the unlock flag from the server (?unlocked=1).
+  async startCheckout() {
+    if (!this.signedIn()) return false;
+    const d = await this.api("/accounts/checkout", "POST", {});
+    if (!d.checkout_url) throw new Error("Checkout did not return a payment link");
+    location.href = d.checkout_url;
+    return true;
   },
   async api(path, method, body) {
     const res = await fetch(GHAR_API + path, {

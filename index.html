@@ -392,7 +392,7 @@ GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => 
   // Unlock button: shown only to a signed-in parent whose family has not
   // unlocked yet. Tapping it starts Stripe Checkout ($7.99 one-time).
   const unlockBtn = document.getElementById("unlock-btn");
-  if (GharAuth.signedIn() && !GharAuth.isUnlocked()) {
+  if (GharAuth.signedIn() && !GharAuth.isUnlocked() && !TEST) {
     unlockBtn.hidden = false;
     unlockBtn.addEventListener("click", (e) => {
       e.preventDefault();
