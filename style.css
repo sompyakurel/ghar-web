@@ -728,11 +728,15 @@ EOF'
 .spirit-row .spirit-img { height: 130px; width: auto; object-fit: contain; }
 .spirit-row .spirit-danfe { height: 110px; }
 .spirit-row .spirit-flag { height: 150px; }
+.spirit-row .spirit-map { display: inline-block; border-radius: 14px; overflow: hidden; box-shadow: 0 3px 12px rgba(0,0,0,.18); transition: transform .15s ease; }
+.spirit-row .spirit-map:hover { transform: scale(1.04); }
+.spirit-row .spirit-map-img { height: 110px; width: auto; display: block; }
 @media (max-width: 640px) {
   .spirit-row { gap: 20px; }
   .spirit-row .spirit-img { height: 90px; }
   .spirit-row .spirit-danfe { height: 76px; }
   .spirit-row .spirit-flag { height: 104px; }
+  .spirit-row .spirit-map-img { height: 76px; }
 }
 
 /* Lessons: Bhunte's guide panel on one side, the learning path on the
