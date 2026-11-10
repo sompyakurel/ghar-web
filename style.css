@@ -343,7 +343,11 @@ EOF'
 .myghar-sign-name { position: absolute; left: 50%; top: 42.7%; transform: translate(-50%, -50%); font-weight: 800; color: #4e342e; font-size: clamp(14px, 2vw, 26px); letter-spacing: 0.5px; white-space: nowrap; z-index: 4; }
 .myghar-night { position: absolute; inset: 0; background: rgba(10, 20, 60, 0.35); z-index: 6; pointer-events: none; }
 .myghar-weather { position: absolute; top: 10px; right: 10px; z-index: 7; background: rgba(255,255,255,.85); border-radius: 999px; padding: 4px 12px; font-size: 14px; font-weight: 600; }
-.myghar-dog { position: absolute; left: 47.5%; bottom: 3%; width: 20%; transform: translateX(-50%); z-index: 5; cursor: pointer; animation: dog-bob 2.4s ease-in-out infinite; transition: left 1.6s ease-in-out; --flip: 1; }
+.myghar-dog { position: absolute; left: 47.5%; bottom: 3%; width: 20%; transform: translateX(-50%); z-index: 7; cursor: pointer; animation: dog-bob 2.4s ease-in-out infinite; transition: left 1.6s ease-in-out; --flip: 1; }
+/* z-index 7 puts the dog (img, pose img, and the Rive canvases, which copy
+   this class) ABOVE the night tint (z-index 6). The tint darkens the room,
+   not the living things — before this fix it dulled the grown-up dog to a
+   flat grey at night. */
 /* Facing: the dog turns to face the way it walks. --flip is read inside
    every dog keyframe (bob / walk / bounce), so the flip composes with the
    bob instead of the animation overriding it. */
@@ -364,7 +368,9 @@ EOF'
 /* Fetch ball: positioned by JS (left/bottom in %) so it can be thrown,
    land, and be carried back at the dog's mouth. The left/bottom
    transitions make every move glide smoothly. */
-#fetch-ball { position: absolute; left: 56%; bottom: 10%; font-size: 34px; z-index: 6; pointer-events: none; transition: left 0.8s ease-in-out, bottom 0.4s ease-in-out; }
+#fetch-ball { position: absolute; left: 56%; bottom: 10%; font-size: 34px; z-index: 8; pointer-events: none; transition: left 0.8s ease-in-out, bottom 0.4s ease-in-out; }
+/* z-index 8: above the night tint (6) and the dog (7), so the ball stays
+   bright and visible in the dog's mouth during fetch at night. */
 .myghar-hint { text-align: center; color: #666; font-size: 14px; margin: 8px 0; }
 .myghar-earn { background: #fff; border: 1px solid #e5e0d8; border-radius: 12px; padding: 16px 20px; margin: 16px 0; box-shadow: 0 2px 8px rgba(0,0,0,.05); }
 .myghar-earn h3 { margin: 0 0 4px; }
@@ -435,7 +441,9 @@ EOF'
 /* Suga the parrot: he bobs gently on his stand (the stand stays still),
    and the teach row under his panel. */
 @keyframes suga-bob { 0%, 100% { transform: translate(-50%, -50%); } 50% { transform: translate(-50%, calc(-50% - 4px)); } }
-.myghar-suga { animation: suga-bob 1.6s ease-in-out infinite; }
+.myghar-suga { animation: suga-bob 1.6s ease-in-out infinite; z-index: 7; }
+/* z-index 7, same as the dog: Suga is a living thing, so she stays bright
+   above the night tint (z-index 6) instead of being dulled by it. */
 .suga-teach { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .suga-teach select { flex: 1; min-width: 220px; }
 
