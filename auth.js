@@ -324,25 +324,38 @@ const GharStreak = {
     } catch (e) { return false; }
     if (!s) return false;
     const local = this._streakState();
-    let changed = false;
     // Streak count + last day: latest date wins, max count on a tie.
     let count = local.count, lastDay = local.last_day;
-    if ((s.last_day || "") > local.last_day) { count = s.count || 0; lastDay = s.last_day; changed = true; }
-    else if ((s.last_day || "") === local.last_day && (s.count || 0) > local.count) { count = s.count; changed = true; }
+    if ((s.last_day || "") > local.last_day) { count = s.count || 0; lastDay = s.last_day; }
+    else if ((s.last_day || "") === local.last_day && (s.count || 0) > local.count) { count = s.count; }
     // Daily done: latest date wins.
     let dailyDone = local.daily_done;
-    if ((s.daily_done || "") > local.daily_done) { dailyDone = s.daily_done; changed = true; }
+    if ((s.daily_done || "") > local.daily_done) { dailyDone = s.daily_done; }
     // Daily quiz: latest date wins, max count on a tie.
     let qDate = local.daily_quiz_date, qCount = local.daily_quiz_count;
-    if ((s.daily_quiz_date || "") > local.daily_quiz_date) { qDate = s.daily_quiz_date; qCount = s.daily_quiz_count || 0; changed = true; }
-    else if ((s.daily_quiz_date || "") === local.daily_quiz_date && (s.daily_quiz_count || 0) > local.daily_quiz_count) { qCount = s.daily_quiz_count; changed = true; }
+    if ((s.daily_quiz_date || "") > local.daily_quiz_date) { qDate = s.daily_quiz_date; qCount = s.daily_quiz_count || 0; }
+    else if ((s.daily_quiz_date || "") === local.daily_quiz_date && (s.daily_quiz_count || 0) > local.daily_quiz_count) { qCount = s.daily_quiz_count; }
     localStorage.setItem("ghar.streak.count", String(count));
     localStorage.setItem("ghar.streak.lastDay", lastDay);
     localStorage.setItem("ghar.daily.done", dailyDone);
     localStorage.setItem("ghar.daily.quizDate", qDate);
     localStorage.setItem("ghar.daily.quizCount", String(qCount));
-    // Push the merged state back so the server catches up too.
-    if (changed) { try { await this.push(); } catch (e) {} }
+    // Push the merged state back whenever it differs from the server's.
+    // The old code only pushed when the server won, so a local-only streak
+    // (built before the sync existed, server empty) never reached the
+    // database — the dashboard and db-browser kept showing 0.
+    const mergedState = {
+      count, last_day: lastDay, daily_done: dailyDone,
+      daily_quiz_date: qDate, daily_quiz_count: qCount,
+    };
+    const serverState = {
+      count: Number(s.count) || 0, last_day: s.last_day || "",
+      daily_done: s.daily_done || "", daily_quiz_date: s.daily_quiz_date || "",
+      daily_quiz_count: Number(s.daily_quiz_count) || 0,
+    };
+    if (JSON.stringify(mergedState) !== JSON.stringify(serverState)) {
+      try { await this.push(); } catch (e) {}
+    }
     return true;
   },
 };
