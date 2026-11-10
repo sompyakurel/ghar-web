@@ -24,6 +24,7 @@
   <h1>Database browser</h1>
   <p class="auth-note">Every table in the Ghar database for your family — read-only, straight from the server. This is the same data the dashboard shows, just as raw tables. A child's id is shown shortened; the full id is in the table.</p>
   <p class="error" id="error" hidden>Couldn't load the database. Check your connection and refresh.</p>
+  <p class="db-meta" id="db-refreshed"></p>
   <div class="db-table-list" id="table-list"></div>
   <h2 id="table-title"></h2>
   <p class="db-meta" id="table-meta"></p>
@@ -90,7 +91,12 @@ function renderTable() {
     // this page only reads the server, so without a pull the local streak
     // never shows up here).
     await GharAuth.pull().catch(() => {});
-    const data = await GharAuth.api("/accounts/admin/tables");
+    // Cache-buster: the browser may otherwise serve a stale /admin/tables
+    // response from before the streak was pushed, so the tables look empty
+    // even though the server has the data.
+    const data = await GharAuth.api("/accounts/admin/tables?t=" + Date.now());
+    document.getElementById("db-refreshed").textContent =
+      "Refreshed " + new Date().toLocaleTimeString() + " — tap a table to see its rows.";
     tables = data.tables || [];
     if (!tables.length) { document.getElementById("error").hidden = false; return; }
     active = tables[0].name;
