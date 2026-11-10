@@ -86,6 +86,10 @@ function renderTable() {
 }
 (async function load() {
   try {
+    // Push this browser's local streak first (same reason as the dashboard:
+    // this page only reads the server, so without a pull the local streak
+    // never shows up here).
+    await GharAuth.pull().catch(() => {});
     const data = await GharAuth.api("/accounts/admin/tables");
     tables = data.tables || [];
     if (!tables.length) { document.getElementById("error").hidden = false; return; }

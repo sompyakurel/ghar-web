@@ -65,6 +65,11 @@ function statRow(label, value) {
 
 async function load() {
   try {
+    // Push this browser's local streak (and pull the merged state) for the
+    // selected child first, so the numbers below are fresh. Without this,
+    // the dashboard only ever read the server — a streak built in this
+    // browser never showed up until some other page ran pull().
+    await GharAuth.pull().catch(() => {});
     const me = await GharAuth.api("/accounts/me");
     document.getElementById("parent-email").textContent = "Signed in as " + me.email;
     pack = await (await fetch("data/nepal-v1.json")).json();
