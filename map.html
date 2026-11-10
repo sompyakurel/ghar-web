@@ -150,7 +150,15 @@
   var DATA = (typeof window !== 'undefined' && window.GHAR_MAP_DATA) || (typeof GHAR_MAP_DATA !== 'undefined' ? GHAR_MAP_DATA : null);
   if (!DATA) { document.querySelector('.map-intro').textContent = 'The map data could not load. Please refresh.'; return; }
   var POS = {"kathmandu": [641, 369], "pokhara": [476, 304], "chitwan": [542, 395], "rara": [251, 140], "janaki": [713, 493], "sagarmatha": [835, 332], "kanchenjunga": [955, 365], "ilam": [950, 465], "koshitappu": [845, 500], "janakpurponds": [690, 515], "parsa": [590, 425], "saptari": [800, 520], "swayambhu": [618, 348], "pashupatinath": [662, 352], "bhaktapur": [668, 392], "phewa": [455, 328], "annapurna": [467, 255], "muktinath": [495, 228], "lumbini": [395, 384], "mayadevi": [418, 402], "bardiya": [169, 282], "phoksundo": [323, 177], "karnaliriver": [217, 200], "sinja": [193, 167], "khaptad": [139, 185], "shuklaphanta": [60, 211], "ghodaghodi": [108, 255]};
-  var TEST = new URLSearchParams(location.search).has('test');
+  // Test mode: same pattern as the other pages — ?test sets a persistent
+  // localStorage flag, so the whole site (including this page) stays
+  // unlocked once test mode is on. ?test=off clears it.
+  function isTestUnlock() {
+    var q = new URLSearchParams(location.search);
+    if (q.has('test')) localStorage.setItem('ghar.testUnlock', q.get('test') === 'off' ? '' : '1');
+    try { return localStorage.getItem('ghar.testUnlock') === '1'; } catch (e) { return false; }
+  }
+  var TEST = isTestUnlock();
   var FREE = {};
   DATA.pins.forEach(function (p) { if (p.free) FREE[p.id] = true; });
 
