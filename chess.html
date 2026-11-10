@@ -30,15 +30,22 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
 #thinking .tdot:nth-child(2) { animation-delay: .2s; }
 #thinking .tdot:nth-child(3) { animation-delay: .4s; }
 @keyframes thinkDot { 0%, 60%, 100% { transform: translateY(0); opacity: .35; } 30% { transform: translateY(-4px); opacity: 1; } }
-.board-frame { width: min(728px, 94vw); margin: 14px auto 4px; padding: 13px; box-sizing: border-box; background: linear-gradient(135deg, #8d6e63, #5d4037 55%, #3e2723); border-radius: 20px; box-shadow: 0 16px 38px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.18); }
-#board { display: grid; grid-template-columns: repeat(8, 1fr); width: 100%; aspect-ratio: 1; border-radius: 8px; overflow: hidden; box-shadow: inset 0 0 0 2px #d4a017; }
+.board-frame { position: relative; width: min(728px, 94vw); margin: 14px auto 4px; padding: 13px; box-sizing: border-box; background: var(--frame-bg, linear-gradient(135deg, #8d6e63, #5d4037 55%, #3e2723)); border-radius: 20px; box-shadow: 0 16px 38px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.18); border: 3px solid var(--frame-border, #d4a017); }
+.board-frame .corner { position: absolute; font-size: 22px; color: var(--frame-border, #d4a017); text-shadow: 0 1px 2px rgba(0,0,0,.5); pointer-events: none; z-index: 2; }
+.board-frame .corner.tl { top: -2px; left: 6px; transform: rotate(-12deg); }
+.board-frame .corner.tr { top: -2px; right: 6px; transform: rotate(12deg); }
+.board-frame .corner.bl { bottom: -2px; left: 6px; transform: rotate(12deg); }
+.board-frame .corner.br { bottom: -2px; right: 6px; transform: rotate(-12deg); }
+#board { display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr); width: 100%; aspect-ratio: 1; border-radius: 8px; overflow: hidden; box-shadow: inset 0 0 0 2px var(--frame-border, #d4a017), 0 0 0 4px rgba(0,0,0,.12); }
 #game.pop-in { animation: boardIn .45s ease-out; }
 @keyframes boardIn { from { opacity: 0; transform: translateY(12px) scale(.985); } to { opacity: 1; transform: none; } }
 .sq { position: relative; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-.sq.light { background: #f0d9b5; }
-.sq.dark { background: #b58863; }
-.sq img { width: 88%; height: 88%; pointer-events: none; user-select: none; -webkit-user-drag: none; }
-.sq img.land { animation: landPop .22s ease-out; }
+.sq.light { background: var(--sq-light, #f0d9b5); background-image: radial-gradient(circle at 35% 30%, rgba(255,255,255,.35), rgba(255,255,255,0) 70%); }
+.sq.dark { background: var(--sq-dark, #b58863); background-image: radial-gradient(circle at 35% 30%, rgba(255,255,255,.22), rgba(255,255,255,0) 70%); }
+.sq .piece { font-size: clamp(28px, 9.2vw, 70px); line-height: 1; pointer-events: none; user-select: none; display: flex; align-items: center; justify-content: center; }
+.sq .piece.w { color: var(--piece-w, #ffffff); text-shadow: 0 0 2px rgba(0,0,0,.55), 0 2px 4px rgba(0,0,0,.35); }
+.sq .piece.b { color: var(--piece-b, #1a1a1a); text-shadow: 0 0 3px rgba(255,255,255,.6), 0 2px 4px rgba(0,0,0,.35); }
+.sq .piece.land { animation: landPop .22s ease-out; }
 @keyframes landPop { 0% { transform: scale(1.32); } 100% { transform: scale(1); } }
 .sq.sel { box-shadow: inset 0 0 0 4px #ff9800; }
 .sq.dest::after { content: ""; position: absolute; width: 28%; height: 28%; border-radius: 50%; background: rgba(0,0,0,.28); pointer-events: none; }
@@ -50,7 +57,9 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
 .sq .coord.file { right: 4px; bottom: 2px; }
 .sq .coord.rank { left: 4px; top: 2px; }
 .cap-row { min-height: 38px; display: flex; align-items: center; justify-content: center; gap: 3px; font-size: 17px; font-weight: 700; color: #6b5d4f; }
-.cap-row img { width: 34px; height: 34px; }
+.cap-row .piece { font-size: 30px; line-height: 1; }
+.cap-row .piece.w { color: var(--piece-w, #ffffff); text-shadow: 0 0 2px rgba(0,0,0,.55), 0 1px 2px rgba(0,0,0,.3); }
+.cap-row .piece.b { color: var(--piece-b, #1a1a1a); text-shadow: 0 0 2px rgba(255,255,255,.6), 0 1px 2px rgba(0,0,0,.3); }
 #history { max-width: 700px; margin: 12px auto; background: #fff; border-radius: 14px; padding: 12px 16px; box-shadow: 0 1px 6px rgba(0,0,0,.1); font-size: 16px; text-align: left; max-height: 150px; overflow-y: auto; line-height: 1.8; }
 #history:empty::before { content: "No moves yet — White starts."; color: #999; }
 .chess-toggles { display: flex; gap: 10px; justify-content: center; margin: 10px 0 2px; flex-wrap: wrap; }
@@ -66,7 +75,13 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
 .promo-box p { font-size: 18px; font-weight: 700; margin: 0 0 14px; }
 .promo-box .promo-row { display: flex; gap: 10px; justify-content: center; }
 .promo-box button { font-size: 15px; font-weight: 700; padding: 10px 14px; border-radius: 12px; border: 2px solid #e0d6c8; background: #fff8ee; cursor: pointer; }
-.promo-box button img { width: 44px; height: 44px; display: block; margin: 0 auto 4px; }
+.promo-box button .piece { font-size: 44px; line-height: 1; display: block; margin: 0 auto 4px; }
+.promo-box button .piece.w { color: var(--piece-w, #ffffff); text-shadow: 0 0 2px rgba(0,0,0,.55), 0 1px 2px rgba(0,0,0,.3); }
+.promo-box button .piece.b { color: var(--piece-b, #1a1a1a); text-shadow: 0 0 2px rgba(255,255,255,.6), 0 1px 2px rgba(0,0,0,.3); }
+.chess-themes { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 12px 0 2px; }
+.chess-theme { display: flex; align-items: center; gap: 5px; border: 3px solid transparent; border-radius: 999px; background: #fff; padding: 5px 12px 5px 6px; cursor: pointer; font-size: 14px; font-weight: 700; box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+.chess-theme.active { border-color: #fb8c00; background: #fff3e0; }
+.chess-theme-dot { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; font-size: 18px; border: 2px solid rgba(0,0,0,.25); line-height: 1; }
 #result { font-size: 22px; font-weight: 800; margin: 8px 0; color: #3e2723; }
 #result:empty { display: none; }
 </style>
@@ -97,8 +112,9 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
       <div id="thinking">🤖 Computer is thinking<span class="tdot">.</span><span class="tdot">.</span><span class="tdot">.</span></div>
       <div id="result"></div>
       <div class="cap-row" id="cap-top"></div>
-      <div class="board-frame"><div id="board"></div></div>
+      <div class="board-frame" id="board-frame"><span class="corner tl">♞</span><span class="corner tr">♞</span><span class="corner bl">♞</span><span class="corner br">♞</span><div id="board"></div></div>
       <div class="cap-row" id="cap-bottom"></div>
+      <div class="chess-themes" id="theme-picker" role="group" aria-label="Piece theme"></div>
       <div id="history"></div>
       <div class="chess-btns">
         <button id="btn-new" type="button">↺ New game</button>
@@ -158,6 +174,44 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
   var toastEl = document.getElementById('toast');
   var thinkingEl = document.getElementById('thinking');
   var toastTimer;
+
+  // ---- Piece + board themes ----
+  // Pieces are Unicode chess glyphs (the shape IS the piece, so a king is
+  // always a king). The theme only changes the colours — white pieces and
+  // black pieces are far apart in every theme, so the two sides are never
+  // confused. The board squares and frame change with the theme too.
+  var GLYPHS = {
+    w: { k: '♔', q: '♕', r: '♖', b: '♗', n: '♘', p: '♙' },
+    b: { k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟' }
+  };
+  var CHESS_THEMES = {
+    classic:  { name: 'Classic',  pieceW: '#ffffff', pieceB: '#1a1a1a', sqLight: '#f0d9b5', sqDark: '#b58863', frameBg: 'linear-gradient(135deg,#8d6e63,#5d4037 55%,#3e2723)', frameBorder: '#d4a017' },
+    crimson:  { name: 'Crimson',  pieceW: '#ffd54f', pieceB: '#3e0a0a', sqLight: '#fff3e0', sqDark: '#d32f2f', frameBg: 'linear-gradient(135deg,#b71c1c,#7f0000 55%,#4a0000)', frameBorder: '#ffd54f' },
+    forest:   { name: 'Forest',   pieceW: '#ffd54f', pieceB: '#1b5e20', sqLight: '#c8e6c9', sqDark: '#43a047', frameBg: 'linear-gradient(135deg,#2e7d32,#1b5e20 55%,#0d3311)', frameBorder: '#a5d6a7' },
+    midnight: { name: 'Midnight', pieceW: '#ffb300', pieceB: '#263238', sqLight: '#eceff1', sqDark: '#546e7a', frameBg: 'linear-gradient(135deg,#37474f,#1c262b 55%,#0d1417)', frameBorder: '#ffb300' }
+  };
+  var CHESS_THEME_KEY = 'ghar.chess.theme';
+  var chessTheme = CHESS_THEMES[localStorage.getItem(CHESS_THEME_KEY)] ? localStorage.getItem(CHESS_THEME_KEY) : 'classic';
+  function applyChessTheme(name) {
+    if (!CHESS_THEMES[name]) return;
+    chessTheme = name;
+    try { localStorage.setItem(CHESS_THEME_KEY, name); } catch (e) {}
+    var t = CHESS_THEMES[name];
+    var root = document.documentElement;
+    root.style.setProperty('--piece-w', t.pieceW);
+    root.style.setProperty('--piece-b', t.pieceB);
+    root.style.setProperty('--sq-light', t.sqLight);
+    root.style.setProperty('--sq-dark', t.sqDark);
+    root.style.setProperty('--frame-bg', t.frameBg);
+    root.style.setProperty('--frame-border', t.frameBorder);
+    document.querySelectorAll('.chess-theme').forEach(function (b) { b.classList.toggle('active', b.dataset.theme === name); });
+  }
+  function pieceSpan(type, color) {
+    var s = document.createElement('span');
+    s.className = 'piece ' + color;
+    s.textContent = GLYPHS[color][type];
+    return s;
+  }
 
   function toast(msg, ms) {
     toastEl.textContent = msg;
@@ -296,13 +350,6 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
     s.classList.toggle('off', !sfxOn);
   }
 
-  function pieceImg(type, color) {
-    // Cburnett set: Chess_<type><l|d>t45.svg  (l = white, d = black).
-    // NOTE: the "t" before 45 is part of the filename — without it every
-    // piece 404s and only the alt text shows.
-    return 'assets/images/chess/Chess_' + type + (color === 'w' ? 'l' : 'd') + 't45.svg';
-  }
-
   function squares() {
     // Board squares in display order for the current orientation.
     var list = [];
@@ -342,11 +389,10 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
       div.dataset.sq = sq;
       var pc = at[sq];
       if (pc) {
-        var img = document.createElement('img');
-        img.src = pieceImg(pc.type, pc.color);
-        img.alt = (pc.color === 'w' ? 'White ' : 'Black ') + pc.type;
-        if (animateLand && lastMove && lastMove.to === sq) img.className = 'land';
-        div.appendChild(img);
+        var piece = pieceSpan(pc.type, pc.color);
+        piece.setAttribute('aria-label', (pc.color === 'w' ? 'White ' : 'Black ') + pc.type);
+        if (animateLand && lastMove && lastMove.to === sq) piece.classList.add('land');
+        div.appendChild(piece);
       }
       if (selected === sq) div.classList.add('sel');
       if (destSet[sq]) div.classList.add(destCap[sq] ? 'dest-cap' : 'dest');
@@ -387,7 +433,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
     });
     function rowHtml(list, color) {
       if (!list.length) return '';
-      return list.map(function (t) { return '<img src="' + pieceImg(t, color) + '" alt="">'; }).join('');
+      return list.map(function (t) { return '<span class="piece ' + color + '">' + GLYPHS[color][t] + '</span>'; }).join('');
     }
     function matScore() {
       var w = 0, b = 0;
@@ -441,7 +487,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
       var b = document.createElement('button');
       b.type = 'button';
       var names = { q: 'Queen', r: 'Rook', b: 'Bishop', n: 'Knight' };
-      b.innerHTML = '<img src="' + pieceImg(p, color) + '" alt="">' + names[p];
+      b.innerHTML = '<span class="piece ' + color + '">' + GLYPHS[color][p] + '</span>' + names[p];
       b.addEventListener('click', function () {
         var pr = pendingPromo; pendingPromo = null; promoEl.hidden = true;
         doMove(pr.from, pr.to, p);
@@ -652,6 +698,25 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
     refreshToggles();
     if (sfxOn) sfxMove();
   });
+
+  // ---- Theme picker ----
+  (function buildChessThemePicker() {
+    var picker = document.getElementById('theme-picker');
+    if (!picker) return;
+    Object.keys(CHESS_THEMES).forEach(function (name) {
+      var t = CHESS_THEMES[name];
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chess-theme' + (name === chessTheme ? ' active' : '');
+      b.dataset.theme = name;
+      b.title = t.name + ' theme';
+      b.setAttribute('aria-label', t.name + ' piece theme');
+      b.innerHTML = '<span class="chess-theme-dot" style="background:' + t.pieceB + ';color:' + t.pieceW + '">♞</span><span class="chess-theme-dot" style="background:' + t.pieceW + ';color:' + t.pieceB + '">♟</span><span>' + t.name + '</span>';
+      b.addEventListener('click', function () { applyChessTheme(name); render(); });
+      picker.appendChild(b);
+    });
+  })();
+  applyChessTheme(chessTheme);
 
   if (window.GharAuth) GharAuth.pull().catch(function () {});
 })();
