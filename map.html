@@ -40,11 +40,14 @@
   #danfe-flyer.flip img { transform: scaleX(-1); }
   #danfe-flyer.idle img { animation: danfe-bob 2.4s ease-in-out infinite; }
   @keyframes danfe-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
-  #fact-card { margin-top: 16px; background: #fff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,.10); padding: 18px 20px; }
+  /* Sticker popup ON the map — no scrolling needed to see the photo */
+  #fact-card { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-1.5deg); width: min(430px, 92%); background: #fff; border: 6px solid #fff; border-radius: 20px; box-shadow: 0 16px 40px rgba(0,0,0,.35); padding: 12px 16px 16px; z-index: 10; text-align: center; animation: sticker-pop .4s cubic-bezier(.2,1.6,.4,1); }
   #fact-card[hidden] { display: none; }
+  @keyframes sticker-pop { from { transform: translate(-50%, -50%) scale(.4) rotate(-8deg); opacity: 0; } to { transform: translate(-50%, -50%) scale(1) rotate(-1.5deg); opacity: 1; } }
+  #fact-card .sticker-x { position: absolute; top: -14px; right: -14px; width: 36px; height: 36px; border-radius: 50%; background: #e53935; color: #fff; font-size: 19px; font-weight: 700; border: 3px solid #fff; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.3); line-height: 1; }
   #fact-visual { font-size: 72px; text-align: center; line-height: 1; animation: visual-pop .45s cubic-bezier(.2,1.6,.4,1); }
   @keyframes visual-pop { from { transform: scale(.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-  #fact-photo { display: block; max-width: 100%; width: 420px; margin: 10px auto 4px; border-radius: 14px; box-shadow: 0 4px 16px rgba(0,0,0,.15); animation: visual-pop .45s cubic-bezier(.2,1.6,.4,1); }
+  #fact-photo { display: block; width: 100%; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,.15); }
   #fact-photo[hidden] { display: none; }
   #fact-card h2 { margin: 8px 0 2px; font-size: 22px; text-align: center; }
   #fact-card .fact-ne { font-size: 19px; color: #6b4e9b; margin: 0 0 8px; text-align: center; }
@@ -117,23 +120,7 @@
 <rect width="1000" height="560" fill="#dff0e0" rx="16"/>
 <path d="M0,0 H1000 V28 C900,10 800,22 700,12 C600,4 500,20 400,10 C300,2 200,18 100,8 C50,4 20,12 0,8 Z" fill="#ffffff" opacity="0.9"/>
 <path d="M104,56 L120,30 L136,56 Z" fill="#ffffff" stroke="#b0bec5" stroke-width="1"/>
-<text x="120" y="72" font-size="11" text-anchor="middle" fill="#5d4037">Api</text>
-<path d="M314,48 L330,22 L346,48 Z" fill="#ffffff" stroke="#b0bec5" stroke-width="1"/>
-<text x="330" y="64" font-size="11" text-anchor="middle" fill="#5d4037">Annapurna</text>
-<path d="M404,46 L420,20 L436,46 Z" fill="#ffffff" stroke="#b0bec5" stroke-width="1"/>
-<text x="420" y="62" font-size="11" text-anchor="middle" fill="#5d4037">Manaslu</text>
-<path d="M464,48 L480,22 L496,48 Z" fill="#ffffff" stroke="#b0bec5" stroke-width="1"/>
-<text x="480" y="64" font-size="11" text-anchor="middle" fill="#5d4037">Dhaulagiri</text>
-<path d="M684,44 L700,18 L716,44 Z" fill="#ffffff" stroke="#b0bec5" stroke-width="1"/>
-<text x="700" y="60" font-size="11" text-anchor="middle" fill="#5d4037">Cho Oyu</text>
-<path d="M744,42 L760,16 L776,42 Z" fill="#ffffff" stroke="#b0bec5" stroke-width="1"/>
-<text x="760" y="58" font-size="11" text-anchor="middle" fill="#5d4037">Makalu</text>
-<path d="M784,40 L800,14 L816,40 Z" fill="#ffffff" stroke="#b0bec5" stroke-width="1"/>
-<text x="800" y="56" font-size="11" text-anchor="middle" fill="#5d4037">Everest</text>
-<path d="M814,44 L830,18 L846,44 Z" fill="#ffffff" stroke="#b0bec5" stroke-width="1"/>
-<text x="830" y="60" font-size="11" text-anchor="middle" fill="#5d4037">Lhotse</text>
-<path d="M934,48 L950,22 L966,48 Z" fill="#ffffff" stroke="#b0bec5" stroke-width="1"/>
-<text x="950" y="64" font-size="11" text-anchor="middle" fill="#5d4037">Kanchenjunga</text>
+
 <path d="M300,30 C280,120 320,200 290,300 C270,380 300,460 285,545" fill="none" class="map-river" stroke="#4fc3f7" stroke-width="7" stroke-dasharray="14 14" stroke-linecap="round" opacity="0.75"/>
 <path d="M560,25 C540,110 580,190 550,290 C530,370 565,450 545,545" fill="none" class="map-river" stroke="#4fc3f7" stroke-width="7" stroke-dasharray="14 14" stroke-linecap="round" opacity="0.75"/>
 <path d="M820,30 C800,120 840,210 810,300 C790,380 825,460 800,545" fill="none" class="map-river" stroke="#4fc3f7" stroke-width="7" stroke-dasharray="14 14" stroke-linecap="round" opacity="0.75"/>
@@ -146,34 +133,26 @@
 <path class="province" data-province="bagmati" d="M785.3,336.5 L772.7,342.8 L751.3,334.2 L745.7,308.8 L733.1,319.4 L738.1,340.2 L721.8,341.4 L688.4,281.8 L676.0,298.2 L663.7,288.4 L648.2,295.5 L612.4,286.9 L597.5,314.8 L583.8,316.1 L572.1,336.0 L576.4,354.7 L557.0,346.1 L535.8,353.5 L534.0,368.5 L496.0,387.8 L473.1,388.9 L473.9,401.0 L499.7,392.2 L517.3,409.2 L538.9,413.0 L549.9,399.3 L577.5,402.5 L663.0,440.0 L702.8,436.9 L754.5,468.5 L767.2,460.8 L760.1,444.4 L770.1,435.3 L747.7,426.4 L749.9,409.6 L788.0,372.9 L785.3,336.5 Z" fill="#FFDAC1" stroke="#ffffff" stroke-width="3" stroke-linejoin="round"/>
 <path class="province" data-province="madhesh" d="M624.5,425.8 L613.2,412.3 L577.5,402.5 L549.9,399.3 L540.5,411.6 L557.2,415.4 L565.3,429.8 L559.6,452.3 L598.1,463.2 L605.3,476.7 L625.6,474.8 L628.2,489.0 L643.0,491.1 L679.1,474.5 L705.0,513.1 L726.4,500.6 L749.4,510.6 L763.3,506.7 L811.2,531.7 L842.7,512.7 L844.9,495.0 L834.2,487.9 L825.4,497.5 L796.7,497.8 L781.0,472.4 L752.6,475.4 L742.0,468.5 L750.0,472.4 L751.4,464.6 L722.2,455.1 L709.5,439.7 L689.9,433.4 L663.0,440.0 L624.5,425.8 Z" fill="#FDE2A8" stroke="#ffffff" stroke-width="3" stroke-linejoin="round"/>
 <path class="province" data-province="koshi" d="M832.1,523.4 L852.3,510.9 L854.7,528.2 L884.8,541.2 L899.8,529.5 L916.5,537.0 L950.7,523.5 L965.0,539.5 L972.8,533.6 L986.8,487.3 L980.5,460.1 L962.7,443.0 L987.8,349.5 L943.9,336.9 L931.1,355.7 L911.4,347.9 L864.4,353.7 L812.1,317.7 L791.0,317.2 L788.0,372.9 L749.9,409.6 L747.7,426.4 L770.1,435.3 L760.1,444.4 L767.2,460.6 L749.9,472.4 L742.0,468.5 L781.0,472.4 L796.7,497.8 L825.4,497.5 L834.3,488.0 L845.3,500.0 L832.1,523.4 Z" fill="#E2F0CB" stroke="#ffffff" stroke-width="3" stroke-linejoin="round"/>
-<path d="M10,30 Q500,62 990,30" fill="none" stroke="#8d6e63" stroke-width="2"/>
-<path d="M20,34 L36,34 L28,52 Z" fill="#0091ff" stroke="#fff" stroke-width="1"/>
-<path d="M61,34 L77,34 L69,52 Z" fill="#ffffff" stroke="#fff" stroke-width="1"/>
-<path d="M102,34 L118,34 L110,52 Z" fill="#e53935" stroke="#fff" stroke-width="1"/>
-<path d="M143,34 L159,34 L151,52 Z" fill="#00c853" stroke="#fff" stroke-width="1"/>
-<path d="M184,34 L200,34 L192,52 Z" fill="#ffb300" stroke="#fff" stroke-width="1"/>
-<path d="M225,34 L241,34 L233,52 Z" fill="#0091ff" stroke="#fff" stroke-width="1"/>
-<path d="M266,34 L282,34 L274,52 Z" fill="#ffffff" stroke="#fff" stroke-width="1"/>
-<path d="M307,34 L323,34 L315,52 Z" fill="#e53935" stroke="#fff" stroke-width="1"/>
-<path d="M348,34 L364,34 L356,52 Z" fill="#00c853" stroke="#fff" stroke-width="1"/>
-<path d="M389,34 L405,34 L397,52 Z" fill="#ffb300" stroke="#fff" stroke-width="1"/>
-<path d="M430,34 L446,34 L438,52 Z" fill="#0091ff" stroke="#fff" stroke-width="1"/>
-<path d="M471,34 L487,34 L479,52 Z" fill="#ffffff" stroke="#fff" stroke-width="1"/>
-<path d="M512,34 L528,34 L520,52 Z" fill="#e53935" stroke="#fff" stroke-width="1"/>
-<path d="M553,34 L569,34 L561,52 Z" fill="#00c853" stroke="#fff" stroke-width="1"/>
-<path d="M594,34 L610,34 L602,52 Z" fill="#ffb300" stroke="#fff" stroke-width="1"/>
-<path d="M635,34 L651,34 L643,52 Z" fill="#0091ff" stroke="#fff" stroke-width="1"/>
-<path d="M676,34 L692,34 L684,52 Z" fill="#ffffff" stroke="#fff" stroke-width="1"/>
-<path d="M717,34 L733,34 L725,52 Z" fill="#e53935" stroke="#fff" stroke-width="1"/>
-<path d="M758,34 L774,34 L766,52 Z" fill="#00c853" stroke="#fff" stroke-width="1"/>
-<path d="M799,34 L815,34 L807,52 Z" fill="#ffb300" stroke="#fff" stroke-width="1"/>
-<path d="M840,34 L856,34 L848,52 Z" fill="#0091ff" stroke="#fff" stroke-width="1"/>
-<path d="M881,34 L897,34 L889,52 Z" fill="#ffffff" stroke="#fff" stroke-width="1"/>
-<path d="M922,34 L938,34 L930,52 Z" fill="#e53935" stroke="#fff" stroke-width="1"/>
-<path d="M963,34 L979,34 L971,52 Z" fill="#00c853" stroke="#fff" stroke-width="1"/>
-<g transform="translate(70,70)"><circle r="26" fill="#ffeb3b" stroke="#ffb300" stroke-width="3"/><circle cx="-8" cy="-4" r="3" fill="#5d4037"/><circle cx="8" cy="-4" r="3" fill="#5d4037"/><path d="M-10,8 Q0,16 10,8" fill="none" stroke="#5d4037" stroke-width="2.5" stroke-linecap="round"/><g stroke="#ffb300" stroke-width="3" stroke-linecap="round"><line x1="0" y1="-34" x2="0" y2="-28"/><line x1="0" y1="28" x2="0" y2="34"/><line x1="-34" y1="0" x2="-28" y2="0"/><line x1="28" y1="0" x2="34" y2="0"/><line x1="-24" y1="-24" x2="-20" y2="-20"/><line x1="24" y1="-24" x2="20" y2="-20"/><line x1="-24" y1="24" x2="-20" y2="20"/><line x1="24" y1="24" x2="20" y2="20"/></g></g>
+<text x="120" y="72" font-size="11" text-anchor="middle" fill="#5d4037">Api</text><text x="120" y="84" font-size="9" text-anchor="middle" fill="#8d6e63" font-weight="700">7,132 m</text>
+<path d="M314,48 L330,22 L346,48 Z" fill="#ffffff" stroke="#b0bec5" stroke-width="1"/>
+<text x="330" y="64" font-size="11" text-anchor="middle" fill="#5d4037">Annapurna</text><text x="330" y="76" font-size="9" text-anchor="middle" fill="#8d6e63" font-weight="700">8,091 m</text>
+<path d="M404,46 L420,20 L436,46 Z" fill="#ffffff" stroke="#b0bec5" stroke-width="1"/>
+<text x="420" y="62" font-size="11" text-anchor="middle" fill="#5d4037">Manaslu</text><text x="420" y="74" font-size="9" text-anchor="middle" fill="#8d6e63" font-weight="700">8,163 m</text>
+<path d="M464,48 L480,22 L496,48 Z" fill="#ffffff" stroke="#b0bec5" stroke-width="1"/>
+<text x="480" y="64" font-size="11" text-anchor="middle" fill="#5d4037">Dhaulagiri</text><text x="480" y="76" font-size="9" text-anchor="middle" fill="#8d6e63" font-weight="700">8,167 m</text>
+<path d="M684,44 L700,18 L716,44 Z" fill="#ffffff" stroke="#b0bec5" stroke-width="1"/>
+<text x="700" y="60" font-size="11" text-anchor="middle" fill="#5d4037">Cho Oyu</text><text x="700" y="72" font-size="9" text-anchor="middle" fill="#8d6e63" font-weight="700">8,188 m</text>
+<path d="M744,42 L760,16 L776,42 Z" fill="#ffffff" stroke="#b0bec5" stroke-width="1"/>
+<text x="760" y="58" font-size="11" text-anchor="middle" fill="#5d4037">Makalu</text><text x="760" y="70" font-size="9" text-anchor="middle" fill="#8d6e63" font-weight="700">8,485 m</text>
+<path d="M784,40 L800,14 L816,40 Z" fill="#ffffff" stroke="#b0bec5" stroke-width="1"/>
+<text x="800" y="56" font-size="11" text-anchor="middle" fill="#5d4037">Everest</text><text x="800" y="82" font-size="9" text-anchor="middle" fill="#8d6e63" font-weight="700">8,848 m</text>
+<path d="M814,44 L830,18 L846,44 Z" fill="#ffffff" stroke="#b0bec5" stroke-width="1"/>
+<text x="830" y="60" font-size="11" text-anchor="middle" fill="#5d4037">Lhotse</text><text x="830" y="72" font-size="9" text-anchor="middle" fill="#8d6e63" font-weight="700">8,516 m</text>
+<path d="M934,48 L950,22 L966,48 Z" fill="#ffffff" stroke="#b0bec5" stroke-width="1"/>
+<text x="950" y="64" font-size="11" text-anchor="middle" fill="#5d4037">Kanchenjunga</text><text x="950" y="76" font-size="9" text-anchor="middle" fill="#8d6e63" font-weight="700">8,586 m</text>
+<g transform="translate(45,40)"><circle r="26" fill="#ffeb3b" stroke="#ffb300" stroke-width="3"/><circle cx="-8" cy="-4" r="3" fill="#5d4037"/><circle cx="8" cy="-4" r="3" fill="#5d4037"/><path d="M-10,8 Q0,16 10,8" fill="none" stroke="#5d4037" stroke-width="2.5" stroke-linecap="round"/><g stroke="#ffb300" stroke-width="3" stroke-linecap="round"><line x1="0" y1="-34" x2="0" y2="-28"/><line x1="0" y1="28" x2="0" y2="34"/><line x1="-34" y1="0" x2="-28" y2="0"/><line x1="28" y1="0" x2="34" y2="0"/><line x1="-24" y1="-24" x2="-20" y2="-20"/><line x1="24" y1="-24" x2="20" y2="-20"/><line x1="-24" y1="24" x2="-20" y2="20"/><line x1="24" y1="24" x2="20" y2="20"/></g></g>
 <g class="map-cloud" style="--drift: 90s"><ellipse cx="200" cy="60" rx="34" ry="13" fill="#fff" opacity=".85"/><ellipse cx="225" cy="52" rx="26" ry="11" fill="#fff" opacity=".85"/></g>
-<g class="map-cloud" style="--drift: 120s; animation-delay: -40s"><ellipse cx="700" cy="80" rx="40" ry="14" fill="#fff" opacity=".8"/><ellipse cx="730" cy="72" rx="28" ry="11" fill="#fff" opacity=".8"/></g>
+<g class="map-cloud" style="--drift: 120s; animation-delay: -40s"><ellipse cx="620" cy="38" rx="40" ry="14" fill="#fff" opacity=".8"/><ellipse cx="650" cy="30" rx="28" ry="11" fill="#fff" opacity=".8"/></g>
 <g class="map-cloud" style="--drift: 100s; animation-delay: -70s"><ellipse cx="480" cy="45" rx="30" ry="11" fill="#fff" opacity=".75"/></g>
 <g class="map-bird" style="--drift: 70s"><path d="M0,0 Q6,-7 12,0 Q18,-7 24,0" fill="none" stroke="#37474f" stroke-width="2.5" stroke-linecap="round"/></g>
 <g class="map-bird" style="--drift: 85s; animation-delay: -30s"><path d="M0,0 Q5,-6 10,0 Q15,-6 20,0" fill="none" stroke="#37474f" stroke-width="2" stroke-linecap="round"/></g>
@@ -215,23 +194,24 @@
 <g transform="translate(900,460)"><circle cx="0" cy="-3" r="2.2" fill="#ba68c8"/><circle cx="3" cy="0" r="2.2" fill="#ba68c8"/><circle cx="0" cy="3" r="2.2" fill="#ba68c8"/><circle cx="-3" cy="0" r="2.2" fill="#ba68c8"/><circle cx="0" cy="0" r="2" fill="#ffeb3b"/></g>
 </svg>
         <div id="danfe-flyer" class="idle"><img id="danfe-img" src="assets/images/danfe/danfe_perched.png" alt="Danfe the Himalayan monal"></div>
+        <div id="fact-card" hidden>
+          <button class="sticker-x" id="fact-x" aria-label="Close">✕</button>
+          <div id="fact-visual" aria-hidden="true"></div>
+          <img id="fact-photo" hidden alt="">
+          <h2 id="fact-name"></h2>
+          <p class="fact-ne" id="fact-nepali"></p>
+          <p class="fact-text" id="fact-text"></p>
+          <p class="fact-meta" id="fact-meta"></p>
+          <span class="fact-xp" id="fact-xp"></span>
+          <div class="fact-actions">
+            <button id="fact-hear">🔊 Hear it</button>
+            <button class="secondary" id="fact-close">Close</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
-  <div id="fact-card" hidden>
-    <div id="fact-visual" aria-hidden="true"></div>
-    <img id="fact-photo" hidden alt="">
-    <h2 id="fact-name"></h2>
-    <p class="fact-ne" id="fact-nepali"></p>
-    <p class="fact-text" id="fact-text"></p>
-    <p class="fact-meta" id="fact-meta"></p>
-    <span class="fact-xp" id="fact-xp"></span>
-    <div class="fact-actions">
-      <button id="fact-hear">🔊 Hear it</button>
-      <button class="secondary" id="fact-close">Close</button>
-    </div>
-  </div>
 
   <div id="premium-note" hidden>
     <strong>🔒 Premium needed!</strong><br>
@@ -468,7 +448,7 @@
     visual.style.animation = '';
     var photo = document.getElementById('fact-photo');
     if (place.kind === 'pin') {
-      photo.src = 'assets/images/map/' + id + '.png';
+      photo.src = 'assets/images/map/' + id + '.jpg';
       photo.alt = d.name;
       photo.hidden = false;
       photo.onerror = function () { photo.hidden = true; };
@@ -514,6 +494,10 @@
     if (!currentPlace) return;
     playAudio(currentPlace.data.audioName);
     audio.onended = function () { playAudio(currentPlace.data.audioFact); audio.onended = null; };
+  });
+  document.getElementById('fact-x').addEventListener('click', function () {
+    document.getElementById('fact-card').hidden = true;
+    try { audio.pause(); } catch (e) {}
   });
   document.getElementById('fact-close').addEventListener('click', function () {
     document.getElementById('fact-card').hidden = true;
