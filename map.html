@@ -7,14 +7,20 @@
 <title>Danfe's Map of Nepal — Ghar</title>
 <link rel="stylesheet" href="style.css?v=29">
 <script src="auth.js?v=8"></script>
+<script src="shop-data.js"></script>
 <script src="data/map-data.js"></script>
 <style>
   .map-wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px 40px; }
-  .map-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 16px 0 8px; }
+  .map-back-top { display: inline-block; margin: 14px 0 0; padding: 9px 18px; background: #f0e8dc; color: #4a3f35; border-radius: 999px; font-size: 15px; font-weight: 700; text-decoration: none; }
+  .map-back-top:hover { background: #e5dcc9; }
+  .map-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 12px 0 8px; }
   .map-head h1 { font-size: 28px; margin: 0; }
   .map-head .xp-pill { margin-left: auto; font-size: 16px; font-weight: 700; background: #fff3e0; border-radius: 999px; padding: 6px 14px; }
   .map-intro { font-size: 16px; color: #4a3f35; margin: 0 0 14px; }
-  .map-stage { position: relative; width: 100%; border-radius: 18px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,.12); background: #dff0e0; }
+  /* Nepali frame: prayer-flag stripes + gold inner border */
+  .map-frame { position: relative; border-radius: 22px; padding: 10px; background: linear-gradient(90deg, #0091ff 0 20%, #ffffff 20% 40%, #e53935 40% 60%, #00c853 60% 80%, #ffb300 80% 100%); box-shadow: 0 8px 28px rgba(0,0,0,.18); }
+  .map-frame-inner { border-radius: 14px; overflow: hidden; border: 4px solid #d4a017; background: #dff0e0; }
+  .map-stage { position: relative; width: 100%; background: #dff0e0; }
   .map-stage svg { display: block; width: 100%; height: auto; }
   .province { cursor: pointer; }
   .province:hover { filter: brightness(1.06); }
@@ -23,18 +29,31 @@
   .map-pin text, .map-mark text { pointer-events: none; font-weight: 700; }
   .map-pin.found circle.pin-dot { stroke: #2e7d32; }
   .map-pin.locked, .map-mark.locked { opacity: .85; }
+  .map-river { animation: river-flow 3s linear infinite; }
+  @keyframes river-flow { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -28; } }
+  .map-cloud { animation: cloud-drift var(--drift, 100s) linear infinite; }
+  @keyframes cloud-drift { from { transform: translateX(-140px); } to { transform: translateX(1080px); } }
+  .map-bird { animation: bird-drift var(--drift, 75s) linear infinite; }
+  @keyframes bird-drift { from { transform: translate(900px, 120px); } to { transform: translate(-80px, 60px); } }
   #danfe-flyer { position: absolute; width: 9%; max-width: 96px; min-width: 56px; z-index: 5; pointer-events: none; transition: left 1.1s ease-in-out, top 1.1s ease-in-out; will-change: left, top; }
   #danfe-flyer img { width: 100%; height: auto; display: block; }
   #danfe-flyer.flip img { transform: scaleX(-1); }
+  #danfe-flyer.idle img { animation: danfe-bob 2.4s ease-in-out infinite; }
+  @keyframes danfe-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
   #fact-card { margin-top: 16px; background: #fff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,.10); padding: 18px 20px; }
   #fact-card[hidden] { display: none; }
-  #fact-card h2 { margin: 0 0 2px; font-size: 22px; }
-  #fact-card .fact-ne { font-size: 19px; color: #6b4e9b; margin: 0 0 8px; }
-  #fact-card .fact-text { font-size: 16px; margin: 0 0 10px; }
-  #fact-card .fact-meta { font-size: 14px; color: #6b5d4f; margin: 0 0 12px; }
+  #fact-visual { font-size: 72px; text-align: center; line-height: 1; animation: visual-pop .45s cubic-bezier(.2,1.6,.4,1); }
+  @keyframes visual-pop { from { transform: scale(.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  #fact-photo { display: block; max-width: 100%; width: 420px; margin: 10px auto 4px; border-radius: 14px; box-shadow: 0 4px 16px rgba(0,0,0,.15); animation: visual-pop .45s cubic-bezier(.2,1.6,.4,1); }
+  #fact-photo[hidden] { display: none; }
+  #fact-card h2 { margin: 8px 0 2px; font-size: 22px; text-align: center; }
+  #fact-card .fact-ne { font-size: 19px; color: #6b4e9b; margin: 0 0 8px; text-align: center; }
+  #fact-card .fact-text { font-size: 16px; margin: 0 0 10px; text-align: center; }
+  #fact-card .fact-meta { font-size: 14px; color: #6b5d4f; margin: 0 0 12px; text-align: center; }
   #fact-card .fact-xp { display: inline-block; background: #e8f5e9; color: #2e7d32; font-weight: 700; border-radius: 999px; padding: 4px 12px; font-size: 15px; }
-  #fact-card .fact-xp.earned { background: #fff3e0; color: #b26a00; }
-  #fact-card .fact-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+  #fact-card .fact-xp.earned { background: #fff3e0; color: #b26a00; animation: xp-bounce .5s ease; }
+  @keyframes xp-bounce { 0% { transform: scale(1); } 50% { transform: scale(1.25); } 100% { transform: scale(1); } }
+  #fact-card .fact-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; justify-content: center; }
   #fact-card button { font-size: 15px; padding: 9px 18px; border: none; border-radius: 999px; cursor: pointer; background: #e3a04b; color: #fff; font-weight: 700; }
   #fact-card button.secondary { background: #f0e8dc; color: #4a3f35; }
   #premium-note { margin-top: 16px; background: #fff8e1; border: 2px dashed #f9a825; border-radius: 16px; padding: 16px 20px; font-size: 16px; }
@@ -49,32 +68,52 @@
   .stamp .stamp-icon { font-size: 30px; }
   .stamp .stamp-name { font-size: 14px; font-weight: 700; margin-top: 4px; }
   .stamp .stamp-count { font-size: 13px; color: #6b5d4f; margin-top: 2px; }
-  .stamp.stamped { background: #e8f5e9; border: 2px solid #66bb6a; }
+  .stamp.stamped { background: #e8f5e9; border: 2px solid #66bb6a; animation: stamp-pop .5s ease; }
+  @keyframes stamp-pop { 0% { transform: scale(.85); } 60% { transform: scale(1.08); } 100% { transform: scale(1); } }
   .stamp.locked { opacity: .65; }
   #badge-card { margin-top: 16px; background: #fff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,.10); padding: 18px 20px; text-align: center; }
   #badge-card[hidden] { display: none; }
   #badge-card .badge-icon { font-size: 44px; }
   #badge-card h3 { margin: 8px 0 4px; font-size: 22px; }
   #badge-card p { margin: 0; font-size: 15px; color: #4a3f35; }
-  .map-back { display: inline-block; margin-top: 14px; font-size: 15px; }
-  #toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: #333; color: #fff; padding: 10px 18px; border-radius: 999px; font-size: 15px; z-index: 50; }
+  /* Completion celebration overlay */
+  #completion { position: fixed; inset: 0; background: rgba(20,16,12,.72); z-index: 80; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  #completion[hidden] { display: none; }
+  #completion .confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+  .completion-card { position: relative; width: min(520px, calc(100vw - 32px)); max-height: calc(100vh - 48px); overflow-y: auto; background: #fff; border-radius: 22px; box-shadow: 0 16px 48px rgba(0,0,0,.4); padding: 26px 24px; text-align: center; border: 4px solid #d4a017; }
+  .completion-card .comp-danfe { width: 110px; height: 110px; border-radius: 18px; }
+  .completion-card h2 { margin: 12px 0 4px; font-size: 26px; }
+  .completion-card .comp-sub { font-size: 16px; color: #4a3f35; margin: 0 0 14px; }
+  .comp-rewards { display: flex; flex-direction: column; gap: 8px; margin: 0 0 16px; text-align: left; }
+  .comp-reward { background: #fff8e1; border-radius: 12px; padding: 10px 14px; font-size: 16px; font-weight: 700; }
+  .comp-reward span { font-weight: 400; color: #6b5d4f; font-size: 14px; }
+  .comp-reward.treasure { background: #f3e5f5; }
+  .comp-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .comp-actions a, .comp-actions button { font-size: 16px; padding: 12px 22px; border: none; border-radius: 999px; cursor: pointer; background: #43a047; color: #fff; font-weight: 700; text-decoration: none; }
+  .comp-actions button.secondary { background: #f0e8dc; color: #4a3f35; }
+  #toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: #333; color: #fff; padding: 10px 18px; border-radius: 999px; font-size: 15px; z-index: 90; max-width: calc(100vw - 32px); text-align: center; }
   #toast[hidden] { display: none; }
   @media (max-width: 640px) {
     .map-head h1 { font-size: 22px; }
     #fact-card h2 { font-size: 19px; }
+    #fact-visual { font-size: 56px; }
+    .completion-card h2 { font-size: 22px; }
   }
 </style>
 </head>
 <body>
 <div class="map-wrap">
+  <a class="map-back-top" href="index.html">← Back home</a>
   <div class="map-head">
     <h1>🗺️ Danfe's Map of Nepal</h1>
     <span class="xp-pill">⭐ <span id="xp-total">0</span> XP</span>
   </div>
   <p class="map-intro">Tap a pin and Danfe will fly you there! Find the hidden <b>?</b> places, stamp every province in your passport, and earn the <b>Nepal Explorer</b> badge.</p>
 
-  <div class="map-stage" id="map-stage">
-    <svg id="nepal-map" viewBox="0 0 1000 560" role="img" aria-label="Map of Nepal" xmlns="http://www.w3.org/2000/svg">
+  <div class="map-frame">
+    <div class="map-frame-inner">
+      <div class="map-stage" id="map-stage">
+        <svg id="nepal-map" viewBox="0 0 1000 560" role="img" aria-label="Map of Nepal" xmlns="http://www.w3.org/2000/svg">
 <rect width="1000" height="560" fill="#dff0e0" rx="16"/>
 <path d="M0,0 H1000 V28 C900,10 800,22 700,12 C600,4 500,20 400,10 C300,2 200,18 100,8 C50,4 20,12 0,8 Z" fill="#ffffff" opacity="0.9"/>
 <path d="M104,56 L120,30 L136,56 Z" fill="#ffffff" stroke="#b0bec5" stroke-width="1"/>
@@ -95,11 +134,11 @@
 <text x="830" y="60" font-size="11" text-anchor="middle" fill="#5d4037">Lhotse</text>
 <path d="M934,48 L950,22 L966,48 Z" fill="#ffffff" stroke="#b0bec5" stroke-width="1"/>
 <text x="950" y="64" font-size="11" text-anchor="middle" fill="#5d4037">Kanchenjunga</text>
-<path d="M300,30 C280,120 320,200 290,300 C270,380 300,460 285,545" fill="none" stroke="#4fc3f7" stroke-width="7" stroke-linecap="round" opacity="0.75"/>
-<path d="M560,25 C540,110 580,190 550,290 C530,370 565,450 545,545" fill="none" stroke="#4fc3f7" stroke-width="7" stroke-linecap="round" opacity="0.75"/>
-<path d="M820,30 C800,120 840,210 810,300 C790,380 825,460 800,545" fill="none" stroke="#4fc3f7" stroke-width="7" stroke-linecap="round" opacity="0.75"/>
-<path d="M60,40 C45,140 70,240 55,340 C45,420 60,490 50,545" fill="none" stroke="#4fc3f7" stroke-width="7" stroke-linecap="round" opacity="0.75"/>
-<path d="M640,340 C630,400 655,450 640,500" fill="none" stroke="#4fc3f7" stroke-width="7" stroke-linecap="round" opacity="0.75"/>
+<path d="M300,30 C280,120 320,200 290,300 C270,380 300,460 285,545" fill="none" class="map-river" stroke="#4fc3f7" stroke-width="7" stroke-dasharray="14 14" stroke-linecap="round" opacity="0.75"/>
+<path d="M560,25 C540,110 580,190 550,290 C530,370 565,450 545,545" fill="none" class="map-river" stroke="#4fc3f7" stroke-width="7" stroke-dasharray="14 14" stroke-linecap="round" opacity="0.75"/>
+<path d="M820,30 C800,120 840,210 810,300 C790,380 825,460 800,545" fill="none" class="map-river" stroke="#4fc3f7" stroke-width="7" stroke-dasharray="14 14" stroke-linecap="round" opacity="0.75"/>
+<path d="M60,40 C45,140 70,240 55,340 C45,420 60,490 50,545" fill="none" class="map-river" stroke="#4fc3f7" stroke-width="7" stroke-dasharray="14 14" stroke-linecap="round" opacity="0.75"/>
+<path d="M640,340 C630,400 655,450 640,500" fill="none" class="map-river" stroke="#4fc3f7" stroke-width="7" stroke-dasharray="14 14" stroke-linecap="round" opacity="0.75"/>
 <path class="province" data-province="sudurpashchim" d="M153.5,70.6 L135.6,73.8 L123.4,45.0 L66.2,19.9 L106.0,59.9 L44.3,108.5 L49.4,127.9 L29.5,147.2 L36.0,177.5 L17.6,190.5 L9.2,226.0 L62.6,260.7 L60.9,246.3 L68.7,243.4 L128.8,280.7 L155.3,246.5 L145.6,221.3 L133.0,223.4 L120.5,209.4 L172.7,215.0 L190.5,234.6 L170.1,204.0 L188.8,187.6 L179.4,181.6 L181.9,163.6 L194.6,156.5 L209.8,161.1 L216.8,151.9 L216.9,130.3 L204.7,117.3 L217.0,89.0 L198.5,83.0 L177.4,90.4 L175.8,76.2 L153.5,70.6 Z" fill="#F9D5A7" stroke="#ffffff" stroke-width="3" stroke-linejoin="round"/>
 <path class="province" data-province="karnali" d="M443.6,187.9 L417.4,168.4 L395.2,131.2 L340.8,115.8 L307.4,81.0 L261.9,68.1 L266.0,56.8 L253.0,45.9 L253.9,31.9 L239.8,35.5 L195.4,19.4 L187.2,29.3 L169.9,22.8 L168.5,49.8 L151.6,57.7 L153.5,70.6 L176.5,76.9 L177.4,90.4 L198.5,83.0 L217.0,89.0 L204.7,117.3 L216.9,130.3 L216.8,151.9 L209.8,161.1 L194.6,156.5 L181.9,163.6 L179.4,181.6 L188.8,187.6 L170.1,204.0 L190.7,234.3 L183.4,235.6 L172.7,215.0 L118.4,211.4 L133.0,223.4 L145.5,221.2 L158.8,249.8 L242.1,311.7 L253.3,298.0 L289.0,309.4 L293.9,299.5 L283.4,277.2 L311.1,256.3 L300.2,247.0 L315.4,243.1 L308.9,233.2 L318.7,220.6 L405.3,237.5 L419.9,231.3 L443.6,187.9 Z" fill="#A8D8EA" stroke="#ffffff" stroke-width="3" stroke-linejoin="round"/>
 <path class="province" data-province="lumbini" d="M379.2,235.8 L318.7,220.6 L308.9,233.2 L315.4,243.1 L300.2,247.0 L311.1,256.3 L283.4,277.2 L293.9,299.5 L289.0,309.4 L253.3,298.0 L242.1,311.7 L157.7,245.3 L127.8,279.0 L146.4,285.3 L159.0,313.9 L174.4,310.4 L227.4,349.1 L249.7,340.8 L295.3,371.8 L326.5,366.3 L329.8,394.2 L384.3,400.4 L398.4,416.0 L411.0,405.7 L408.5,397.2 L435.8,398.4 L466.0,414.0 L469.8,394.5 L459.5,373.9 L443.3,366.7 L481.0,362.8 L485.6,349.2 L415.7,340.0 L434.4,331.3 L428.5,316.0 L356.2,285.1 L346.9,265.3 L359.0,261.4 L358.9,250.9 L375.6,250.6 L379.2,235.8 Z" fill="#B5EAD7" stroke="#ffffff" stroke-width="3" stroke-linejoin="round"/>
@@ -107,11 +146,82 @@
 <path class="province" data-province="bagmati" d="M785.3,336.5 L772.7,342.8 L751.3,334.2 L745.7,308.8 L733.1,319.4 L738.1,340.2 L721.8,341.4 L688.4,281.8 L676.0,298.2 L663.7,288.4 L648.2,295.5 L612.4,286.9 L597.5,314.8 L583.8,316.1 L572.1,336.0 L576.4,354.7 L557.0,346.1 L535.8,353.5 L534.0,368.5 L496.0,387.8 L473.1,388.9 L473.9,401.0 L499.7,392.2 L517.3,409.2 L538.9,413.0 L549.9,399.3 L577.5,402.5 L663.0,440.0 L702.8,436.9 L754.5,468.5 L767.2,460.8 L760.1,444.4 L770.1,435.3 L747.7,426.4 L749.9,409.6 L788.0,372.9 L785.3,336.5 Z" fill="#FFDAC1" stroke="#ffffff" stroke-width="3" stroke-linejoin="round"/>
 <path class="province" data-province="madhesh" d="M624.5,425.8 L613.2,412.3 L577.5,402.5 L549.9,399.3 L540.5,411.6 L557.2,415.4 L565.3,429.8 L559.6,452.3 L598.1,463.2 L605.3,476.7 L625.6,474.8 L628.2,489.0 L643.0,491.1 L679.1,474.5 L705.0,513.1 L726.4,500.6 L749.4,510.6 L763.3,506.7 L811.2,531.7 L842.7,512.7 L844.9,495.0 L834.2,487.9 L825.4,497.5 L796.7,497.8 L781.0,472.4 L752.6,475.4 L742.0,468.5 L750.0,472.4 L751.4,464.6 L722.2,455.1 L709.5,439.7 L689.9,433.4 L663.0,440.0 L624.5,425.8 Z" fill="#FDE2A8" stroke="#ffffff" stroke-width="3" stroke-linejoin="round"/>
 <path class="province" data-province="koshi" d="M832.1,523.4 L852.3,510.9 L854.7,528.2 L884.8,541.2 L899.8,529.5 L916.5,537.0 L950.7,523.5 L965.0,539.5 L972.8,533.6 L986.8,487.3 L980.5,460.1 L962.7,443.0 L987.8,349.5 L943.9,336.9 L931.1,355.7 L911.4,347.9 L864.4,353.7 L812.1,317.7 L791.0,317.2 L788.0,372.9 L749.9,409.6 L747.7,426.4 L770.1,435.3 L760.1,444.4 L767.2,460.6 L749.9,472.4 L742.0,468.5 L781.0,472.4 L796.7,497.8 L825.4,497.5 L834.3,488.0 L845.3,500.0 L832.1,523.4 Z" fill="#E2F0CB" stroke="#ffffff" stroke-width="3" stroke-linejoin="round"/>
+<path d="M10,30 Q500,62 990,30" fill="none" stroke="#8d6e63" stroke-width="2"/>
+<path d="M20,34 L36,34 L28,52 Z" fill="#0091ff" stroke="#fff" stroke-width="1"/>
+<path d="M61,34 L77,34 L69,52 Z" fill="#ffffff" stroke="#fff" stroke-width="1"/>
+<path d="M102,34 L118,34 L110,52 Z" fill="#e53935" stroke="#fff" stroke-width="1"/>
+<path d="M143,34 L159,34 L151,52 Z" fill="#00c853" stroke="#fff" stroke-width="1"/>
+<path d="M184,34 L200,34 L192,52 Z" fill="#ffb300" stroke="#fff" stroke-width="1"/>
+<path d="M225,34 L241,34 L233,52 Z" fill="#0091ff" stroke="#fff" stroke-width="1"/>
+<path d="M266,34 L282,34 L274,52 Z" fill="#ffffff" stroke="#fff" stroke-width="1"/>
+<path d="M307,34 L323,34 L315,52 Z" fill="#e53935" stroke="#fff" stroke-width="1"/>
+<path d="M348,34 L364,34 L356,52 Z" fill="#00c853" stroke="#fff" stroke-width="1"/>
+<path d="M389,34 L405,34 L397,52 Z" fill="#ffb300" stroke="#fff" stroke-width="1"/>
+<path d="M430,34 L446,34 L438,52 Z" fill="#0091ff" stroke="#fff" stroke-width="1"/>
+<path d="M471,34 L487,34 L479,52 Z" fill="#ffffff" stroke="#fff" stroke-width="1"/>
+<path d="M512,34 L528,34 L520,52 Z" fill="#e53935" stroke="#fff" stroke-width="1"/>
+<path d="M553,34 L569,34 L561,52 Z" fill="#00c853" stroke="#fff" stroke-width="1"/>
+<path d="M594,34 L610,34 L602,52 Z" fill="#ffb300" stroke="#fff" stroke-width="1"/>
+<path d="M635,34 L651,34 L643,52 Z" fill="#0091ff" stroke="#fff" stroke-width="1"/>
+<path d="M676,34 L692,34 L684,52 Z" fill="#ffffff" stroke="#fff" stroke-width="1"/>
+<path d="M717,34 L733,34 L725,52 Z" fill="#e53935" stroke="#fff" stroke-width="1"/>
+<path d="M758,34 L774,34 L766,52 Z" fill="#00c853" stroke="#fff" stroke-width="1"/>
+<path d="M799,34 L815,34 L807,52 Z" fill="#ffb300" stroke="#fff" stroke-width="1"/>
+<path d="M840,34 L856,34 L848,52 Z" fill="#0091ff" stroke="#fff" stroke-width="1"/>
+<path d="M881,34 L897,34 L889,52 Z" fill="#ffffff" stroke="#fff" stroke-width="1"/>
+<path d="M922,34 L938,34 L930,52 Z" fill="#e53935" stroke="#fff" stroke-width="1"/>
+<path d="M963,34 L979,34 L971,52 Z" fill="#00c853" stroke="#fff" stroke-width="1"/>
+<g transform="translate(70,70)"><circle r="26" fill="#ffeb3b" stroke="#ffb300" stroke-width="3"/><circle cx="-8" cy="-4" r="3" fill="#5d4037"/><circle cx="8" cy="-4" r="3" fill="#5d4037"/><path d="M-10,8 Q0,16 10,8" fill="none" stroke="#5d4037" stroke-width="2.5" stroke-linecap="round"/><g stroke="#ffb300" stroke-width="3" stroke-linecap="round"><line x1="0" y1="-34" x2="0" y2="-28"/><line x1="0" y1="28" x2="0" y2="34"/><line x1="-34" y1="0" x2="-28" y2="0"/><line x1="28" y1="0" x2="34" y2="0"/><line x1="-24" y1="-24" x2="-20" y2="-20"/><line x1="24" y1="-24" x2="20" y2="-20"/><line x1="-24" y1="24" x2="-20" y2="20"/><line x1="24" y1="24" x2="20" y2="20"/></g></g>
+<g class="map-cloud" style="--drift: 90s"><ellipse cx="200" cy="60" rx="34" ry="13" fill="#fff" opacity=".85"/><ellipse cx="225" cy="52" rx="26" ry="11" fill="#fff" opacity=".85"/></g>
+<g class="map-cloud" style="--drift: 120s; animation-delay: -40s"><ellipse cx="700" cy="80" rx="40" ry="14" fill="#fff" opacity=".8"/><ellipse cx="730" cy="72" rx="28" ry="11" fill="#fff" opacity=".8"/></g>
+<g class="map-cloud" style="--drift: 100s; animation-delay: -70s"><ellipse cx="480" cy="45" rx="30" ry="11" fill="#fff" opacity=".75"/></g>
+<g class="map-bird" style="--drift: 70s"><path d="M0,0 Q6,-7 12,0 Q18,-7 24,0" fill="none" stroke="#37474f" stroke-width="2.5" stroke-linecap="round"/></g>
+<g class="map-bird" style="--drift: 85s; animation-delay: -30s"><path d="M0,0 Q5,-6 10,0 Q15,-6 20,0" fill="none" stroke="#37474f" stroke-width="2" stroke-linecap="round"/></g>
+<g transform="translate(180,250) scale(0.9)"><path d="M0,-14 L8,2 L-8,2 Z" fill="#2e7d32"/><path d="M0,-8 L7,6 L-7,6 Z" fill="#388e3c"/><rect x="-1.5" y="6" width="3" height="5" fill="#5d4037"/></g>
+<g transform="translate(220,270) scale(1.05)"><path d="M0,-14 L8,2 L-8,2 Z" fill="#2e7d32"/><path d="M0,-8 L7,6 L-7,6 Z" fill="#388e3c"/><rect x="-1.5" y="6" width="3" height="5" fill="#5d4037"/></g>
+<g transform="translate(140,300) scale(1.2)"><path d="M0,-14 L8,2 L-8,2 Z" fill="#2e7d32"/><path d="M0,-8 L7,6 L-7,6 Z" fill="#388e3c"/><rect x="-1.5" y="6" width="3" height="5" fill="#5d4037"/></g>
+<g transform="translate(300,220) scale(0.9)"><path d="M0,-14 L8,2 L-8,2 Z" fill="#2e7d32"/><path d="M0,-8 L7,6 L-7,6 Z" fill="#388e3c"/><rect x="-1.5" y="6" width="3" height="5" fill="#5d4037"/></g>
+<g transform="translate(380,280) scale(1.2)"><path d="M0,-14 L8,2 L-8,2 Z" fill="#2e7d32"/><path d="M0,-8 L7,6 L-7,6 Z" fill="#388e3c"/><rect x="-1.5" y="6" width="3" height="5" fill="#5d4037"/></g>
+<g transform="translate(420,320) scale(0.9)"><path d="M0,-14 L8,2 L-8,2 Z" fill="#2e7d32"/><path d="M0,-8 L7,6 L-7,6 Z" fill="#388e3c"/><rect x="-1.5" y="6" width="3" height="5" fill="#5d4037"/></g>
+<g transform="translate(200,130) scale(1.2)"><path d="M0,-14 L8,2 L-8,2 Z" fill="#2e7d32"/><path d="M0,-8 L7,6 L-7,6 Z" fill="#388e3c"/><rect x="-1.5" y="6" width="3" height="5" fill="#5d4037"/></g>
+<g transform="translate(280,160) scale(1.05)"><path d="M0,-14 L8,2 L-8,2 Z" fill="#2e7d32"/><path d="M0,-8 L7,6 L-7,6 Z" fill="#388e3c"/><rect x="-1.5" y="6" width="3" height="5" fill="#5d4037"/></g>
+<g transform="translate(350,120) scale(1.2)"><path d="M0,-14 L8,2 L-8,2 Z" fill="#2e7d32"/><path d="M0,-8 L7,6 L-7,6 Z" fill="#388e3c"/><rect x="-1.5" y="6" width="3" height="5" fill="#5d4037"/></g>
+<g transform="translate(500,200) scale(1.2)"><path d="M0,-14 L8,2 L-8,2 Z" fill="#2e7d32"/><path d="M0,-8 L7,6 L-7,6 Z" fill="#388e3c"/><rect x="-1.5" y="6" width="3" height="5" fill="#5d4037"/></g>
+<g transform="translate(560,250) scale(1.2)"><path d="M0,-14 L8,2 L-8,2 Z" fill="#2e7d32"/><path d="M0,-8 L7,6 L-7,6 Z" fill="#388e3c"/><rect x="-1.5" y="6" width="3" height="5" fill="#5d4037"/></g>
+<g transform="translate(620,280) scale(1.2)"><path d="M0,-14 L8,2 L-8,2 Z" fill="#2e7d32"/><path d="M0,-8 L7,6 L-7,6 Z" fill="#388e3c"/><rect x="-1.5" y="6" width="3" height="5" fill="#5d4037"/></g>
+<g transform="translate(700,300) scale(1.05)"><path d="M0,-14 L8,2 L-8,2 Z" fill="#2e7d32"/><path d="M0,-8 L7,6 L-7,6 Z" fill="#388e3c"/><rect x="-1.5" y="6" width="3" height="5" fill="#5d4037"/></g>
+<g transform="translate(760,380) scale(1.05)"><path d="M0,-14 L8,2 L-8,2 Z" fill="#2e7d32"/><path d="M0,-8 L7,6 L-7,6 Z" fill="#388e3c"/><rect x="-1.5" y="6" width="3" height="5" fill="#5d4037"/></g>
+<g transform="translate(820,420) scale(1.05)"><path d="M0,-14 L8,2 L-8,2 Z" fill="#2e7d32"/><path d="M0,-8 L7,6 L-7,6 Z" fill="#388e3c"/><rect x="-1.5" y="6" width="3" height="5" fill="#5d4037"/></g>
+<g transform="translate(900,400) scale(0.9)"><path d="M0,-14 L8,2 L-8,2 Z" fill="#2e7d32"/><path d="M0,-8 L7,6 L-7,6 Z" fill="#388e3c"/><rect x="-1.5" y="6" width="3" height="5" fill="#5d4037"/></g>
+<g transform="translate(950,430) scale(1.2)"><path d="M0,-14 L8,2 L-8,2 Z" fill="#2e7d32"/><path d="M0,-8 L7,6 L-7,6 Z" fill="#388e3c"/><rect x="-1.5" y="6" width="3" height="5" fill="#5d4037"/></g>
+<g transform="translate(480,380) scale(0.9)"><path d="M0,-14 L8,2 L-8,2 Z" fill="#2e7d32"/><path d="M0,-8 L7,6 L-7,6 Z" fill="#388e3c"/><rect x="-1.5" y="6" width="3" height="5" fill="#5d4037"/></g>
+<g transform="translate(520,420) scale(1.05)"><path d="M0,-14 L8,2 L-8,2 Z" fill="#2e7d32"/><path d="M0,-8 L7,6 L-7,6 Z" fill="#388e3c"/><rect x="-1.5" y="6" width="3" height="5" fill="#5d4037"/></g>
+<g transform="translate(660,420) scale(0.9)"><path d="M0,-14 L8,2 L-8,2 Z" fill="#2e7d32"/><path d="M0,-8 L7,6 L-7,6 Z" fill="#388e3c"/><rect x="-1.5" y="6" width="3" height="5" fill="#5d4037"/></g>
+<g transform="translate(740,460) scale(1.2)"><path d="M0,-14 L8,2 L-8,2 Z" fill="#2e7d32"/><path d="M0,-8 L7,6 L-7,6 Z" fill="#388e3c"/><rect x="-1.5" y="6" width="3" height="5" fill="#5d4037"/></g>
+<g transform="translate(100,320) scale(1.05)"><path d="M0,-14 L8,2 L-8,2 Z" fill="#2e7d32"/><path d="M0,-8 L7,6 L-7,6 Z" fill="#388e3c"/><rect x="-1.5" y="6" width="3" height="5" fill="#5d4037"/></g>
+<g transform="translate(260,330) scale(1.2)"><path d="M0,-14 L8,2 L-8,2 Z" fill="#2e7d32"/><path d="M0,-8 L7,6 L-7,6 Z" fill="#388e3c"/><rect x="-1.5" y="6" width="3" height="5" fill="#5d4037"/></g>
+<g transform="translate(440,250) scale(1.2)"><path d="M0,-14 L8,2 L-8,2 Z" fill="#2e7d32"/><path d="M0,-8 L7,6 L-7,6 Z" fill="#388e3c"/><rect x="-1.5" y="6" width="3" height="5" fill="#5d4037"/></g>
+<g transform="translate(240,300)"><circle cx="0" cy="-3" r="2.2" fill="#ff4081"/><circle cx="3" cy="0" r="2.2" fill="#ff4081"/><circle cx="0" cy="3" r="2.2" fill="#ff4081"/><circle cx="-3" cy="0" r="2.2" fill="#ff4081"/><circle cx="0" cy="0" r="2" fill="#ffeb3b"/></g>
+<g transform="translate(330,290)"><circle cx="0" cy="-3" r="2.2" fill="#ffeb3b"/><circle cx="3" cy="0" r="2.2" fill="#ffeb3b"/><circle cx="0" cy="3" r="2.2" fill="#ffeb3b"/><circle cx="-3" cy="0" r="2.2" fill="#ffeb3b"/><circle cx="0" cy="0" r="2" fill="#ffeb3b"/></g>
+<g transform="translate(470,360)"><circle cx="0" cy="-3" r="2.2" fill="#ff7043"/><circle cx="3" cy="0" r="2.2" fill="#ff7043"/><circle cx="0" cy="3" r="2.2" fill="#ff7043"/><circle cx="-3" cy="0" r="2.2" fill="#ff7043"/><circle cx="0" cy="0" r="2" fill="#ffeb3b"/></g>
+<g transform="translate(590,380)"><circle cx="0" cy="-3" r="2.2" fill="#ba68c8"/><circle cx="3" cy="0" r="2.2" fill="#ba68c8"/><circle cx="0" cy="3" r="2.2" fill="#ba68c8"/><circle cx="-3" cy="0" r="2.2" fill="#ba68c8"/><circle cx="0" cy="0" r="2" fill="#ffeb3b"/></g>
+<g transform="translate(680,440)"><circle cx="0" cy="-3" r="2.2" fill="#ff4081"/><circle cx="3" cy="0" r="2.2" fill="#ff4081"/><circle cx="0" cy="3" r="2.2" fill="#ff4081"/><circle cx="-3" cy="0" r="2.2" fill="#ff4081"/><circle cx="0" cy="0" r="2" fill="#ffeb3b"/></g>
+<g transform="translate(780,430)"><circle cx="0" cy="-3" r="2.2" fill="#ffeb3b"/><circle cx="3" cy="0" r="2.2" fill="#ffeb3b"/><circle cx="0" cy="3" r="2.2" fill="#ffeb3b"/><circle cx="-3" cy="0" r="2.2" fill="#ffeb3b"/><circle cx="0" cy="0" r="2" fill="#ffeb3b"/></g>
+<g transform="translate(860,470)"><circle cx="0" cy="-3" r="2.2" fill="#ff7043"/><circle cx="3" cy="0" r="2.2" fill="#ff7043"/><circle cx="0" cy="3" r="2.2" fill="#ff7043"/><circle cx="-3" cy="0" r="2.2" fill="#ff7043"/><circle cx="0" cy="0" r="2" fill="#ffeb3b"/></g>
+<g transform="translate(160,280)"><circle cx="0" cy="-3" r="2.2" fill="#ba68c8"/><circle cx="3" cy="0" r="2.2" fill="#ba68c8"/><circle cx="0" cy="3" r="2.2" fill="#ba68c8"/><circle cx="-3" cy="0" r="2.2" fill="#ba68c8"/><circle cx="0" cy="0" r="2" fill="#ffeb3b"/></g>
+<g transform="translate(400,340)"><circle cx="0" cy="-3" r="2.2" fill="#ff4081"/><circle cx="3" cy="0" r="2.2" fill="#ff4081"/><circle cx="0" cy="3" r="2.2" fill="#ff4081"/><circle cx="-3" cy="0" r="2.2" fill="#ff4081"/><circle cx="0" cy="0" r="2" fill="#ffeb3b"/></g>
+<g transform="translate(540,330)"><circle cx="0" cy="-3" r="2.2" fill="#ffeb3b"/><circle cx="3" cy="0" r="2.2" fill="#ffeb3b"/><circle cx="0" cy="3" r="2.2" fill="#ffeb3b"/><circle cx="-3" cy="0" r="2.2" fill="#ffeb3b"/><circle cx="0" cy="0" r="2" fill="#ffeb3b"/></g>
+<g transform="translate(720,350)"><circle cx="0" cy="-3" r="2.2" fill="#ff7043"/><circle cx="3" cy="0" r="2.2" fill="#ff7043"/><circle cx="0" cy="3" r="2.2" fill="#ff7043"/><circle cx="-3" cy="0" r="2.2" fill="#ff7043"/><circle cx="0" cy="0" r="2" fill="#ffeb3b"/></g>
+<g transform="translate(900,460)"><circle cx="0" cy="-3" r="2.2" fill="#ba68c8"/><circle cx="3" cy="0" r="2.2" fill="#ba68c8"/><circle cx="0" cy="3" r="2.2" fill="#ba68c8"/><circle cx="-3" cy="0" r="2.2" fill="#ba68c8"/><circle cx="0" cy="0" r="2" fill="#ffeb3b"/></g>
 </svg>
-    <div id="danfe-flyer"><img id="danfe-img" src="assets/images/danfe/danfe_perched.png" alt="Danfe the Himalayan monal"></div>
+        <div id="danfe-flyer" class="idle"><img id="danfe-img" src="assets/images/danfe/danfe_perched.png" alt="Danfe the Himalayan monal"></div>
+      </div>
+    </div>
   </div>
 
   <div id="fact-card" hidden>
+    <div id="fact-visual" aria-hidden="true"></div>
+    <img id="fact-photo" hidden alt="">
     <h2 id="fact-name"></h2>
     <p class="fact-ne" id="fact-nepali"></p>
     <p class="fact-text" id="fact-text"></p>
@@ -140,8 +250,20 @@
     <h3>Nepal Explorer!</h3>
     <p>You stamped all 7 provinces and found every hidden place. Danfe is so proud of you!</p>
   </div>
+</div>
 
-  <a class="map-back" href="index.html">← Back home</a>
+<div id="completion" hidden>
+  <div class="confetti" id="confetti"></div>
+  <div class="completion-card">
+    <img class="comp-danfe" src="assets/images/danfe/danfe_wings_up.png" alt="Danfe celebrating">
+    <h2>🎉 Congratulations!</h2>
+    <p class="comp-sub">You explored <b>all of Nepal</b> — every pin and every hidden place! Danfe is so proud of you!</p>
+    <div class="comp-rewards" id="comp-rewards"></div>
+    <div class="comp-actions">
+      <a href="myghar.html">See my treasure in My Ghar →</a>
+      <button class="secondary" id="comp-close">Keep exploring</button>
+    </div>
+  </div>
 </div>
 <div id="toast" hidden></div>
 
@@ -161,10 +283,10 @@
   var TEST = isTestUnlock();
   var FREE = {};
   DATA.pins.forEach(function (p) { if (p.free) FREE[p.id] = true; });
+  var TOTAL_PLACES = DATA.pins.length + DATA.landmarks.length;
 
   var xpTotal = 0;
-  var found = {};      // id -> true (pins + landmarks found)
-  var heard = {};      // not used here; audio is per-place
+  var found = {};
   function loadState() {
     try { xpTotal = parseInt(localStorage.getItem('ghar.xp.total') || '0', 10) || 0; } catch (e) { xpTotal = 0; }
     try { found = JSON.parse(localStorage.getItem('ghar.map.found') || '{}'); } catch (e) { found = {}; }
@@ -175,6 +297,7 @@
       localStorage.setItem('ghar.map.found', JSON.stringify(found));
     } catch (e) {}
   }
+  function foundCount() { return Object.keys(found).length; }
   function isUnlocked() {
     if (TEST) return true;
     try { return window.GharAuth && GharAuth.isUnlocked && GharAuth.isUnlocked(); } catch (e) { return false; }
@@ -191,6 +314,18 @@
     t._timer = setTimeout(function () { t.hidden = true; }, ms || 3000);
   }
   function setXP() { document.getElementById('xp-total').textContent = xpTotal; }
+  function playDing() {
+    try {
+      var ctx = window.AudioContext ? new AudioContext() : null;
+      if (!ctx) return;
+      var o = ctx.createOscillator(), g = ctx.createGain();
+      o.frequency.value = 880; o.type = 'sine';
+      g.gain.setValueAtTime(0.15, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(); o.stop(ctx.currentTime + 0.6);
+    } catch (e) {}
+  }
 
   // ---- Build the pins and landmark markers inside the SVG ----
   var svg = document.getElementById('nepal-map');
@@ -222,7 +357,6 @@
       var t = el('text', { x: xy[0], y: xy[1] + 5, 'text-anchor': 'middle', 'font-size': locked ? 13 : 15 });
       t.textContent = label;
       g.appendChild(t);
-      // name label under the pin
       var name = el('text', { x: xy[0], y: xy[1] + 32, 'text-anchor': 'middle', 'font-size': 13, fill: '#3e2723', 'font-weight': 700 });
       name.textContent = place.data.name;
       g.appendChild(name);
@@ -242,12 +376,30 @@
     DATA.landmarks.forEach(function (l) { var m = markerFor(l.id); if (m) svg.appendChild(m); });
   }
 
+  // ---- Province tap: Danfe says the province name in Nepali ----
+  function onProvinceTap(provinceId) {
+    var prov = null;
+    DATA.provinces.forEach(function (p) { if (p.id === provinceId) prov = p; });
+    if (!prov) return;
+    // Say the name in Nepali (Som's cloned voice)
+    playAudio('assets/audio/map/' + provinceId + '_province_np.m4a');
+    var marks = DATA.landmarks.filter(function (l) { return l.province === provinceId; });
+    var foundCountProv = marks.filter(function (l) { return found[l.id]; }).length;
+    toast('🗺️ ' + prov.name + ' Province — ' + prov.nepali + ' • Capital: ' + prov.capital + ' (' + prov.capitalNepali + ') • ' + foundCountProv + ' / ' + marks.length + ' hidden places found', 5000);
+  }
+  function wireProvinceTaps() {
+    svg.querySelectorAll('.province').forEach(function (path) {
+      var pid = path.getAttribute('data-province');
+      if (!pid) return;
+      path.addEventListener('click', function () { onProvinceTap(pid); });
+    });
+  }
+
   // ---- Danfe flight ----
   var flyer = document.getElementById('danfe-flyer');
   var danfeImg = document.getElementById('danfe-img');
-  var stage = document.getElementById('map-stage');
   var flapTimer = null;
-  var danfePos = { x: 50, y: 12 }; // start: top centre, perched
+  var danfePos = { x: 50, y: 12 };
   function setDanfe(xPct, yPct) {
     flyer.style.left = xPct + '%';
     flyer.style.top = yPct + '%';
@@ -256,9 +408,8 @@
     var xy = POS[id];
     if (!xy) { done(); return; }
     var xPct = xy[0] / 10, yPct = xy[1] / 5.6;
-    // face the direction of travel
+    flyer.classList.remove('idle');
     flyer.classList.toggle('flip', xPct < danfePos.x);
-    // flap: cycle wings up / down
     var flap = false;
     clearInterval(flapTimer);
     danfeImg.src = 'assets/images/danfe/danfe_wings_up.png';
@@ -273,6 +424,7 @@
       danfeImg.src = 'assets/images/danfe/danfe_landing.png';
       setTimeout(function () {
         danfeImg.src = 'assets/images/danfe/danfe_perched.png';
+        flyer.classList.add('idle');
         done();
       }, 450);
     }, 1150);
@@ -284,6 +436,22 @@
     try { audio.pause(); audio.src = src; audio.play().catch(function () {}); } catch (e) {}
   }
 
+  // ---- Confetti (same pattern as the deck celebration) ----
+  function spawnConfetti() {
+    var box = document.getElementById('confetti');
+    box.innerHTML = '';
+    var colors = ['#ff5252', '#ffb300', '#00c853', '#0091ff', '#aa00ff', '#ff4081'];
+    for (var i = 0; i < 60; i++) {
+      var piece = document.createElement('div');
+      piece.className = 'confetti-piece';
+      piece.style.left = Math.random() * 100 + '%';
+      piece.style.background = colors[i % colors.length];
+      piece.style.animationDelay = (Math.random() * 0.4) + 's';
+      piece.style.animationDuration = (1.6 + Math.random() * 1.2) + 's';
+      box.appendChild(piece);
+    }
+  }
+
   // ---- Fact card ----
   var currentPlace = null;
   function showFact(id) {
@@ -292,6 +460,21 @@
     currentPlace = place;
     var d = place.data;
     var province = DATA.provinces.filter(function (p) { return p.id === d.province; })[0];
+    // Big pop-up visual: the place's picture for famous pins, big emoji for all
+    var visual = document.getElementById('fact-visual');
+    visual.textContent = d.visual || '📍';
+    visual.style.animation = 'none';
+    void visual.offsetWidth; // restart the pop animation
+    visual.style.animation = '';
+    var photo = document.getElementById('fact-photo');
+    if (place.kind === 'pin') {
+      photo.src = 'assets/images/map/' + id + '.png';
+      photo.alt = d.name;
+      photo.hidden = false;
+      photo.onerror = function () { photo.hidden = true; };
+    } else {
+      photo.hidden = true;
+    }
     document.getElementById('fact-name').textContent = (place.kind === 'pin' ? '📍 ' : '✨ ') + d.name;
     document.getElementById('fact-nepali').textContent = d.nepali || '';
     document.getElementById('fact-text').textContent = d.fact;
@@ -301,22 +484,30 @@
     if (already) { xpEl.textContent = '✓ Found — +5 XP earned'; xpEl.className = 'fact-xp earned'; }
     else { xpEl.textContent = '+5 XP when found'; xpEl.className = 'fact-xp'; }
     document.getElementById('fact-card').hidden = false;
-    // Play the name, then the fact
     playAudio(d.audioName);
     audio.onended = function () { playAudio(d.audioFact); audio.onended = null; };
-    // Award XP once
     if (!already) {
       found[id] = true;
       xpTotal += DATA.xp.perFound;
       saveState();
       setXP();
+      playDing();
       renderMarkers();
+      var stamped = checkProvinceStamp(d.province);
       renderPassport();
       syncProgress();
       setTimeout(function () {
         xpEl.textContent = '✓ Found! +5 XP';
         xpEl.className = 'fact-xp earned';
       }, 600);
+      // Last place on the whole map → the big completion celebration
+      if (foundCount() >= TOTAL_PLACES) {
+        setTimeout(showCompletion, 1200);
+      } else if (stamped) {
+        setTimeout(function () {
+          toast('🎉 ' + (DATA.provinces.filter(function (p) { return p.id === d.province; })[0] || {}).name + ' Province stamped in your passport!', 4000);
+        }, 900);
+      }
     }
   }
   document.getElementById('fact-hear').addEventListener('click', function () {
@@ -328,6 +519,13 @@
     document.getElementById('fact-card').hidden = true;
     try { audio.pause(); } catch (e) {}
   });
+
+  // ---- Province stamp check ----
+  function checkProvinceStamp(provinceId) {
+    var marks = DATA.landmarks.filter(function (l) { return l.province === provinceId; });
+    if (marks.length === 0) return false;
+    return marks.every(function (l) { return found[l.id]; });
+  }
 
   // ---- Tap handling ----
   function onPlaceTap(id) {
@@ -354,33 +552,81 @@
     var allStamped = true;
     DATA.provinces.forEach(function (prov) {
       var marks = DATA.landmarks.filter(function (l) { return l.province === prov.id; });
-      var foundCount = marks.filter(function (l) { return found[l.id]; }).length;
-      var stamped = marks.length > 0 && foundCount === marks.length;
+      var foundCountProv = marks.filter(function (l) { return found[l.id]; }).length;
+      var stamped = marks.length > 0 && foundCountProv === marks.length;
       if (!stamped) allStamped = false;
       var div = document.createElement('div');
       div.className = 'stamp' + (stamped ? ' stamped' : '') + (!isUnlocked() && !TEST ? ' locked' : '');
       div.innerHTML = '<div class="stamp-icon">' + (stamped ? '✅' : '🛂') + '</div>' +
         '<div class="stamp-name">' + prov.name + '</div>' +
-        '<div class="stamp-count">' + foundCount + ' / ' + marks.length + ' found</div>';
+        '<div class="stamp-count">' + foundCountProv + ' / ' + marks.length + ' found</div>';
       row.appendChild(div);
     });
-    var badge = document.getElementById('badge-card');
-    badge.hidden = !allStamped;
-    if (allStamped) {
-      // Explorer badge: also award a mystery treasure + XP once
+    document.getElementById('badge-card').hidden = !allStamped;
+  }
+
+  // ---- Completion celebration: congratulations + what you got + mystery treasure ----
+  function grantMysteryTreasure() {
+    // Same treasure pool as My Ghar (shop-data.js). Pick a random one not
+    // owned yet; if all 6 are owned, the box pays +10 XP instead.
+    try {
+      if (typeof MYSTERY === 'undefined' || typeof mysteryOwned !== 'function') return null;
+      var owned = mysteryOwned();
+      var remaining = MYSTERY.filter(function (t) { return owned.indexOf(t.id) === -1; });
+      var opened = parseInt(localStorage.getItem('ghar.mystery.opened') || '0', 10) || 0;
+      localStorage.setItem('ghar.mystery.opened', String(opened + 1));
+      if (remaining.length === 0) {
+        xpTotal += 10;
+        setXP();
+        saveState();
+        return { xpFallback: true };
+      }
+      var pick = remaining[Math.floor(Math.random() * remaining.length)];
+      owned.push(pick.id);
+      mysterySaveOwned(owned);
+      saveState();
       try {
-        var awarded = localStorage.getItem('ghar.map.explorerAwarded') === '1';
-        if (!awarded) {
-          localStorage.setItem('ghar.map.explorerAwarded', '1');
-          toast('🏔️ Nepal Explorer badge earned! +25 XP and a mystery treasure!', 5000);
-          xpTotal += 25;
-          setXP();
-          saveState();
-          syncProgress();
+        if (window.GharAuth && GharAuth.api && GharAuth.childId) {
+          GharAuth.api('/accounts/children/' + GharAuth.childId() + '/mystery', 'POST', { item_id: pick.id }).catch(function () {});
         }
       } catch (e) {}
-    }
+      return pick;
+    } catch (e) { return null; }
   }
+  function showCompletion() {
+    try {
+      if (localStorage.getItem('ghar.map.completed') === '1') return;
+      localStorage.setItem('ghar.map.completed', '1');
+    } catch (e) {}
+    var treasure = grantMysteryTreasure();
+    xpTotal += 25; // Explorer badge bonus
+    setXP();
+    saveState();
+    syncProgress();
+    var rewards = document.getElementById('comp-rewards');
+    var xpEarned = TOTAL_PLACES * DATA.xp.perFound;
+    var html = '';
+    html += '<div class="comp-reward">🏔️ Nepal Explorer badge <span>— all 7 provinces stamped!</span></div>';
+    html += '<div class="comp-reward">⭐ +' + xpEarned + ' XP <span>— ' + TOTAL_PLACES + ' places found × 5 XP</span></div>';
+    html += '<div class="comp-reward">⭐ +25 XP <span>— Explorer badge bonus</span></div>';
+    html += '<div class="comp-reward">🛂 7 / 7 provinces stamped <span>— your passport is full!</span></div>';
+    if (treasure && treasure.xpFallback) {
+      html += '<div class="comp-reward treasure">🎁 +10 XP <span>— you already own all 6 treasures, so the Mystery Box paid XP instead!</span></div>';
+    } else if (treasure) {
+      html += '<div class="comp-reward treasure">🎁 Mystery treasure: ' + treasure.emoji + ' ' + treasure.ne + ' (' + treasure.en + ') <span>— find it on the shelf in My Ghar!</span></div>';
+    }
+    rewards.innerHTML = html;
+    document.getElementById('completion').hidden = false;
+    spawnConfetti();
+    playDing();
+    setTimeout(playDing, 500);
+  }
+  document.getElementById('comp-close').addEventListener('click', function () {
+    document.getElementById('completion').hidden = true;
+  });
+  document.getElementById('completion').addEventListener('click', function (e) {
+    if (e.target.id === 'completion') document.getElementById('completion').hidden = true;
+  });
 
   // ---- Server sync (same pattern as the decks) ----
   function syncProgress() {
@@ -394,9 +640,11 @@
   setXP();
   setDanfe(danfePos.x, danfePos.y);
   renderMarkers();
+  wireProvinceTaps();
   renderPassport();
   if (!isUnlocked()) showPremiumNote();
-  // Keep the XP pill and markers fresh if the unlock state changes
+  // If the map was already completed in an earlier visit, the badge card
+  // shows — the big celebration only fires the first time you finish.
   try {
     if (window.GharAuth && GharAuth.pull) {
       GharAuth.pull().catch(function () {}).then(function () {

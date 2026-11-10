@@ -104,6 +104,7 @@ window.GHAR_MAP_DATA = {
   pins: [
     {
       id: "kathmandu",
+      visual: "🛕",
       name: "Kathmandu",
       nepali: "काठमाडौं",
       province: "bagmati",
@@ -114,6 +115,7 @@ window.GHAR_MAP_DATA = {
     },
     {
       id: "pokhara",
+      visual: "🏞️",
       name: "Pokhara",
       nepali: "पोखरा",
       province: "gandaki",
@@ -124,6 +126,7 @@ window.GHAR_MAP_DATA = {
     },
     {
       id: "chitwan",
+      visual: "🦏",
       name: "Chitwan National Park",
       nepali: "चितवन",
       province: "bagmati",
@@ -135,6 +138,7 @@ window.GHAR_MAP_DATA = {
     },
     {
       id: "rara",
+      visual: "💧",
       name: "Rara Lake",
       nepali: "रारा ताल",
       province: "karnali",
@@ -145,6 +149,7 @@ window.GHAR_MAP_DATA = {
     },
     {
       id: "janaki",
+      visual: "🛕",
       name: "Janaki Mandir",
       nepali: "जानकी मन्दिर",
       province: "madhesh",
@@ -155,6 +160,7 @@ window.GHAR_MAP_DATA = {
     },
     {
       id: "sagarmatha",
+      visual: "🏔️",
       name: "Sagarmatha / Mount Everest",
       nepali: "सगरमाथा",
       province: "koshi",
@@ -170,6 +176,7 @@ window.GHAR_MAP_DATA = {
     // Koshi (3)
     {
       id: "kanchenjunga",
+      visual: "🏔️",
       name: "Kanchenjunga",
       nepali: "कञ्चनजङ्घा",
       province: "koshi",
@@ -179,6 +186,7 @@ window.GHAR_MAP_DATA = {
     },
     {
       id: "ilam",
+      visual: "🍃",
       name: "Ilam Tea Gardens",
       nepali: "इलाम चिया बगान",
       province: "koshi",
@@ -188,6 +196,7 @@ window.GHAR_MAP_DATA = {
     },
     {
       id: "koshitappu",
+      visual: "🦆",
       name: "Koshi Tappu Wildlife Reserve",
       nepali: "कोशी टप्पु वन्यजन्तु आरक्ष",
       province: "koshi",
@@ -199,6 +208,7 @@ window.GHAR_MAP_DATA = {
     // Madhesh (3)
     {
       id: "janakpurponds",
+      visual: "🪷",
       name: "Janakpur's Ponds and Vivah Mandap",
       nepali: "जनकपुरका पोखरी र विवाह मण्डप",
       province: "madhesh",
@@ -208,6 +218,7 @@ window.GHAR_MAP_DATA = {
     },
     {
       id: "parsa",
+      visual: "🌳",
       name: "Parsa National Park",
       nepali: "पर्सा राष्ट्रिय निकुञ्ज",
       province: "madhesh",
@@ -217,6 +228,7 @@ window.GHAR_MAP_DATA = {
     },
     {
       id: "saptari",
+      visual: "🦆",
       name: "Koshi Tappu (Saptari side)",
       nepali: "सप्तरी कोशी टप्पु",
       province: "madhesh",
@@ -228,6 +240,7 @@ window.GHAR_MAP_DATA = {
     // Bagmati (3)
     {
       id: "swayambhu",
+      visual: "🐒",
       name: "Swayambhunath (Monkey Temple)",
       nepali: "स्वयम्भूनाथ",
       province: "bagmati",
@@ -237,6 +250,7 @@ window.GHAR_MAP_DATA = {
     },
     {
       id: "pashupatinath",
+      visual: "🛕",
       name: "Pashupatinath Temple",
       nepali: "पशुपतिनाथ मन्दिर",
       province: "bagmati",
@@ -246,6 +260,7 @@ window.GHAR_MAP_DATA = {
     },
     {
       id: "bhaktapur",
+      visual: "🏛️",
       name: "Bhaktapur Durbar Square",
       nepali: "भक्तपुर दरबार क्षेत्र",
       province: "bagmati",
@@ -256,6 +271,7 @@ window.GHAR_MAP_DATA = {
     // Gandaki (3)
     {
       id: "phewa",
+      visual: "🚣",
       name: "Phewa Lake",
       nepali: "फेवा ताल",
       province: "gandaki",
@@ -265,6 +281,7 @@ window.GHAR_MAP_DATA = {
     },
     {
       id: "annapurna",
+      visual: "🏔️",
       name: "Annapurna",
       nepali: "अन्नपूर्ण",
       province: "gandaki",
@@ -274,6 +291,7 @@ window.GHAR_MAP_DATA = {
     },
     {
       id: "muktinath",
+      visual: "🛕",
       name: "Muktinath Temple",
       nepali: "मुक्तिनाथ मन्दिर",
       province: "gandaki",
@@ -284,6 +302,7 @@ window.GHAR_MAP_DATA = {
     // Lumbini (3)
     {
       id: "lumbini",
+      visual: "🌸",
       name: "Lumbini Garden (Sacred Garden)",
       nepali: "लुम्बिनी बगैंचा",
       province: "lumbini",
@@ -293,6 +312,7 @@ window.GHAR_MAP_DATA = {
     },
     {
       id: "mayadevi",
+      visual: "🪷",
       name: "Maya Devi Temple and Ashoka Pillar",
       nepali: "मायादेवी मन्दिर",
       province: "lumbini",
@@ -302,6 +322,7 @@ window.GHAR_MAP_DATA = {
     },
     {
       id: "bardiya",
+      visual: "🐅",
       name: "Bardiya National Park",
       nepali: "बर्दिया राष्ट्रिय निकुञ्ज",
       province: "lumbini",
@@ -312,6 +333,7 @@ window.GHAR_MAP_DATA = {
     // Karnali (3)
     {
       id: "phoksundo",
+      visual: "💧",
       name: "Shey Phoksundo Lake",
       nepali: "शे-फोक्सुण्डो ताल",
       province: "karnali",
@@ -321,6 +343,7 @@ window.GHAR_MAP_DATA = {
     },
     {
       id: "karnaliriver",
+      visual: "🌊",
       name: "Karnali River",
       nepali: "कर्णाली नदी",
       province: "karnali",
@@ -330,6 +353,7 @@ window.GHAR_MAP_DATA = {
     },
     {
       id: "sinja",
+      visual: "🏛️",
       name: "Sinja Valley, Jumla",
       nepali: "सिन्जा उपत्यका",
       province: "karnali",
@@ -340,6 +364,7 @@ window.GHAR_MAP_DATA = {
     // Sudurpashchim (3)
     {
       id: "khaptad",
+      visual: "🦚",
       name: "Khaptad National Park",
       nepali: "खप्तड राष्ट्रिय निकुञ्ज",
       province: "sudurpashchim",
@@ -349,6 +374,7 @@ window.GHAR_MAP_DATA = {
     },
     {
       id: "shuklaphanta",
+      visual: "🦌",
       name: "Shuklaphanta National Park",
       nepali: "शुक्लाफाँटा राष्ट्रिय निकुञ्ज",
       province: "sudurpashchim",
@@ -358,6 +384,7 @@ window.GHAR_MAP_DATA = {
     },
     {
       id: "ghodaghodi",
+      visual: "🦢",
       name: "Ghodaghodi Lake",
       nepali: "घोडाघोडी ताल",
       province: "sudurpashchim",
