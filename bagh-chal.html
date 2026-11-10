@@ -72,7 +72,7 @@
   </div>
 </div>
 
-<script src="auth.js?v=8"></script>
+<script src="auth.js?v=9"></script>
 <script>
 // Bagh-Chal — the classic Nepali tiger-and-goats game, ported from the
 // app's BaghChalView.swift (which mirrors ~/workspace/baghchal/baghchal.py).
@@ -86,6 +86,33 @@ function asset(u) {
 }
 let xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
 function saveXP() { localStorage.setItem("ghar.xp.total", String(xp)); }
+
+// Cross-device sync for the daily paid-game cap. The server is the shared
+// record; local data is never wiped — latest day wins, same day takes the
+// max paid. Guest/offline: no-op, page works.
+function syncBaghchalGames() {
+  if (!window.GharAuth || !GharAuth.signedIn() || !GharAuth.childId()) return Promise.resolve();
+  return GharAuth.api("/accounts/children/" + GharAuth.childId() + "/games").then((g) => {
+    const entry = g && g.daily && g.daily.baghchal;
+    if (!entry || !entry.day) return;
+    const localDay = localStorage.getItem("ghar.baghchal.day") || "";
+    const localPaid = parseInt(localStorage.getItem("ghar.baghchal.paid") || "0", 10) || 0;
+    if (!localDay || entry.day > localDay) {
+      localStorage.setItem("ghar.baghchal.day", entry.day);
+      localStorage.setItem("ghar.baghchal.paid", String(entry.paid || 0));
+    } else if (entry.day === localDay) {
+      localStorage.setItem("ghar.baghchal.paid", String(Math.max(localPaid, entry.paid || 0)));
+    }
+  }).catch(() => {});
+}
+function pushBaghchalGames() {
+  if (!window.GharAuth || !GharAuth.signedIn() || !GharAuth.childId()) return;
+  GharAuth.api("/accounts/children/" + GharAuth.childId() + "/games", "POST", {
+    game: "baghchal",
+    day: localStorage.getItem("ghar.baghchal.day") || "",
+    paid: parseInt(localStorage.getItem("ghar.baghchal.paid") || "0", 10) || 0,
+  }).catch(() => {});
+}
 function todayString() {
   const d = new Date();
   return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
@@ -434,6 +461,7 @@ function checkDone() {
     if (paidCount < MAX_PAID_PER_DAY) {
       paidCount += 1;
       localStorage.setItem("ghar.baghchal.paid", String(paidCount));
+      pushBaghchalGames();
       xpEarned = (o === "goatsWin") ? 10 : 2;
       xp += xpEarned;
       saveXP();
@@ -720,8 +748,8 @@ const Music = (() => {
   };
 })();
 
-// Boot: pull server progress, then show the ready screen.
-GharAuth.pull().catch(() => {}).then(() => {
+// Boot: pull server progress, sync the games cap, then show the ready screen.
+GharAuth.pull().catch(() => {}).then(() => syncBaghchalGames()).then(() => {
   document.getElementById("xp-display").textContent = `⭐ ${xp} XP`;
   setMode(false);
   renderBoard();

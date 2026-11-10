@@ -52,7 +52,7 @@
   </div>
 </div>
 
-<script src="auth.js?v=8"></script>
+<script src="auth.js?v=9"></script>
 <script>
 function asset(u) {
   if (!u) return "";
@@ -67,6 +67,41 @@ let gamePaid = true; // whether this round pays XP (first 3 games a day)
 let xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
 let best = parseInt(localStorage.getItem(BEST_KEY) || "0", 10);
 function saveXP() { localStorage.setItem("ghar.xp.total", String(xp)); }
+
+// Cross-device sync for the daily paid-game cap + best score. The server
+// is the shared record; local data is never wiped — latest day wins, same
+// day takes the max paid, best is max. Guest/offline: no-op, page works.
+function syncBalloonGames() {
+  if (!window.GharAuth || !GharAuth.signedIn() || !GharAuth.childId()) return Promise.resolve();
+  return GharAuth.api("/accounts/children/" + GharAuth.childId() + "/games").then(function (g) {
+    var entry = g && g.daily && g.daily.balloon;
+    var localDay = localStorage.getItem(PAID_DAY_KEY) || "";
+    var localPaid = parseInt(localStorage.getItem(PAID_COUNT_KEY) || "0", 10) || 0;
+    if (entry && entry.day) {
+      if (!localDay || entry.day > localDay) {
+        localStorage.setItem(PAID_DAY_KEY, entry.day);
+        localStorage.setItem(PAID_COUNT_KEY, String(entry.paid || 0));
+      } else if (entry.day === localDay) {
+        localStorage.setItem(PAID_COUNT_KEY, String(Math.max(localPaid, entry.paid || 0)));
+      }
+    }
+    var serverBest = g && g.best && g.best.balloon;
+    if (typeof serverBest === "number" && serverBest > best) {
+      best = serverBest;
+      localStorage.setItem(BEST_KEY, String(best));
+      document.getElementById("ready-best").textContent = "Best: " + best + " pops";
+    }
+  }).catch(function () {});
+}
+function pushBalloonGames() {
+  if (!window.GharAuth || !GharAuth.signedIn() || !GharAuth.childId()) return;
+  GharAuth.api("/accounts/children/" + GharAuth.childId() + "/games", "POST", {
+    game: "balloon",
+    day: localStorage.getItem(PAID_DAY_KEY) || "",
+    paid: parseInt(localStorage.getItem(PAID_COUNT_KEY) || "0", 10) || 0,
+    best: best,
+  }).catch(function () {});
+}
 
 // Balloon Pop, matching the app (BalloonPopView.swift):
 // hear the Nepali word, pop the balloon showing it. 60-second rounds.
@@ -269,6 +304,7 @@ function startGame() {
   if (gamePaid) {
     paidCount += 1;
     localStorage.setItem(PAID_COUNT_KEY, String(paidCount));
+    pushBalloonGames();
   }
   balloons.forEach(b => { if (b.el && b.el.parentNode) b.el.parentNode.removeChild(b.el); });
   balloons = [];
@@ -305,6 +341,7 @@ function endGame() {
     best = score;
     localStorage.setItem(BEST_KEY, String(best));
   }
+  pushBalloonGames();
   GharAuth.pushTotals().catch(() => {});
   if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
   fanfare();
@@ -325,7 +362,7 @@ document.getElementById("replay-btn").addEventListener("click", () => playWord(t
 // Boot: pull server progress, then load the pack and keep words that
 // have BOTH a picture and audio (hear it, find the picture).
 document.getElementById("ready-best").textContent = best > 0 ? ("Best: " + best + " pops") : "";
-GharAuth.pull().catch(() => {}).then(() => fetch("data/nepal-v1.json"))
+GharAuth.pull().catch(() => {}).then(() => syncBalloonGames()).then(() => fetch("data/nepal-v1.json"))
   .then(r => r.json())
   .then(pack => {
     playable = pack.decks.flatMap(d => d.words).filter(w => w.image && w.has_audio);

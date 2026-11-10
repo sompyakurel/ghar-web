@@ -127,7 +127,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
 </div>
 <div id="toast"></div>
 
-<script src="auth.js?v=8"></script>
+<script src="auth.js?v=9"></script>
 <script src="assets/js/chess.js"></script>
 <script>
 (function () {
@@ -540,6 +540,33 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
     return false;
   }
 
+  // Cross-device sync for the daily paid-game cap. The server is the
+  // shared record; local data is never wiped — latest day wins, same day
+  // takes the max paid. Guest/offline: no-op, page works.
+  function syncChessGames() {
+    if (!window.GharAuth || !GharAuth.signedIn() || !GharAuth.childId()) return;
+    GharAuth.api('/accounts/children/' + GharAuth.childId() + '/games').then(function (g) {
+      var entry = g && g.daily && g.daily.chess;
+      if (!entry || !entry.day) return;
+      var localDay = localStorage.getItem('ghar.chess.day') || '';
+      var localPaid = parseInt(localStorage.getItem('ghar.chess.paid') || '0', 10) || 0;
+      if (!localDay || entry.day > localDay) {
+        localStorage.setItem('ghar.chess.day', entry.day);
+        localStorage.setItem('ghar.chess.paid', String(entry.paid || 0));
+      } else if (entry.day === localDay) {
+        localStorage.setItem('ghar.chess.paid', String(Math.max(localPaid, entry.paid || 0)));
+      }
+    }).catch(function () {});
+  }
+  function pushChessGames() {
+    if (!window.GharAuth || !GharAuth.signedIn() || !GharAuth.childId()) return;
+    GharAuth.api('/accounts/children/' + GharAuth.childId() + '/games', 'POST', {
+      game: 'chess',
+      day: localStorage.getItem('ghar.chess.day') || '',
+      paid: parseInt(localStorage.getItem('ghar.chess.paid') || '0', 10) || 0
+    }).catch(function () {});
+  }
+
   function awardXp(humanWon) {
     if (!mode || mode === '2p' || xpPaid) return;
     xpPaid = true;
@@ -553,6 +580,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
     localStorage.setItem('ghar.xp.total', String(total));
     localStorage.setItem('ghar.chess.day', day);
     localStorage.setItem('ghar.chess.paid', String(paid + 1));
+    pushChessGames();
     toast(humanWon === true ? '🏆 You win! +' + xp + ' XP' : '🤝 Game over! +' + xp + ' XP', 4000);
     if (window.GharAuth) {
       GharAuth.pushTotals().catch(function () {});
@@ -715,6 +743,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
   applyChessTheme(chessTheme);
 
   if (window.GharAuth) GharAuth.pull().catch(function () {});
+  syncChessGames();
 })();
 </script>
 </body>

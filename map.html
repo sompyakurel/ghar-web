@@ -6,7 +6,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://backend-patient-wave-3724.fly.dev https://api.open-meteo.com https://unpkg.com https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self';">
 <title>Danfe's Map of Nepal — Ghar</title>
 <link rel="stylesheet" href="style.css?v=29">
-<script src="auth.js?v=8"></script>
+<script src="auth.js?v=9"></script>
 <script src="shop-data.js"></script>
 <script src="data/map-data.js"></script>
 <style>
@@ -476,6 +476,7 @@
       var stamped = checkProvinceStamp(d.province);
       renderPassport();
       syncProgress();
+      pushMapPlace(id);
       setTimeout(function () {
         xpEl.textContent = '✓ Found! +5 XP';
         xpEl.className = 'fact-xp earned';
@@ -587,6 +588,7 @@
     setXP();
     saveState();
     syncProgress();
+    pushMapExplorer();
     var rewards = document.getElementById('comp-rewards');
     var xpEarned = TOTAL_PLACES * DATA.xp.perFound;
     var html = '';
@@ -619,6 +621,43 @@
     } catch (e) {}
   }
 
+  // ---- Cross-device map sync ----
+  // The server remembers which places this child already found (and
+  // whether the Explorer badge was granted), so a place found on another
+  // device can't pay +5 XP again here. Merge only — never wipe local.
+  // The server's explorer_awarded maps to the local ghar.map.completed
+  // flag, which is what showCompletion() already guards on.
+  function pullMapState() {
+    try {
+      if (!window.GharAuth || !GharAuth.signedIn || !GharAuth.signedIn() || !GharAuth.childId || !GharAuth.childId()) return Promise.resolve();
+      return GharAuth.api('/accounts/children/' + GharAuth.childId() + '/map', 'GET').then(function (m) {
+        if (!m) return;
+        var changed = false;
+        if (Array.isArray(m.found)) {
+          m.found.forEach(function (id) {
+            if (!found[id]) { found[id] = true; changed = true; }
+          });
+        }
+        if (m.explorer_awarded) {
+          try { localStorage.setItem('ghar.map.completed', '1'); } catch (e) {}
+        }
+        if (changed) saveState();
+      }).catch(function () {});
+    } catch (e) { return Promise.resolve(); }
+  }
+  function pushMapPlace(id) {
+    try {
+      if (!window.GharAuth || !GharAuth.signedIn || !GharAuth.signedIn() || !GharAuth.childId || !GharAuth.childId()) return;
+      GharAuth.api('/accounts/children/' + GharAuth.childId() + '/map', 'POST', { place_id: id }).catch(function () {});
+    } catch (e) {}
+  }
+  function pushMapExplorer() {
+    try {
+      if (!window.GharAuth || !GharAuth.signedIn || !GharAuth.signedIn() || !GharAuth.childId || !GharAuth.childId()) return;
+      GharAuth.api('/accounts/children/' + GharAuth.childId() + '/map', 'POST', { explorer_awarded: true }).catch(function () {});
+    } catch (e) {}
+  }
+
   // ---- Init ----
   loadState();
   setXP();
@@ -633,6 +672,12 @@
     if (window.GharAuth && GharAuth.pull) {
       GharAuth.pull().catch(function () {}).then(function () {
         if (GharAuth.refreshUnlock) return GharAuth.refreshUnlock().catch(function () {});
+      }).then(function () {
+        // Cross-device map sync: pull the places this child already found
+        // on another device, so they can't pay +5 XP again here. Runs
+        // before the markers render, so the merged set is what the
+        // found-check in showFact() consults.
+        return pullMapState();
       }).then(function () {
         renderMarkers();
         renderPassport();

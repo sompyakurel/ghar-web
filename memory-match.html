@@ -106,7 +106,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
 </div>
 <div id="toast"></div>
 
-<script src="auth.js?v=8"></script>
+<script src="auth.js?v=9"></script>
 <script>
 (function () {
   // ---- Sound & music (Web Audio, synthesized — no files, no copyright) ----
@@ -388,6 +388,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
     if (!best || moves < best) {
       localStorage.setItem(bestKey, String(moves));
       bestMsg = '🏆 New best for ' + DIFFS[diff].label + '!';
+      pushMemoryGames({ difficulty: diff, best: moves });
     } else {
       bestMsg = 'Best for ' + DIFFS[diff].label + ': ' + best + ' moves';
     }
@@ -409,6 +410,48 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
     }
   }
 
+  // Cross-device sync for the daily paid-game cap + per-difficulty best
+  // scores. The server is the shared record; local data is never wiped —
+  // latest day wins, same day takes the max paid. Best scores are
+  // per-difficulty (ghar.memory.best.<diff>) and lower-is-better (fewest
+  // moves), so the server min-merges them. Guest/offline: no-op.
+  function syncMemoryGames() {
+    if (!window.GharAuth || !GharAuth.signedIn() || !GharAuth.childId()) return;
+    GharAuth.api('/accounts/children/' + GharAuth.childId() + '/games').then(function (g) {
+      var entry = g && g.daily && g.daily.memory;
+      if (entry && entry.day) {
+        var localDay = localStorage.getItem('ghar.memory.day') || '';
+        var localPaid = parseInt(localStorage.getItem('ghar.memory.paid') || '0', 10) || 0;
+        if (!localDay || entry.day > localDay) {
+          localStorage.setItem('ghar.memory.day', entry.day);
+          localStorage.setItem('ghar.memory.paid', String(entry.paid || 0));
+        } else if (entry.day === localDay) {
+          localStorage.setItem('ghar.memory.paid', String(Math.max(localPaid, entry.paid || 0)));
+        }
+      }
+      // Best scores are per difficulty (easy/med/hard) and lower-is-better
+      // (fewest moves) — the server min-merges them, so only take a server
+      // best when the local one is unset or worse (higher).
+      var byDiff = (g && g.best_by_diff && g.best_by_diff.memory) || {};
+      ['easy', 'med', 'hard'].forEach(function (d) {
+        if (byDiff[d] === undefined || byDiff[d] === null) return;
+        var key = 'ghar.memory.best.' + d;
+        var local = parseInt(localStorage.getItem(key) || '0', 10) || 0;
+        if (!local || byDiff[d] < local) localStorage.setItem(key, String(byDiff[d]));
+      });
+    }).catch(function () {});
+  }
+  function pushMemoryGames(extra) {
+    if (!window.GharAuth || !GharAuth.signedIn() || !GharAuth.childId()) return;
+    var body = {
+      game: 'memory',
+      day: localStorage.getItem('ghar.memory.day') || '',
+      paid: parseInt(localStorage.getItem('ghar.memory.paid') || '0', 10) || 0
+    };
+    if (extra) for (var k in extra) body[k] = extra[k];
+    GharAuth.api('/accounts/children/' + GharAuth.childId() + '/games', 'POST', body).catch(function () {});
+  }
+
   function awardXp(sharp) {
     if (xpPaid) return 0;
     xpPaid = true;
@@ -422,6 +465,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
     localStorage.setItem('ghar.xp.total', String(total));
     localStorage.setItem('ghar.memory.day', day);
     localStorage.setItem('ghar.memory.paid', String(paid + 1));
+    pushMemoryGames();
     if (window.GharAuth) {
       GharAuth.pushTotals().catch(function () {});
       if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(function () {});
@@ -490,6 +534,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
   });
 
   if (window.GharAuth) GharAuth.pull().catch(function () {});
+  syncMemoryGames();
 })();
 </script>
 </body>

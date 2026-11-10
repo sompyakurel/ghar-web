@@ -70,7 +70,7 @@
 
   <p class="error" id="error" hidden></p>
 </div>
-<script src="auth.js?v=8"></script>
+<script src="auth.js?v=9"></script>
 <script>
 const LB_API = "https://backend-patient-wave-3724.fly.dev/leaderboard";
 const CODE_KEY = "ghar.lb.code";
@@ -105,6 +105,27 @@ function showError(msg) {
 }
 function code() { return (localStorage.getItem(CODE_KEY) || "").trim().toUpperCase(); }
 function nickname() { return (localStorage.getItem(NICK_KEY) || "").trim(); }
+// Cross-device leaderboard identity: the server remembers which group +
+// nickname this child uses. On load, fill in any blanks from the server
+// (local wins when set). On create/join, push the new identity up.
+async function pullIdentity() {
+  if (!window.GharAuth || !GharAuth.signedIn() || !GharAuth.childId()) return;
+  try {
+    const id = await GharAuth.api("/accounts/children/" + GharAuth.childId() + "/leaderboard-identity");
+    if (!id) return;
+    if (!code() && id.group_code) localStorage.setItem(CODE_KEY, id.group_code);
+    if (!nickname() && id.nickname) localStorage.setItem(NICK_KEY, id.nickname);
+    if (!(localStorage.getItem(NAME_KEY) || "").trim() && id.group_name) localStorage.setItem(NAME_KEY, id.group_name);
+  } catch (e) { /* guest or offline — local identity stands */ }
+}
+function pushIdentity() {
+  if (!window.GharAuth || !GharAuth.signedIn() || !GharAuth.childId()) return;
+  GharAuth.api("/accounts/children/" + GharAuth.childId() + "/leaderboard-identity", "POST", {
+    group_code: code() || undefined,
+    nickname: nickname() || undefined,
+    group_name: (localStorage.getItem(NAME_KEY) || "").trim() || undefined,
+  }).catch(() => {});
+}
 function myStats() {
   let missions = 0;
   try {
@@ -175,6 +196,7 @@ async function createGroup() {
     const d = await r.json();
     localStorage.setItem(CODE_KEY, d.code);
     localStorage.setItem(NAME_KEY, d.name || "");
+    pushIdentity();
     document.getElementById("created").hidden = false;
     document.getElementById("created-code").textContent = d.code;
   } catch (e) {
@@ -200,6 +222,7 @@ async function joinGroup() {
     localStorage.setItem(NICK_KEY, nick);
     localStorage.setItem(CODE_KEY, d.code);
     localStorage.setItem(NAME_KEY, d.name || "");
+    pushIdentity();
     enterBoard();
   } catch (e) {
     showError(e.message || "Could not join the group.");
@@ -326,6 +349,10 @@ document.getElementById("leave-group").addEventListener("click", () => {
   if (!confirm("Leave this group? Your score stays on the board unless you delete it.")) return;
   localStorage.removeItem(CODE_KEY);
   localStorage.removeItem(NAME_KEY);
+  // Clear the server identity too, or a new device would rejoin the old group.
+  if (window.GharAuth && GharAuth.signedIn() && GharAuth.childId()) {
+    GharAuth.api("/accounts/children/" + GharAuth.childId() + "/leaderboard-identity", "DELETE").catch(() => {});
+  }
   document.getElementById("board").hidden = true;
   renderSetup();
 });
@@ -333,10 +360,13 @@ document.getElementById("save-nickname").addEventListener("click", () => {
   const nick = (document.getElementById("nickname").value || "").trim();
   if (!nick) { showError("Pick a nickname first — something fun, not your real name."); return; }
   localStorage.setItem(NICK_KEY, nick);
+  pushIdentity();
   renderPlayers();
 });
 
-if (code()) enterBoard(); else renderSetup();
+// Pull the server identity first (a new device rejoins the same group),
+// then follow the normal flow: board when a code is set, setup otherwise.
+pullIdentity().then(() => { if (code()) enterBoard(); else renderSetup(); });
 </script>
 <div class="prayer-bunting prayer-bottom" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span></div></div>
 </body>

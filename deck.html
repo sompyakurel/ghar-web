@@ -16,7 +16,7 @@
   <div id="content"></div>
   <p class="error" id="error" hidden>Couldn't load this deck.</p>
 </div>
-<script src="auth.js?v=8"></script>
+<script src="auth.js?v=9"></script>
 <div class="celebration" id="celebration" hidden>
   <div class="confetti" id="confetti"></div>
   <div class="celebration-card">
@@ -217,7 +217,31 @@ function loadHeard() {
 }
 let heard = loadHeard();
 function saveHeard() { localStorage.setItem(storeKey, JSON.stringify([...heard])); }
-GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => false)).then(() => fetch("data/nepal-v1.json"))
+// Cross-device deck-rewards sync: the server remembers which decks already
+// paid the +25 completion bonus, so a finished deck re-opened on another
+// device can't pay it again. Merge only — never wipe local. Pulled in the
+// init chain below, before the pack loads, so the merged set is what
+// evaluateCompletion() consults.
+async function pullDeckRewards() {
+  try {
+    if (!window.GharAuth || !GharAuth.signedIn || !GharAuth.signedIn() || !GharAuth.childId || !GharAuth.childId()) return;
+    const r = await GharAuth.api("/accounts/children/" + GharAuth.childId() + "/deck-rewards", "GET");
+    if (!r || !Array.isArray(r.rewarded)) return;
+    let rewarded;
+    try { rewarded = new Set(JSON.parse(localStorage.getItem(REWARDED_KEY) || "[]")); }
+    catch (e) { rewarded = new Set(); }
+    let changed = false;
+    r.rewarded.forEach(id => { if (!rewarded.has(id)) { rewarded.add(id); changed = true; } });
+    if (changed) localStorage.setItem(REWARDED_KEY, JSON.stringify([...rewarded]));
+  } catch (e) {}
+}
+function pushDeckReward(id) {
+  try {
+    if (!window.GharAuth || !GharAuth.signedIn || !GharAuth.signedIn() || !GharAuth.childId || !GharAuth.childId()) return;
+    GharAuth.api("/accounts/children/" + GharAuth.childId() + "/deck-rewards", "POST", { deck_id: id }).catch(() => {});
+  } catch (e) {}
+}
+GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => false)).then(() => pullDeckRewards()).then(() => fetch("data/nepal-v1.json"))
   .then(r => { if (!r.ok) throw new Error("load failed"); return r.json(); })
   .then(pack => {
     const deck = pack.decks.find(d => d.id === deckId);
@@ -342,6 +366,7 @@ GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => 
       if (rewarded.has(deckId)) return;
       rewarded.add(deckId);
       localStorage.setItem(REWARDED_KEY, JSON.stringify([...rewarded]));
+      pushDeckReward(deckId);
       const xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10) + COMPLETION_BONUS;
       localStorage.setItem("ghar.xp.total", String(xp));
       GharAuth.push(deckId).catch(() => {});

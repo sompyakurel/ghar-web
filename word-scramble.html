@@ -121,7 +121,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
 </div>
 <div id="toast"></div>
 
-<script src="auth.js?v=8"></script>
+<script src="auth.js?v=9"></script>
 <script>
 (function () {
   // ---- Sound & music (Web Audio, synthesized — no files, no copyright) ----
@@ -416,6 +416,47 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
     }, 600);
   }
 
+  // Cross-device sync for the daily XP cap. The server is the shared
+  // record; local data is never wiped — latest day wins, same day takes
+  // the max xp_today. This game tracks XP used today, not a paid-game
+  // count, so paid is omitted. Guest/offline: no-op, page works.
+  // Best scores are per-difficulty (ghar.scramble.best.<diff>),
+  // most correct wins — the server max-merges them per difficulty.
+  function syncScrambleGames() {
+    if (!window.GharAuth || !GharAuth.signedIn() || !GharAuth.childId()) return;
+    GharAuth.api('/accounts/children/' + GharAuth.childId() + '/games').then(function (g) {
+      var entry = g && g.daily && g.daily.scramble;
+      if (entry && entry.day) {
+        var localDay = localStorage.getItem('ghar.scramble.day') || '';
+        var localUsed = parseInt(localStorage.getItem('ghar.scramble.xpToday') || '0', 10) || 0;
+        if (!localDay || entry.day > localDay) {
+          localStorage.setItem('ghar.scramble.day', entry.day);
+          localStorage.setItem('ghar.scramble.xpToday', String(entry.xp_today || 0));
+        } else if (entry.day === localDay) {
+          localStorage.setItem('ghar.scramble.xpToday', String(Math.max(localUsed, entry.xp_today || 0)));
+        }
+      }
+      // Best scores are per difficulty (easy/med/hard), most correct wins.
+      var byDiff = (g && g.best_by_diff && g.best_by_diff.scramble) || {};
+      ['easy', 'med', 'hard'].forEach(function (d) {
+        if (byDiff[d] === undefined || byDiff[d] === null) return;
+        var key = 'ghar.scramble.best.' + d;
+        var local = parseInt(localStorage.getItem(key) || '0', 10) || 0;
+        if (byDiff[d] > local) localStorage.setItem(key, String(byDiff[d]));
+      });
+    }).catch(function () {});
+  }
+  function pushScrambleGames(extra) {
+    if (!window.GharAuth || !GharAuth.signedIn() || !GharAuth.childId()) return;
+    var body = {
+      game: 'scramble',
+      day: localStorage.getItem('ghar.scramble.day') || '',
+      xp_today: parseInt(localStorage.getItem('ghar.scramble.xpToday') || '0', 10) || 0
+    };
+    if (extra) for (var k in extra) body[k] = extra[k];
+    GharAuth.api('/accounts/children/' + GharAuth.childId() + '/games', 'POST', body).catch(function () {});
+  }
+
   function awardXp(base) {
     var today = new Date().toISOString().slice(0, 10);
     var day = localStorage.getItem('ghar.scramble.day');
@@ -428,6 +469,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
     localStorage.setItem('ghar.xp.total', String(total));
     localStorage.setItem('ghar.scramble.day', day);
     localStorage.setItem('ghar.scramble.xpToday', String(used + xp));
+    pushScrambleGames();
     if (window.GharAuth) {
       GharAuth.pushTotals().catch(function () {});
       if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(function () {});
@@ -483,6 +525,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
     if (correct > best) {
       localStorage.setItem(bestKey, String(correct));
       bestMsg = '🏆 New best for ' + (diff === 'easy' ? 'Easy' : diff === 'med' ? 'Medium' : 'Hard') + '!';
+      pushScrambleGames({ difficulty: diff, best: correct });
     } else {
       bestMsg = 'Best for ' + (diff === 'easy' ? 'Easy' : diff === 'med' ? 'Medium' : 'Hard') + ': ' + best + ' of ' + ROUNDS;
     }
@@ -579,6 +622,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
   });
 
   if (window.GharAuth) GharAuth.pull().catch(function () {});
+  syncScrambleGames();
 })();
 </script>
 </body>

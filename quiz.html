@@ -16,7 +16,7 @@
   <div id="content"></div>
   <p class="error" id="error" hidden>Couldn't load the quiz.</p>
 </div>
-<script src="auth.js?v=8"></script>
+<script src="auth.js?v=9"></script>
 <script>
 const TIERS = { beginner: "🌱 Beginner", intermediate: "🌿 Intermediate", hard: "🌳 Hard", teen: "🔥 Teen" };
 function isTestUnlock() {
@@ -42,6 +42,23 @@ function saveQuizStats() {
   localStorage.setItem("ghar.quiz.correctTotal", String(quizCorrect));
   localStorage.setItem("ghar.quiz.streak", String(quizStreak));
   localStorage.setItem("ghar.quiz.streakBest", String(quizStreakBest));
+}
+// Cross-device quiz stats: the server keeps the best streak and total
+// correct answers per child. Pull on load and take the max — never wipe
+// local progress. (The current streak and last section stay on this
+// device; only the best + total sync.)
+async function pullQuizStats() {
+  if (!GharAuth.signedIn() || !GharAuth.childId()) return;
+  try {
+    const s = await GharAuth.api("/accounts/children/" + GharAuth.childId() + "/quiz-stats");
+    if (!s) return;
+    const best = Math.max(quizStreakBest, parseInt(s.streak_best || "0", 10) || 0);
+    const total = Math.max(quizCorrect, parseInt(s.correct_total || "0", 10) || 0);
+    localStorage.setItem("ghar.quiz.streakBest", String(best));
+    localStorage.setItem("ghar.quiz.correctTotal", String(total));
+    quizStreakBest = best;
+    quizCorrect = total;
+  } catch (e) { /* guest or offline — local stats stand */ }
 }
 const player = new Audio();
 let audioCtx = null;
@@ -233,6 +250,10 @@ function answer(i, btn) {
     quizStreak++;
     if (quizStreak > quizStreakBest) quizStreakBest = quizStreak;
     saveQuizStats();
+    // Sync the new best + total to the server (max-merged there too).
+    if (GharAuth.signedIn() && GharAuth.childId()) {
+      GharAuth.api("/accounts/children/" + GharAuth.childId() + "/quiz-stats", "POST", { streak_best: quizStreakBest, correct_total: quizCorrect }).catch(() => {});
+    }
     // Daily Quiz Blitz: 5 correct answers in one day finishes the daily
     // challenge (+15 XP) and keeps the streak alive. (Matches the app.)
     let blitz = false;
@@ -266,7 +287,7 @@ function answer(i, btn) {
     fb.className = "quiz-feedback bad";
   }
 }
-GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => false)).then(() => fetch("data/nepal-v1.json"))
+GharAuth.pull().catch(() => {}).then(() => pullQuizStats().catch(() => {})).then(() => GharAuth.refreshUnlock().catch(() => false)).then(() => fetch("data/nepal-v1.json"))
   .then(r => { if (!r.ok) throw new Error("load failed"); return r.json(); })
   .then(p => {
     xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);

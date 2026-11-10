@@ -97,6 +97,9 @@ const GharAuth = {
     if (mergedXp !== (p.xp || 0) || mergedQuiz !== (p.quiz_free_used || 0)) {
       try { await this.pushTotals(); } catch (e) {}
     }
+    // The streak + daily challenge sync alongside progress, so every page
+    // that pulls progress also pulls the streak (added 2026-11-09).
+    try { if (window.GharStreak) await GharStreak.pull(); } catch (e) {}
     return true;
   },
   // Push one deck's heard list plus the child's XP and quiz counter up to
@@ -215,6 +218,7 @@ const GharStreak = {
     const newCount = (lastDay === this.yesterdayString()) ? this.count() + 1 : 1;
     localStorage.setItem("ghar.streak.count", String(newCount));
     localStorage.setItem("ghar.streak.lastDay", today);
+    this.push().catch(() => {});
     return newCount;
   },
   dailyDoneToday() { return (localStorage.getItem("ghar.daily.done") || "") === this.todayString(); },
@@ -223,7 +227,7 @@ const GharStreak = {
   // before the daily challenge existed. Used so the challenge shows
   // completed for work already done today.
   missionDoneToday() { return (localStorage.getItem("ghar.streak.lastDay") || "") === this.todayString(); },
-  markDailyDone() { localStorage.setItem("ghar.daily.done", this.todayString()); },
+  markDailyDone() { localStorage.setItem("ghar.daily.done", this.todayString()); this.push().catch(() => {}); },
   // 9 rotating challenges (3 per format), picked by day-of-year % 9.
   // Matches the app's DailyChallenge.today() exactly.
   CHALLENGES: [
@@ -251,6 +255,7 @@ const GharStreak = {
     }
     const n = this.quizTodayCount() + 1;
     localStorage.setItem("ghar.daily.quizCount", String(n));
+    this.push().catch(() => {});
     return n;
   },
   // True if this solve just finished today's Quiz Blitz. Marks it done
@@ -288,6 +293,57 @@ const GharStreak = {
     if (this.count() > 0) return;
     if (localStorage.getItem("ghar.streak.lastDay")) return;
     this.recordMissionDone();
+  },
+  // --- Cross-device sync (added 2026-11-09) ---
+  // The streak + daily challenge used to live in localStorage only, so a
+  // new device started at 0. Now they sync to the server like progress.
+  // Merge rule (same as the server's): the row with the latest last_day
+  // wins; on a tie the higher count wins. Daily fields follow the same
+  // latest-date rule. Never wipes — a stale device can't rewind it.
+  _streakState() {
+    return {
+      count: this.count(),
+      last_day: localStorage.getItem("ghar.streak.lastDay") || "",
+      daily_done: localStorage.getItem("ghar.daily.done") || "",
+      daily_quiz_date: localStorage.getItem("ghar.daily.quizDate") || "",
+      daily_quiz_count: this.quizTodayCount(),
+    };
+  },
+  async push() {
+    if (!window.GharAuth || !GharAuth.signedIn() || !GharAuth.childId()) return false;
+    try {
+      await GharAuth.api("/accounts/children/" + GharAuth.childId() + "/streak", "POST", this._streakState());
+      return true;
+    } catch (e) { return false; }
+  },
+  async pull() {
+    if (!window.GharAuth || !GharAuth.signedIn() || !GharAuth.childId()) return false;
+    let s;
+    try {
+      s = await GharAuth.api("/accounts/children/" + GharAuth.childId() + "/streak");
+    } catch (e) { return false; }
+    if (!s) return false;
+    const local = this._streakState();
+    let changed = false;
+    // Streak count + last day: latest date wins, max count on a tie.
+    let count = local.count, lastDay = local.last_day;
+    if ((s.last_day || "") > local.last_day) { count = s.count || 0; lastDay = s.last_day; changed = true; }
+    else if ((s.last_day || "") === local.last_day && (s.count || 0) > local.count) { count = s.count; changed = true; }
+    // Daily done: latest date wins.
+    let dailyDone = local.daily_done;
+    if ((s.daily_done || "") > local.daily_done) { dailyDone = s.daily_done; changed = true; }
+    // Daily quiz: latest date wins, max count on a tie.
+    let qDate = local.daily_quiz_date, qCount = local.daily_quiz_count;
+    if ((s.daily_quiz_date || "") > local.daily_quiz_date) { qDate = s.daily_quiz_date; qCount = s.daily_quiz_count || 0; changed = true; }
+    else if ((s.daily_quiz_date || "") === local.daily_quiz_date && (s.daily_quiz_count || 0) > local.daily_quiz_count) { qCount = s.daily_quiz_count; changed = true; }
+    localStorage.setItem("ghar.streak.count", String(count));
+    localStorage.setItem("ghar.streak.lastDay", lastDay);
+    localStorage.setItem("ghar.daily.done", dailyDone);
+    localStorage.setItem("ghar.daily.quizDate", qDate);
+    localStorage.setItem("ghar.daily.quizCount", String(qCount));
+    // Push the merged state back so the server catches up too.
+    if (changed) { try { await this.push(); } catch (e) {} }
+    return true;
   },
 };
 // Top-level const does NOT attach to window, so expose it explicitly — the

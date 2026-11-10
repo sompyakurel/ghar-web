@@ -29,7 +29,7 @@
   </div>
   <p class="auth-note">One unlock covers the whole family. A child's progress is saved to their profile — it follows them across devices. Delete a child any time and their data goes with them. <a href="certificate.html?preview">Preview the certificate →</a></p>
 </div>
-<script src="auth.js?v=8"></script>
+<script src="auth.js?v=9"></script>
 <script src="shop-data.js"></script>
 <script>
 if (!GharAuth.signedIn()) location.href = "signin.html";
@@ -81,11 +81,15 @@ async function load() {
 
     list.innerHTML = "";
     for (const child of me.children) {
-      const [p, missions, shop, mystery] = await Promise.all([
+      const [p, missions, shop, mystery, streak, quizStats] = await Promise.all([
         GharAuth.api("/accounts/children/" + child.id + "/progress"),
         GharAuth.api("/accounts/children/" + child.id + "/missions"),
         GharAuth.api("/accounts/children/" + child.id + "/shop"),
-        GharAuth.api("/accounts/children/" + child.id + "/mystery")
+        GharAuth.api("/accounts/children/" + child.id + "/mystery"),
+        // Streak + quiz stats are synced per child (auth.js GharStreak and
+        // quiz.html) — a missing row just means no activity yet.
+        GharAuth.api("/accounts/children/" + child.id + "/streak").catch(() => ({})),
+        GharAuth.api("/accounts/children/" + child.id + "/quiz-stats").catch(() => ({}))
       ]);
       // Lessons done: a deck is done when every word in it has been heard.
       const doneDecks = pack.decks.filter(deck => (p.heard[deck.id] || []).length >= deck.words.length);
@@ -109,18 +113,17 @@ async function load() {
           ${statRow("Total XP", child.xp)}
           ${statRow("Lessons done", done + " of " + pack.decks.length)}
           ${statRow("Missions completed", missionIds.length + " of " + totalMissions + (verifiedCount ? " · " + verifiedCount + " ⭐ verified" : ""))}`;
-      // Quiz + streak live on this device only (the app's parent screen shows
-      // them too) — show them for the child playing on this browser.
-      if (active) {
-        const quizCorrect = parseInt(localStorage.getItem("ghar.quiz.correctTotal") || "0", 10) || 0;
-        const quizBest = parseInt(localStorage.getItem("ghar.quiz.streakBest") || "0", 10) || 0;
-        const dayStreak = parseInt(localStorage.getItem("ghar.streak.count") || "0", 10) || 0;
-        html += `
+      // Quiz + day streak are synced to the server per child, so the
+      // parent sees them for every child here — not just the one playing
+      // on this browser.
+      const quizCorrect = parseInt(quizStats.correct_total || "0", 10) || 0;
+      const quizBest = parseInt(quizStats.streak_best || "0", 10) || 0;
+      const dayStreak = parseInt(streak.count || "0", 10) || 0;
+      html += `
           ${statRow("Quiz answers right", quizCorrect)}
           ${statRow("Best quiz streak", quizBest + " in a row")}
           ${statRow("Day streak", dayStreak === 1 ? "1 day" : dayStreak + " days")}
-          <p class="device-note">Quiz answers, best streak, and day streak are counted on this device.</p>`;
-      }
+          <p class="device-note">Quiz answers, best streak, and day streak sync across devices.</p>`;
       // What was actually completed — the lessons, missions, shop buys, and
       // treasures, by name.
       html += `

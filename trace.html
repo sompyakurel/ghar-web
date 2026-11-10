@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;700&display=swap" rel="stylesheet">
-<script src="auth.js?v=8"></script>
+<script src="auth.js?v=9"></script>
 </head>
 <body>
 <div class="prayer-bunting" aria-hidden="true"><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span><span class="pf" style="--i:0"></span><span class="pf" style="--i:1"></span><span class="pf" style="--i:2"></span><span class="pf" style="--i:3"></span><span class="pf" style="--i:4"></span></div>
@@ -150,6 +150,79 @@
   }
   function boxGrantedSet() {
     return new Set((localStorage.getItem('ghar.writing.boxGranted') || '').split(',').filter(Boolean));
+  }
+  // Cross-device sync for writing + My Name (server: /accounts/children/:id/writing
+  // and /myname). Every call is guarded (signed-in + child) and fire-and-forget,
+  // so guest/offline never breaks the page. Pull merges into localStorage
+  // (union for sets, max for the box count) — never wipes local data.
+  function pushWriting(body) {
+    if (!window.GharAuth || !GharAuth.signedIn() || !GharAuth.childId()) return;
+    GharAuth.api("/accounts/children/" + GharAuth.childId() + "/writing", "POST", body).catch(function () {});
+  }
+  function pushMyName() {
+    if (!window.GharAuth || !GharAuth.signedIn() || !GharAuth.childId()) return;
+    var n = myName();
+    GharAuth.api("/accounts/children/" + GharAuth.childId() + "/myname", "POST", { english: n.en, devanagari: n.dev }).catch(function () {});
+  }
+  // Re-render the picker after a sync merge — but never while the child is
+  // mid-word on the board or mid-edit in the name setup.
+  function maybeRerenderPicker() {
+    if ($('trace-board').hidden && $('trace-name-setup').hidden) renderPicker();
+  }
+  function pullWritingSync() {
+    if (!window.GharAuth || !GharAuth.signedIn() || !GharAuth.childId()) return;
+    var child = GharAuth.childId();
+    // Writing: traced words, Try-It passes, granted boxes, box count.
+    GharAuth.api("/accounts/children/" + child + "/writing").then(function (w) {
+      if (!w) return;
+      var changed = false;
+      // The server keeps traced and done as disjoint lists (a word's status
+      // is either 'traced' or 'done', done outranks traced). Locally a word
+      // is "traced" once it is finished either way, so merge both lists.
+      var traced = tracedSet();
+      (w.traced || []).forEach(function (id) { if (id && !traced.has(id)) { traced.add(id); changed = true; } });
+      (w.done || []).forEach(function (id) { if (id && !traced.has(id)) { traced.add(id); changed = true; } });
+      if (changed) saveTraced(traced);
+      var done = doneSet();
+      var doneChanged = false;
+      (w.done || []).forEach(function (id) { if (id && !done.has(id)) { done.add(id); doneChanged = true; } });
+      if (doneChanged) { localStorage.setItem('ghar.writing.done', Array.from(done).sort().join(',')); changed = true; }
+      // Trace +2 is paid in the same step that marks a word traced. The
+      // server keeps a separate trace_xp list for exactly that guard —
+      // a word that was BOTH traced and Try-It-passed sits in the
+      // server's done list (done outranks traced), so its +2 guard can't
+      // be recovered from the traced list alone. Union both.
+      var txp = traceXPSet();
+      var txpChanged = false;
+      (w.tracexp || []).forEach(function (id) { if (id && !txp.has(id)) { txp.add(id); txpChanged = true; } });
+      (w.traced || []).forEach(function (id) { if (id && !txp.has(id)) { txp.add(id); txpChanged = true; } });
+      if (txpChanged) { localStorage.setItem('ghar.writing.traceXP', Array.from(txp).sort().join(',')); changed = true; }
+      var granted = boxGrantedSet();
+      var grantedChanged = false;
+      (w.boxes_granted || []).forEach(function (s) { if (s && !granted.has(s)) { granted.add(s); grantedChanged = true; } });
+      if (grantedChanged) { localStorage.setItem('ghar.writing.boxGranted', Array.from(granted).sort().join(',')); changed = true; }
+      var boxes = parseInt(localStorage.getItem('ghar.mystery.writingBoxes') || '0', 10) || 0;
+      var serverBoxes = parseInt(w.boxes || '0', 10) || 0;
+      if (serverBoxes > boxes) { localStorage.setItem('ghar.mystery.writingBoxes', String(serverBoxes)); changed = true; }
+      if (changed) maybeRerenderPicker();
+    }).catch(function () {});
+    // My Name: fill the local name from the server only if nothing is saved here.
+    GharAuth.api("/accounts/children/" + child + "/myname").then(function (m) {
+      if (!m) return;
+      var cur = myName();
+      var filled = false;
+      if (!cur.en && m.english) { localStorage.setItem('ghar.myname.english', m.english); filled = true; }
+      if (!cur.dev && m.devanagari) { localStorage.setItem('ghar.myname.devanagari', m.devanagari); filled = true; }
+      if (!filled) return;
+      // If the name setup form is open, fill its fields too.
+      if (!$('trace-name-setup').hidden) {
+        var n2 = myName();
+        $('trace-name-dev').value = n2.dev;
+        $('trace-name-en').value = n2.en;
+        didEditDevanagari = !!n2.dev;
+      }
+      maybeRerenderPicker();
+    }).catch(function () {});
   }
   // English -> Devanagari transliteration for names, ported from the app's
   // DevanagariTransliterator (rule-based v1). Same rule as the app: type the
@@ -573,6 +646,7 @@
         done.add(currentId);
         localStorage.setItem('ghar.writing.done', Array.from(done).sort().join(','));
         addXP(5);
+        pushWriting({ word_id: currentId, status: 'done' });
         xpLine = 'You wrote ' + (W.roman || W.en) + ' yourself! +5 XP ⭐';
       } else {
         xpLine = 'You wrote ' + (W.roman || W.en) + ' yourself!';
@@ -583,6 +657,7 @@
         txp.add(currentId);
         localStorage.setItem('ghar.writing.traceXP', Array.from(txp).sort().join(','));
         addXP(2);
+        pushWriting({ word_id: currentId, status: 'traced', trace_xp: currentId });
         xpLine = 'You traced ' + (W.roman || W.en) + '! +2 XP ⭐';
       } else {
         xpLine = 'You traced ' + (W.roman || W.en) + '!';
@@ -613,6 +688,7 @@
         localStorage.setItem('ghar.writing.boxGranted', Array.from(granted).sort().join(','));
         var boxes = parseInt(localStorage.getItem('ghar.mystery.writingBoxes') || '0', 10) || 0;
         localStorage.setItem('ghar.mystery.writingBoxes', String(boxes + 1));
+        pushWriting({ section: currentDeck, boxes: boxes + 1 });
         boxEarned = true;
       }
     }
@@ -1038,6 +1114,7 @@
     if (!dev) { $('trace-name-error').hidden = false; $('trace-name-en').focus(); return; }
     localStorage.setItem('ghar.myname.devanagari', dev);
     localStorage.setItem('ghar.myname.english', en);
+    pushMyName();
     $('trace-name-setup').hidden = true;
     openNameWord();
   });
@@ -1082,6 +1159,7 @@
     }
     renderPicker();
     if (window.GharAuth) GharAuth.pull().catch(function () {});
+    pullWritingSync();
   }).catch(function () {
     $('trace-picker').innerHTML = '<p>Could not load the tracing dots. Check your connection and reload.</p>';
   });

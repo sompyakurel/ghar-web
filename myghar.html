@@ -92,7 +92,7 @@
   </div>
   <p class="auth-note" id="suga-teach-status"></p>
 </dialog>
-<script src="auth.js?v=8"></script>
+<script src="auth.js?v=9"></script>
 <script src="shop-data.js"></script>
 <script>
 // My Ghar -- ONE ROOM PICTURE (v8).
@@ -328,7 +328,43 @@ const HOUSE_NAME_KEY = "ghar.house.name";
 let arranging = false;
 let layout = {};
 try { layout = JSON.parse(localStorage.getItem(LAYOUT_KEY) || "{}"); } catch (e) { layout = {}; }
-function saveLayout() { localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout)); }
+function saveLayout() {
+  localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout));
+  syncPost("/myghar", { layout_json: JSON.stringify(layout) });
+}
+// ---- Cross-device sync (server is the account's source of truth) ----
+// Every call is guarded (signed-in + child) and fire-and-forget, so
+// guests and offline play never break. Server data is MERGED into
+// localStorage (union for sets, max for counts, latest for dates) —
+// local progress is never wiped.
+function syncChildId() {
+  try {
+    return (window.GharAuth && GharAuth.signedIn && GharAuth.signedIn() && GharAuth.childId()) ? GharAuth.childId() : "";
+  } catch (e) { return ""; }
+}
+function syncPost(path, body) {
+  const cid = syncChildId();
+  if (!cid) return;
+  GharAuth.api("/accounts/children/" + cid + path, "POST", body).catch(() => {});
+}
+async function syncGet(path) {
+  const cid = syncChildId();
+  if (!cid) return null;
+  try { return await GharAuth.api("/accounts/children/" + cid + path, "GET"); }
+  catch (e) { return null; }
+}
+// Renames type per keystroke — debounce so the server gets one POST with
+// the settled names ~800ms after typing stops, not one per character.
+let mygharNameTimer = null;
+function postMygharSoon() {
+  clearTimeout(mygharNameTimer);
+  mygharNameTimer = setTimeout(() => {
+    syncPost("/myghar", {
+      dog_name: localStorage.getItem(DOG_NAME_KEY) || "",
+      house_name: localStorage.getItem(HOUSE_NAME_KEY) || "",
+    });
+  }, 800);
+}
 // Path mapper (same as deck.html): pack JSON refs /audio/nepal-v1/X and
 // /images/nepal-v1/X become assets/audio/nepal-v1/X and assets/images/X.
 // This was MISSING from myghar.html, so sugaTalk() threw
@@ -876,6 +912,7 @@ function awardFetchXP() {
     return;
   }
   localStorage.setItem("ghar.fetch.count", String(count + 1));
+  syncPost("/games", { game: "fetch", day: today, paid: count + 1, xp_today: (count + 1) * 2 });
   const xp = (parseInt(localStorage.getItem("ghar.xp.total") || "0", 10) || 0) + 2;
   localStorage.setItem("ghar.xp.total", String(xp));
   document.getElementById("xp-label").textContent = xp;
@@ -953,10 +990,12 @@ document.getElementById("arrange-btn").addEventListener("click", () => {
 document.getElementById("dog-name").addEventListener("input", e => {
   localStorage.setItem(DOG_NAME_KEY, e.target.value);
   renderNames();
+  postMygharSoon();
 });
 document.getElementById("house-name").addEventListener("input", e => {
   localStorage.setItem(HOUSE_NAME_KEY, e.target.value);
   renderNames();
+  postMygharSoon();
 });
 // Suga's corner: teach him a word (10 XP). The picker lists every pack
 // word that has audio, grouped by deck. Taught words live in localStorage
@@ -1008,6 +1047,7 @@ document.getElementById("suga-teach-btn").addEventListener("click", () => {
   localStorage.setItem("ghar.xp.total", String(xp));
   taught.push(id);
   localStorage.setItem(SUGA_TAUGHT_KEY, JSON.stringify(taught));
+  syncPost("/suga", { word_id: id });
   if (window.GharAuth) GharAuth.pushTotals().catch(() => {});
   if (window.GharAuth && GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
   document.getElementById("suga-teach-status").textContent = `🎉 Suga learned "${w.devanagari}"!`;
@@ -1019,6 +1059,7 @@ document.getElementById("suga-teach-btn").addEventListener("click", () => {
 // --- Feed Suga (matches the app): 5 XP. A treat pops up at his beak, he
 // hops and eats it, and says "mitho chha!" in his parrot voice.
 const SUGA_FED_KEY = "ghar.suga.fed";
+const SUGA_FED_DATE_KEY = "ghar.suga.fedDate";
 const SUGA_TREATS = ["🍎", "🍌", "🌽", "🍇"];
 function sugaFedCount() { return parseInt(localStorage.getItem(SUGA_FED_KEY) || "0", 10) || 0; }
 function renderSugaFed() {
@@ -1031,6 +1072,9 @@ document.getElementById("suga-feed-btn").addEventListener("click", () => {
   xp -= 5;
   localStorage.setItem("ghar.xp.total", String(xp));
   localStorage.setItem(SUGA_FED_KEY, String(sugaFedCount() + 1));
+  const fedToday = new Date().toISOString().slice(0, 10);
+  localStorage.setItem(SUGA_FED_DATE_KEY, fedToday);
+  syncPost("/suga", { fed_date: fedToday, fed_count: sugaFedCount() });
   if (window.GharAuth) GharAuth.pushTotals().catch(() => {});
   if (window.GharAuth && GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
   const yum = SUGA_TREATS[Math.floor(Math.random() * SUGA_TREATS.length)];
@@ -1113,6 +1157,72 @@ GharAuth.pull().catch(() => {}).then(async () => {
       shopSaveOwned(mergedShop);
     }
   } catch (e) { /* guest or offline -- local list stands */ }
+  // Cross-device sync: missions (Bhunte's unlock), My Ghar names/layout,
+  // Suga's taught words, and the Fetch counter. Server data merges into
+  // localStorage — never wipes it — so a new device picks up what the old
+  // one earned. All of this runs before readState(), so the dog-unlock
+  // check sees the merged missions.
+  const ms = await syncGet("/missions");
+  if (ms && typeof ms === "object") {
+    let completed = [], verified = [];
+    try { completed = JSON.parse(localStorage.getItem("ghar.missions.completed") || "[]"); } catch (e) { completed = []; }
+    try { verified = JSON.parse(localStorage.getItem("ghar.missions.verified") || "[]"); } catch (e) { verified = []; }
+    // Same convention as missions.html: verified ids live in BOTH sets,
+    // done ids in completed only; verified outranks done.
+    Object.keys(ms).forEach(id => {
+      if (ms[id] === "verified") {
+        if (!verified.includes(id)) verified.push(id);
+        if (!completed.includes(id)) completed.push(id);
+      } else if (ms[id] === "done") {
+        if (!verified.includes(id) && !completed.includes(id)) completed.push(id);
+      }
+    });
+    localStorage.setItem("ghar.missions.completed", JSON.stringify(completed));
+    localStorage.setItem("ghar.missions.verified", JSON.stringify(verified));
+  }
+  const mg = await syncGet("/myghar");
+  if (mg && typeof mg === "object") {
+    if (mg.dog_name && !localStorage.getItem(DOG_NAME_KEY)) localStorage.setItem(DOG_NAME_KEY, mg.dog_name);
+    if (mg.house_name && !localStorage.getItem(HOUSE_NAME_KEY)) localStorage.setItem(HOUSE_NAME_KEY, mg.house_name);
+    let serverLayout = mg.layout;
+    if (typeof serverLayout === "string") { try { serverLayout = JSON.parse(serverLayout); } catch (e) { serverLayout = null; } }
+    if (serverLayout && typeof serverLayout === "object" && Object.keys(serverLayout).length > 0 && Object.keys(layout).length === 0) {
+      layout = serverLayout;
+      localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout));
+    }
+  }
+  const sg = await syncGet("/suga");
+  if (sg && typeof sg === "object") {
+    if (Array.isArray(sg.taught) && sg.taught.length) {
+      const mergedTaught = [...new Set([...sugaTaught(), ...sg.taught])];
+      localStorage.setItem(SUGA_TAUGHT_KEY, JSON.stringify(mergedTaught));
+    }
+    if (sg.fed_date && typeof sg.fed_date === "string") {
+      const localFedDate = localStorage.getItem(SUGA_FED_DATE_KEY) || "";
+      if (sg.fed_date > localFedDate) {
+        localStorage.setItem(SUGA_FED_DATE_KEY, sg.fed_date);
+        // The count is display-only ("Fed N times") — take the server's
+        // lifetime count so a fresh device shows the real number.
+        if (sg.fed_count && sg.fed_count > sugaFedCount()) {
+          localStorage.setItem(SUGA_FED_KEY, String(sg.fed_count));
+        } else if (sg.fed_date && sugaFedCount() === 0) {
+          localStorage.setItem(SUGA_FED_KEY, "1");
+        }
+      }
+    }
+  }
+  const gm = await syncGet("/games");
+  if (gm && gm.daily && gm.daily.fetch) {
+    const f = gm.daily.fetch;
+    const localDay = localStorage.getItem("ghar.fetch.day") || "";
+    const localCount = parseInt(localStorage.getItem("ghar.fetch.count") || "0", 10) || 0;
+    if (f.day && f.day > localDay) {
+      localStorage.setItem("ghar.fetch.day", f.day);
+      localStorage.setItem("ghar.fetch.count", String(f.paid || 0));
+    } else if (f.day && f.day === localDay) {
+      localStorage.setItem("ghar.fetch.count", String(Math.max(localCount, f.paid || 0)));
+    }
+  }
   // Cache the pack so the deck count (for the Mukut) can be read locally,
   // and index every word by id for the teach picker + Suga's taught words.
   try {
