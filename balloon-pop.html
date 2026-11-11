@@ -59,6 +59,19 @@ function asset(u) {
   return u.replace(/^\/images\/nepal-v1\//, "assets/images/")
           .replace(/^\/audio\/nepal-v1\//, "assets/audio/nepal-v1/");
 }
+// --- Premium locks (match the app) ---
+// Balloon Pop itself is free, but it only uses words from decks you have
+// unlocked — same as the app. Only Alphabets + Numbers are free; the rest
+// is Premium. TEST mode and a server unlock open the full pool.
+function isTestUnlock() {
+  const q = new URLSearchParams(location.search);
+  if (q.has("test")) localStorage.setItem("ghar.testUnlock", q.get("test") === "off" ? "" : "1");
+  return localStorage.getItem("ghar.testUnlock") === "1";
+}
+const TEST = isTestUnlock();
+const FREE_DECKS = new Set(["alphabet", "numbers"]);
+function _isUnlocked() { return !!(window.GharAuth && GharAuth.isUnlocked && GharAuth.isUnlocked()); }
+function premiumOpen() { return TEST || _isUnlocked(); }
 const BEST_KEY = "ghar.balloon.best";
 const PAID_DAY_KEY = "ghar.balloon.day";
 const PAID_COUNT_KEY = "ghar.balloon.paid";
@@ -374,10 +387,12 @@ document.getElementById("replay-btn").addEventListener("click", () => playWord(t
 // Boot: pull server progress, then load the pack and keep words that
 // have BOTH a picture and audio (hear it, find the picture).
 document.getElementById("ready-best").textContent = best > 0 ? ("Best: " + best + " pops") : "";
-GharAuth.pull().catch(() => {}).then(() => syncBalloonGames()).then(() => fetch("data/nepal-v1.json"))
+GharAuth.pull().catch(() => {}).then(() => (GharAuth.refreshUnlock ? GharAuth.refreshUnlock().catch(() => false) : false)).then(() => syncBalloonGames()).then(() => fetch("data/nepal-v1.json"))
   .then(r => r.json())
   .then(pack => {
-    playable = pack.decks.flatMap(d => d.words).filter(w => w.image && w.has_audio);
+    // Free users only pop words from the free decks (alphabet + numbers);
+    // unlocked / TEST users get the full pool.
+    playable = pack.decks.filter(d => premiumOpen() || FREE_DECKS.has(d.id)).flatMap(d => d.words).filter(w => w.image && w.has_audio);
     if (!playable.length) {
       document.getElementById("ready").innerHTML =
         "<p>Balloon Pop needs words with pictures and audio — none found in the pack.</p>";

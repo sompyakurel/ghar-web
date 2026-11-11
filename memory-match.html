@@ -219,6 +219,19 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
   }
 
   // ---- Game ----
+  // Premium lock (match the app): Memory Match itself is free, but it
+  // only uses words from decks you have unlocked. Only Alphabets +
+  // Numbers are free; the rest is Premium. TEST mode and a server
+  // unlock open the full pool.
+  function isTestUnlock() {
+    var q = new URLSearchParams(location.search);
+    if (q.has("test")) localStorage.setItem("ghar.testUnlock", q.get("test") === "off" ? "" : "1");
+    return localStorage.getItem("ghar.testUnlock") === "1";
+  }
+  var TEST = isTestUnlock();
+  var FREE_DECKS = ['alphabet', 'numbers'];
+  function _isUnlocked() { return !!(window.GharAuth && GharAuth.isUnlocked && GharAuth.isUnlocked()); }
+  function premiumOpen() { return TEST || _isUnlocked(); }
   var DIFFS = { easy: { pairs: 6, label: 'Easy' }, med: { pairs: 8, label: 'Medium' }, hard: { pairs: 12, label: 'Hard' } };
   var diff = 'med';
   var pack = null;        // full pack JSON
@@ -286,6 +299,9 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
     var seenDev = {}, seenImg = {};
     var playable = [];
     pack.decks.forEach(function (d) {
+      // Free users only match words from the free decks (alphabet +
+      // numbers); unlocked / TEST users get the full pool.
+      if (!premiumOpen() && FREE_DECKS.indexOf(d.id) < 0) return;
       d.words.forEach(function (w) {
         if (!w.image || !w.has_audio) return;
         if (seenDev[w.devanagari] || seenImg[w.image]) return;
@@ -552,7 +568,12 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
     if (sfxOn) sfxFlip();
   });
 
-  if (window.GharAuth) GharAuth.pull().catch(function () {});
+  if (window.GharAuth) {
+    GharAuth.pull().catch(function () {});
+    // Refresh the Premium flag so the word pool is gated on the server
+    // value, not a stale cache (same as songs/deck).
+    if (GharAuth.refreshUnlock) GharAuth.refreshUnlock().catch(function () {});
+  }
   syncMemoryGames();
 })();
 </script>

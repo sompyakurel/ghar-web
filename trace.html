@@ -116,6 +116,19 @@
   // the six traceable sections, in the order Som gave them
   var TRACE_DECKS = ['alphabet', 'myname', 'numbers', 'fruits', 'bodyparts', 'animals'];
   var TRACE_TITLES = { alphabet: 'Alphabets', myname: 'My Name', numbers: 'Numbers', fruits: 'Fruits', bodyparts: 'Body Parts', animals: 'Animals' };
+  // Premium trace sections (match the app): only Alphabets, My Name and
+  // Numbers are free. Fruits, Body Parts and Animals are Premium — the
+  // same as their decks. TEST mode and a server unlock open everything.
+  var FREE_TRACE_DECKS = { alphabet: true, myname: true, numbers: true };
+  function isTestUnlock() {
+    var q = new URLSearchParams(location.search);
+    if (q.has("test")) localStorage.setItem("ghar.testUnlock", q.get("test") === "off" ? "" : "1");
+    return localStorage.getItem("ghar.testUnlock") === "1";
+  }
+  var TEST = isTestUnlock();
+  function _isUnlocked() { return !!(window.GharAuth && GharAuth.isUnlocked && GharAuth.isUnlocked()); }
+  function premiumOpen() { return TEST || _isUnlocked(); }
+  function traceDeckLocked(did) { return !FREE_TRACE_DECKS[did] && !premiumOpen(); }
 
   var $ = function (id) { return document.getElementById(id); };
   function asset(u) {
@@ -787,6 +800,15 @@
   function openWord(id) {
     var W = words[id];
     if (!W) return;
+    // Premium lock (defense in depth): a locked section's word can never
+    // open the board — show the lock message instead.
+    if (traceDeckLocked(W.deck)) {
+      $('trace-board').hidden = true;
+      $('trace-picker').hidden = false;
+      pickerDeck = W.deck;
+      renderPicker();
+      return;
+    }
     currentId = id; currentDeck = W.deck;
     $('trace-dev').textContent = W.dev;
     $('trace-meta').textContent = W.roman + ' · ' + W.en + '  ·  ' + W.deckTitle;
@@ -988,6 +1010,15 @@
       var html = '<div class="trace-deck-grid">';
       TRACE_DECKS.forEach(function (did) {
         var title = TRACE_TITLES[did];
+        // Premium lock: Fruits, Body Parts and Animals show as locked
+        // sections (🔒 + Premium). Tapping one opens the lock message,
+        // never the word list.
+        if (traceDeckLocked(did)) {
+          html += '<button type="button" class="trace-deck" data-deck="' + esc(did) + '">' +
+            '<span class="trace-deck-title">🔒 ' + esc(title) + '</span>' +
+            '<span class="trace-deck-count">Premium</span></button>';
+          return;
+        }
         if (did === 'myname') {
           var n = myName();
           var done = traced.has('myname');
@@ -1015,6 +1046,23 @@
     }
     // Remember this section so the next visit opens its word list directly.
     try { localStorage.setItem('ghar.trace.lastDeck', pickerDeck); } catch (e) {}
+    // Premium lock: a locked section shows the lock message, never its
+    // words — including when the user lands here directly (stored section).
+    if (traceDeckLocked(pickerDeck)) {
+      root.innerHTML = '<p><button type="button" class="trace-back-decks" id="trace-back-decks">← All sections</button></p>' +
+        '<div class="deck-head"><h1>🔒 ' + esc(TRACE_TITLES[pickerDeck] || pickerDeck) + '</h1>' +
+        '<p>This section unlocks with Ghar Premium.</p>' +
+        '<p><button type="button" class="quiz-next" id="trace-unlock-btn">🔓 Unlock — $7.99</button></p>' +
+        '<p class="section-sub">One-time payment for the whole family. Already paid? <a href="signin.html">Sign in</a> to restore it.</p></div>';
+      $('trace-back-decks').addEventListener('click', function () { pickerDeck = null; renderPicker(); });
+      $('trace-unlock-btn').addEventListener('click', function () {
+        if (!window.GharAuth || !GharAuth.signedIn || !GharAuth.signedIn()) { location.href = 'signin.html'; return; }
+        GharAuth.startCheckout().catch(function () {
+          $('trace-unlock-btn').textContent = 'Could not start checkout — check your connection and try again.';
+        });
+      });
+      return;
+    }
     var ids = deckWords[pickerDeck] || [];
     var groups = {};
     ids.forEach(function (id) {
@@ -1193,9 +1241,18 @@
         pickerDeck = 'alphabet';
       }
     }
-    renderPicker();
-    if (window.GharAuth) GharAuth.pull().catch(function () {});
-    pullWritingSync();
+    // Refresh the Premium flag before rendering, so a signed-in unlocked
+    // parent sees the Premium sections open (same as songs/deck).
+    var boot = function () {
+      renderPicker();
+      if (window.GharAuth) GharAuth.pull().catch(function () {});
+      pullWritingSync();
+    };
+    if (window.GharAuth && GharAuth.refreshUnlock) {
+      GharAuth.refreshUnlock().catch(function () {}).then(boot);
+    } else {
+      boot();
+    }
   }).catch(function () {
     $('trace-picker').innerHTML = '<p>Could not load the tracing dots. Check your connection and reload.</p>';
   });

@@ -84,6 +84,29 @@ let pack = null;
 let completed = new Set();
 let verified = new Set();
 let xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
+// --- Premium locks (match the app) ---
+// The app's free missions are only these two. The other 8 pack missions,
+// all 8 teen missions, and the Streak Challenge are Premium. TEST mode
+// and a server unlock (Stripe $7.99) open everything, same as the decks.
+function isTestUnlock() {
+  const q = new URLSearchParams(location.search);
+  if (q.has("test")) localStorage.setItem("ghar.testUnlock", q.get("test") === "off" ? "" : "1");
+  return localStorage.getItem("ghar.testUnlock") === "1";
+}
+const TEST = isTestUnlock();
+const FREE_MISSIONS = new Set(["tihar-greeting", "count-to-five"]);
+function _isUnlocked() { return !!(window.GharAuth && GharAuth.isUnlocked && GharAuth.isUnlocked()); }
+function premiumOpen() { return TEST || _isUnlocked(); }
+// Locked content: tapping takes the parent to the unlock flow — sign in
+// first if needed, otherwise straight to Stripe Checkout (same as deck.html).
+function wireUnlockButton(btn) {
+  btn.addEventListener("click", () => {
+    if (!window.GharAuth || !GharAuth.signedIn || !GharAuth.signedIn()) { location.href = "signin.html"; return; }
+    GharAuth.startCheckout().catch(() => {
+      btn.textContent = "Could not start checkout — check your connection and try again.";
+    });
+  });
+}
 // The 8 teen missions (in code in the app, not in the pack JSON). Each is
 // self-serve: press and hold 2.5s to confirm, full +25 XP, filed in BOTH
 // the done and verified sets (so the card shows the star).
@@ -111,6 +134,9 @@ function teenDoneCount() { return TEEN_MISSIONS.filter(m => completed.has(m.id))
 function recordStreakAndDaily() {
   if (typeof GharStreak === "undefined") return 0;
   GharStreak.recordMissionDone();
+  // The +15 daily-challenge bonus is part of the Premium-only Streak
+  // Challenge — free users keep their streak, but don't earn the bonus.
+  if (!premiumOpen()) return 0;
   if (GharStreak.claimIfMissionDay()) return 15;
   return 0;
 }
@@ -213,6 +239,28 @@ function render() {
   const wrap = document.getElementById("missions");
   wrap.innerHTML = "";
   pack.missions.forEach(m => {
+    // Premium lock (match the app): only tihar-greeting + count-to-five
+    // are free. A locked mission renders as a locked card — no Hear, no
+    // Done-it, no Prove-it, no XP.
+    if (!FREE_MISSIONS.has(m.id) && !premiumOpen()) {
+      const card = document.createElement("div");
+      card.className = "mission-card";
+      card.innerHTML = `
+      <div class="mission-head">
+        <div>
+          <span class="mission-title-ne">🔒 ${esc(m.title_ne)}</span>
+          <span class="mission-title-en">${esc(m.title_en)}</span>
+        </div>
+        <span class="mission-badge">🔒 Premium</span>
+      </div>
+      <p class="mission-prompt">Unlocks with Ghar Premium.</p>
+      <div class="mission-actions">
+        <button class="quiz-next mission-unlock">🔓 Unlock — $7.99</button>
+      </div>`;
+      wireUnlockButton(card.querySelector(".mission-unlock"));
+      wrap.appendChild(card);
+      return;
+    }
     const isVerified = verified.has(m.id);
     const isDone = completed.has(m.id) || isVerified;
     const card = document.createElement("div");
@@ -261,6 +309,23 @@ function render() {
 // --- Daily challenge card (Streak Challenge) ---
 function renderDaily() {
   if (typeof GharStreak === "undefined") return;
+  // The Streak Challenge is Premium-only (same as the app). Free users
+  // see the locked card and cannot claim or complete it. The streak day
+  // count itself is free info, so the badge still shows it.
+  if (!premiumOpen()) {
+    const n = GharStreak.count();
+    document.getElementById("streak-badge").textContent = `🔥 ${n} day${n === 1 ? "" : "s"}`;
+    document.getElementById("daily-title").textContent = "🔒 Streak Challenge";
+    document.getElementById("daily-prompt").textContent = "The daily Streak Challenge unlocks with Ghar Premium.";
+    const actions = document.getElementById("daily-actions");
+    actions.innerHTML = "";
+    const b = document.createElement("button");
+    b.className = "quiz-next";
+    b.textContent = "🔓 Unlock — $7.99";
+    wireUnlockButton(b);
+    actions.appendChild(b);
+    return;
+  }
   const c = GharStreak.todayChallenge();
   // Done if the flag was set, OR (mission day) a mission was already done
   // today — the flag is only set when a mission completes after the feature
@@ -336,6 +401,27 @@ function renderTeen() {
   const wrap = document.getElementById("teen-missions");
   wrap.innerHTML = "";
   TEEN_MISSIONS.forEach(m => {
+    // All 8 teen missions are Premium (same as the app). A locked teen
+    // mission renders as a locked card — no Hear, no press-and-hold, no XP.
+    if (!premiumOpen()) {
+      const card = document.createElement("div");
+      card.className = "mission-card";
+      card.innerHTML = `
+      <div class="mission-head">
+        <div>
+          <span class="mission-title-ne">🔒 ${esc(m.titleNe)}</span>
+          <span class="mission-title-en">${esc(m.titleEn)}</span>
+        </div>
+        <span class="mission-badge">🔒 Premium</span>
+      </div>
+      <p class="mission-prompt">Unlocks with Ghar Premium.</p>
+      <div class="mission-actions">
+        <button class="quiz-next mission-unlock">🔓 Unlock — $7.99</button>
+      </div>`;
+      wireUnlockButton(card.querySelector(".mission-unlock"));
+      wrap.appendChild(card);
+      return;
+    }
     const isVerified = verified.has(m.id);
     const isDone = completed.has(m.id) || isVerified;
     const card = document.createElement("div");
@@ -476,7 +562,7 @@ document.getElementById("confirm-btn").addEventListener("click", () => {
   render();
   maybeCelebrateDog();
 });
-GharAuth.pull().catch(() => {}).then(async () => {
+GharAuth.pull().catch(() => {}).then(() => (GharAuth.refreshUnlock ? GharAuth.refreshUnlock().catch(() => false) : false)).then(async () => {
   xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
   await syncMissionsFromServer();
   const r = await fetch("data/nepal-v1.json");
@@ -488,7 +574,8 @@ GharAuth.pull().catch(() => {}).then(async () => {
   if (typeof GharStreak !== "undefined") GharStreak.syncFromMissions(new Set([...completed, ...verified]).size);
   // If a mission was already done today on a mission day, the daily
   // challenge is complete — mark it done and pay the +15 XP once.
-  if (typeof GharStreak !== "undefined" && GharStreak.todayChallenge().format === "mission" && GharStreak.missionDoneToday() && !GharStreak.dailyDoneToday()) {
+  // Premium-only: a free user never earns the daily-challenge bonus.
+  if (typeof GharStreak !== "undefined" && premiumOpen() && GharStreak.todayChallenge().format === "mission" && GharStreak.missionDoneToday() && !GharStreak.dailyDoneToday()) {
     GharStreak.markDailyDone();
     xp += 15;
     if (window.GharAuth && GharAuth.addBones) GharAuth.addBones(15);

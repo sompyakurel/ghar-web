@@ -85,6 +85,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
       </div>
       <div class="ws-progress" id="ws-progress">Word 1 of 5</div>
       <div class="ws-bar"><div id="ws-bar-fill" style="width:0%"></div></div>
+      <p id="ws-lock" class="error" hidden></p>
       <div id="ws-loading" hidden>Loading words…</div>
       <div class="ws-card" id="ws-card" hidden>
         <img class="ws-pic" id="ws-pic" alt="">
@@ -235,6 +236,19 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
   }
 
   // ---- Game ----
+  // Premium lock (match the app): Word Scramble itself is free, but it
+  // only uses words from decks you have unlocked. Only Alphabets +
+  // Numbers are free; the rest is Premium. TEST mode and a server
+  // unlock open the full pool.
+  function isTestUnlock() {
+    var q = new URLSearchParams(location.search);
+    if (q.has("test")) localStorage.setItem("ghar.testUnlock", q.get("test") === "off" ? "" : "1");
+    return localStorage.getItem("ghar.testUnlock") === "1";
+  }
+  var TEST = isTestUnlock();
+  var FREE_DECKS = ['alphabet', 'numbers'];
+  function _isUnlocked() { return !!(window.GharAuth && GharAuth.isUnlocked && GharAuth.isUnlocked()); }
+  function premiumOpen() { return TEST || _isUnlocked(); }
   var VIRAMA = '्'; // U+094D — conjuncts break clean tile splitting, so skip them
   var ROUNDS = 5;
   var DAILY_CAP = 30;
@@ -292,6 +306,10 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
     var pool = [];
     var seenDev = {};
     pack.decks.forEach(function (d) {
+      // Free users only scramble words from the free decks (alphabet +
+      // numbers); unlocked / TEST users get the full pool. (Alphabet is
+      // excluded below anyway — single letters can't scramble.)
+      if (!premiumOpen() && FREE_DECKS.indexOf(d.id) < 0) return;
       d.words.forEach(function (w) {
         if (!w.image || !w.has_audio) return;
         if (d.id === 'alphabet') return;          // single letters can't scramble
@@ -514,8 +532,10 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
       if (order.join('') !== letters.join('')) break;
     }
     tiles = order.map(function (ch, i) { return { ch: ch, id: i, used: false }; });
-    document.getElementById('ws-progress').textContent = 'Word ' + (roundIdx + 1) + ' of ' + ROUNDS;
-    document.getElementById('ws-bar-fill').style.width = ((roundIdx) / ROUNDS * 100) + '%';
+    // The game plays as many rounds as there are picked words (normally
+    // ROUNDS; fewer on the free tier, where only one word scrambles).
+    document.getElementById('ws-progress').textContent = 'Word ' + (roundIdx + 1) + ' of ' + words.length;
+    document.getElementById('ws-bar-fill').style.width = ((roundIdx) / words.length * 100) + '%';
     document.getElementById('ws-pic').src = asset(current.image);
     document.getElementById('ws-pic').alt = current.english || '';
     document.getElementById('ws-en').textContent = current.english || '';
@@ -526,8 +546,8 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
 
   function nextRound() {
     roundIdx++;
-    if (roundIdx >= ROUNDS) { endGame(); return; }
-    document.getElementById('ws-bar-fill').style.width = ((roundIdx) / ROUNDS * 100) + '%';
+    if (roundIdx >= words.length) { endGame(); return; }
+    document.getElementById('ws-bar-fill').style.width = ((roundIdx) / words.length * 100) + '%';
     loadRound();
   }
 
@@ -536,7 +556,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
     confettiBurst();
     document.getElementById('win-stats').textContent =
       (diff === 'easy' ? 'Easy' : diff === 'med' ? 'Medium' : 'Hard') +
-      ' · ' + correct + ' of ' + ROUNDS + ' words correct';
+      ' · ' + correct + ' of ' + words.length + ' words correct';
     document.getElementById('win-xp').textContent = gameXp > 0 ? '⭐ +' + gameXp + ' XP' : 'No more XP for Word Scramble today — come back tomorrow!';
     var bestKey = 'ghar.scramble.best.' + diff;
     var best = parseInt(localStorage.getItem(bestKey) || '0', 10);
@@ -546,7 +566,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
       bestMsg = '🏆 New best for ' + (diff === 'easy' ? 'Easy' : diff === 'med' ? 'Medium' : 'Hard') + '!';
       pushScrambleGames({ difficulty: diff, best: correct });
     } else {
-      bestMsg = 'Best for ' + (diff === 'easy' ? 'Easy' : diff === 'med' ? 'Medium' : 'Hard') + ': ' + best + ' of ' + ROUNDS;
+      bestMsg = 'Best for ' + (diff === 'easy' ? 'Easy' : diff === 'med' ? 'Medium' : 'Hard') + ': ' + best + ' of ' + words.length;
     }
     document.getElementById('win-best').textContent = bestMsg;
     document.getElementById('ws-win').hidden = false;
@@ -566,6 +586,25 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
     }
   }
 
+  // Pick the words and start the rounds. A free user has almost no
+  // scrambleable words (only १० on Easy, none on Medium/Hard) — if the
+  // pool is empty for this difficulty, show the lock instead of a
+  // broken game.
+  function beginRounds() {
+    words = pickWords();
+    var lockEl = document.getElementById('ws-lock');
+    if (!words.length) {
+      document.getElementById('ws-loading').hidden = true;
+      document.getElementById('ws-card').hidden = true;
+      lockEl.textContent = '🔒 ' + (diff === 'med' ? 'Medium' : 'Hard') + ' Word Scramble unlocks with Ghar Premium — the free decks have no words this long to scramble. Try Easy, or unlock Premium for the full game.';
+      lockEl.hidden = false;
+      return;
+    }
+    lockEl.hidden = true;
+    document.getElementById('ws-card').hidden = false;
+    loadRound();
+  }
+
   function startGame(d) {
     diff = d;
     roundIdx = 0; correct = 0; gameXp = 0;
@@ -582,16 +621,12 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
       fetch('data/nepal-v1.json?v=2').then(function (r) { return r.json(); }).then(function (j) {
         pack = j;
         document.getElementById('ws-loading').hidden = true;
-        document.getElementById('ws-card').hidden = false;
-        words = pickWords();
-        loadRound();
+        beginRounds();
       }).catch(function () {
         document.getElementById('ws-loading').textContent = 'Couldn\'t load the words. Check your connection and refresh.';
       });
     } else {
-      document.getElementById('ws-card').hidden = false;
-      words = pickWords();
-      loadRound();
+      beginRounds();
     }
   }
 
@@ -640,7 +675,12 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
     if (sfxOn) sfxTap();
   });
 
-  if (window.GharAuth) GharAuth.pull().catch(function () {});
+  if (window.GharAuth) {
+    GharAuth.pull().catch(function () {});
+    // Refresh the Premium flag so the word pool is gated on the server
+    // value, not a stale cache (same as songs/deck).
+    if (GharAuth.refreshUnlock) GharAuth.refreshUnlock().catch(function () {});
+  }
   syncScrambleGames();
 })();
 </script>
