@@ -70,7 +70,7 @@
 
   <p class="error" id="error" hidden></p>
 </div>
-<script src="auth.js?v=12"></script>
+<script src="auth.js?v=14"></script>
 <script>
 const LB_API = "https://backend-patient-wave-3724.fly.dev/leaderboard";
 const CODE_KEY = "ghar.lb.code";
@@ -142,7 +142,11 @@ function myStats() {
     missions = new Set([...c, ...v]).size;
   } catch (e) { missions = 0; }
   return {
-    xp: parseInt(localStorage.getItem("ghar.xp.total") || "0", 10) || 0,
+    // The leaderboard shares the spendable balance, matching the app
+    // (where totalXP is the wallet and drops when XP is spent).
+    xp: (window.GharAuth && GharAuth.spendable) ? GharAuth.spendable()
+      : Math.max((parseInt(localStorage.getItem("ghar.xp.total") || "0", 10) || 0)
+        - (parseInt(localStorage.getItem("ghar.xp.spent") || "0", 10) || 0), 0),
     quiz_streak_best: parseInt(localStorage.getItem("ghar.quiz.streakBest") || "0", 10) || 0,
     quiz_correct_total: parseInt(localStorage.getItem("ghar.quiz.correctTotal") || "0", 10) || 0,
     missions_done: missions,

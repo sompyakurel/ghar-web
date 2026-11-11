@@ -218,7 +218,7 @@
   </section>
 </div>
 <div id="toast"></div>
-<script src="auth.js?v=12"></script>
+<script src="auth.js?v=14"></script>
 <script>
 const FREE = new Set(["alphabet", "numbers"]);
 const TIERS = { beginner: "🌱 Beginner", intermediate: "🌿 Intermediate", hard: "🌳 Hard", teen: "🔥 Teen" };
@@ -394,9 +394,16 @@ function heardList(deckId) {
     return Array.isArray(v) ? v : [];
   } catch (e) { return []; }
 }
+// The wallet balance (spendable XP) — the header shows what the child
+// can actually spend, not the lifetime total.
+function spendableXP() {
+  if (window.GharAuth && GharAuth.spendable) return GharAuth.spendable();
+  return Math.max((parseInt(localStorage.getItem("ghar.xp.total") || "0", 10) || 0)
+    - (parseInt(localStorage.getItem("ghar.xp.spent") || "0", 10) || 0), 0);
+}
 // Show the XP and the streak straight away from this device, before any
 // fetch runs — so a slow or failed lessons load never leaves them at 0.
-document.getElementById("xp-total").textContent = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
+document.getElementById("xp-total").textContent = spendableXP();
 document.getElementById("streak-count").textContent = (window.GharStreak ? GharStreak.count() : parseInt(localStorage.getItem("ghar.streak.count") || "0", 10));
 GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => false)).then(() => {
   const btn = document.getElementById("signin-btn");
@@ -432,7 +439,7 @@ GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => 
   // Server unlock also opens the Songs / Rhymes / Sentences sections.
   applyUnlockUI();
   // pull() may have merged in a higher server total — refresh the header.
-  document.getElementById("xp-total").textContent = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
+  document.getElementById("xp-total").textContent = spendableXP();
   // One retry: a single network blip should not leave the lessons unloadable.
   // The ?v=2 busts a stale cached copy (a bad cached lessons file would
   // otherwise keep failing even though the live file is fine).
@@ -504,7 +511,7 @@ GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => 
       ? `<div class="path-end-card"><h3>🏆 Certificate earned!</h3><p>You finished all ${ordered.length} lessons.</p><p><a href="certificate.html">View your certificate →</a></p></div>`
       : `<div class="path-end-card"><h3>🏆 Certificate</h3><p>Finish all ${ordered.length} lessons to earn it — ${doneCount} of ${ordered.length} done.</p></div>`;
     path.appendChild(end);
-    const xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
+    const xp = spendableXP();
     document.getElementById("xp-total").textContent = xp;
     let done = 0;
     pack.decks.forEach(deck => {

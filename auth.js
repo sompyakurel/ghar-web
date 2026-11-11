@@ -71,6 +71,149 @@ const GharAuth = {
     return res.json();
   },
   xp() { return parseInt(localStorage.getItem("ghar.xp.total") || "0", 10) || 0; },
+  // ---- Spendable XP balance (matches the server's xp - xp_spent) ----
+  // ghar.xp.total is the LIFETIME total earned (never decreases — it is
+  // what /progress stores and what bones migrate from). ghar.xp.spent is
+  // the total spent (a local cache of the server's xp_spent). The wallet
+  // the child can actually spend is spendable() = total - spent.
+  spent() { return parseInt(localStorage.getItem("ghar.xp.spent") || "0", 10) || 0; },
+  spendable() { return Math.max(this.xp() - this.spent(), 0); },
+  // Spend n XP from the wallet through the server (POST /spend). The
+  // server is the source of truth: it checks the balance atomically and
+  // dedupes on the idempotency key, so a retry or a double-tap can never
+  // deduct twice. Returns {ok, spendable} or {ok:false, reason}.
+  // Guests (not signed in) spend locally only. A failed validation never
+  // deducts; a network failure retries once with the SAME key.
+  async spend(amount, reason, key) {
+    amount = Math.floor(amount) || 0;
+    if (amount <= 0) return { ok: false, reason: "bad amount" };
+    // Guest: local-only (no server to record it on).
+    if (!this.signedIn() || !this.childId()) {
+      if (this.spendable() < amount) return { ok: false, reason: "not enough" };
+      localStorage.setItem("ghar.xp.spent", String(this.spent() + amount));
+      return { ok: true, spendable: this.spendable(), local: true };
+    }
+    if (this.spendable() < amount) return { ok: false, reason: "not enough" };
+    key = key || ((window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+      : ("spend-" + Date.now() + "-" + Math.floor(Math.random() * 1e9)));
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const d = await this.api("/accounts/children/" + this.childId() + "/spend", "POST",
+          { amount, reason: reason || "", key });
+        // Server is authoritative: take its spent + lifetime totals.
+        localStorage.setItem("ghar.xp.spent", String(d.xp_spent || 0));
+        if (typeof d.xp_earned === "number") {
+          localStorage.setItem("ghar.xp.total", String(Math.max(this.xp(), d.xp_earned)));
+        }
+        return { ok: true, spendable: d.spendable, deducted: d.deducted || 0, xp_spent: d.xp_spent, xp_earned: d.xp_earned };
+      } catch (e) {
+        const msg = String((e && e.message) || "");
+        // A 4xx is a definitive rejection (not enough XP, bad key) — never retry.
+        const m = msg.match(/request failed: (\d+)/);
+        if (m && parseInt(m[1], 10) >= 400 && parseInt(m[1], 10) < 500) {
+          // Refresh the local balance from the server so the UI stops
+          // showing XP another device already spent.
+          if (m[1] === "422") { try { await this._refreshBalance(); } catch (e2) {} }
+          return { ok: false, reason: m[1] === "422" ? "not enough" : "rejected" };
+        }
+        if (attempt === 0) continue; // network blip / 5xx — retry once, same key
+        return { ok: false, reason: "network" };
+      }
+    }
+    return { ok: false, reason: "network" };
+  },
+  // Re-read the server's lifetime + spent totals (used after a spend is
+  // rejected, so the UI stops showing XP another device already spent).
+  async _refreshBalance() {
+    if (!this.signedIn() || !this.childId()) return false;
+    try {
+      const p = await this.api("/accounts/children/" + this.childId() + "/progress");
+      if (typeof p.xp === "number") {
+        localStorage.setItem("ghar.xp.total", String(Math.max(this.xp(), p.xp)));
+      }
+      if (typeof p.xp_spent === "number") {
+        localStorage.setItem("ghar.xp.spent", String(p.xp_spent));
+      }
+      return true;
+    } catch (e) { return false; }
+  },
+  // Reconcile the local spend record with the server's. Called from
+  // pull() after /progress. Two layers:
+  // (1) Local spending the server never saw (guest/offline): if this
+  //     browser's spent total is higher than the server's, record the
+  //     difference as a "reconcile" spend (deterministic key, so a retry
+  //     cannot double it). The server is otherwise authoritative.
+  // (2) One-time, pre-fix spending: before this build the client never
+  //     told the server about a spend, so the server's xp_spent is 0
+  //     even though the child owns shop items and fed/taught Suga. On
+  //     the first pull (flag ghar.xp.reconciled), compute the spend the
+  //     synced records prove — shop items owned (the first free_used,
+  //     in purchase order, were free) + 5 XP per Suga feed + 10 XP per
+  //     word taught — and record anything the server hasn't seen.
+  //     Mimic and Bagh-Chal hint spends were never counted anywhere, so
+  //     those are forgiven (not deducted). The result is clamped so
+  //     spendable can never go below 0.
+  async syncSpends(serverXp, serverSpent) {
+    if (!this.signedIn() || !this.childId()) return false;
+    serverXp = Math.max(serverXp || 0, 0);
+    serverSpent = Math.max(serverSpent || 0, 0);
+    const localSpent = this.spent();
+    let unrecorded = Math.max(0, localSpent - serverSpent);
+    let layer2done = true;
+    const reconciled = localStorage.getItem("ghar.xp.reconciled") === "1";
+    if (!reconciled && typeof SHOP !== "undefined") {
+      try {
+        const expected = await this._expectedSpendFromRecords();
+        if (typeof expected === "number") {
+          unrecorded = Math.max(unrecorded, expected - serverSpent);
+        } else {
+          layer2done = false;
+        }
+      } catch (e) { layer2done = false; }
+    } else if (!reconciled) {
+      layer2done = false; // no catalog on this page — try again on shop/My Ghar
+    }
+    if (unrecorded > 0) {
+      unrecorded = Math.min(unrecorded, Math.max(serverXp - serverSpent, 0));
+    }
+    if (unrecorded > 0) {
+      const key = "reconcile:" + this.childId() + ":" + serverSpent + ":" + localSpent;
+      const r = await this.spend(unrecorded, "reconcile", key);
+      if (!r.ok) return false; // network — keep the flag unset, retry next pull
+      serverSpent = this.spent(); // spend() already set it from the server
+    } else {
+      // Nothing unrecorded — the server's spent total is authoritative.
+      localStorage.setItem("ghar.xp.spent", String(serverSpent));
+    }
+    if (layer2done) localStorage.setItem("ghar.xp.reconciled", "1");
+    return true;
+  },
+  // One-time migration helper: how much XP do the synced records prove
+  // this child already spent (before spends were recorded server-side)?
+  // Shop items owned (the first free_used, in purchase order, were free)
+  // + 5 XP per Suga feed + 10 XP per word taught. Returns a number, or
+  // null when the records can't be read.
+  async _expectedSpendFromRecords() {
+    if (typeof SHOP === "undefined") return null;
+    const cid = this.childId();
+    if (!cid) return null;
+    const shop = await this.api("/accounts/children/" + cid + "/shop");
+    const suga = await this.api("/accounts/children/" + cid + "/suga");
+    const mg = await this.api("/accounts/children/" + cid + "/myghar");
+    if (!shop || !Array.isArray(shop.items) || !suga || !mg) return null;
+    const price = {};
+    SHOP.forEach(it => { price[it.id] = it.price || 0; });
+    // Freebies: the first free_used owned items, in purchase order (GET
+    // /shop returns purchase order). Use the max of the server's and this
+    // browser's count — free_used is max-merged, so either side can lag.
+    const localFree = parseInt(localStorage.getItem("ghar.shop.freeUsed") || "0", 10) || 0;
+    const freeUsed = Math.min(Math.max(mg.free_used || 0, localFree), shop.items.length);
+    let total = 0;
+    shop.items.forEach((id, i) => { if (i >= freeUsed) total += (price[id] || 0); });
+    total += 5 * (suga.fed_count || 0);
+    total += 10 * ((suga.taught || []).length);
+    return total;
+  },
   // ---- Bones: the dog's growth counter (matches the app's bones) ----
   // Bones only ever grow: every XP earned anywhere adds a bone, and
   // spending XP never takes one back — so the dog can never shrink.
@@ -137,6 +280,12 @@ const GharAuth = {
     // clobbering the local progress on the next load.
     const mergedXp = Math.max(this.xp(), p.xp || 0);
     localStorage.setItem("ghar.xp.total", String(mergedXp));
+    // Spendable balance: the server is the source of truth (xp_spent),
+    // NOT max-merged with the lifetime total — max-merging here is what
+    // used to restore spent XP on every page load (the refund bug).
+    // syncSpends reconciles any local spending the server hasn't seen,
+    // then the local spent total follows the server.
+    try { await this.syncSpends(mergedXp, p.xp_spent || 0); } catch (e) {}
     // Bones migrate from the merged (lifetime) total on first call, so a
     // signed-in child starts at lifetime XP, not the spendable balance.
     this.syncBones();
@@ -200,7 +349,9 @@ const GharAuth = {
       body: JSON.stringify({
         group_code: code,
         nickname: nickname,
-        xp: this.xp(),
+        // The leaderboard shares the spendable balance, matching the app
+        // (where totalXP is the wallet and drops when XP is spent).
+        xp: this.spendable(),
         quiz_streak_best: parseInt(localStorage.getItem("ghar.quiz.streakBest") || "0", 10) || 0,
         quiz_correct_total: parseInt(localStorage.getItem("ghar.quiz.correctTotal") || "0", 10) || 0,
         missions_done: missions,

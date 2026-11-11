@@ -83,8 +83,9 @@
   </div>
   <div class="suga-teach">
     <input class="auth-input" id="suga-rename-input" maxlength="14" placeholder="Rename your parrot…" aria-label="Rename Suga">
-    <button class="quiz-next" id="suga-rename-btn">✏️ Rename</button>
+    <button class="quiz-next" id="suga-rename-btn">✏️ Rename (25 XP)</button>
   </div>
+  <p class="auth-note" id="suga-rename-error" style="color:#c62828" hidden></p>
   <div class="suga-teach">
     <select class="auth-input" id="suga-word-picker" aria-label="Pick a word to teach Suga"></select>
     <button class="quiz-next" id="suga-teach-btn">🎓 Teach Suga (10 XP)</button>
@@ -96,8 +97,8 @@
   </div>
   <p class="auth-note" id="suga-teach-status"></p>
 </dialog>
-<script src="auth.js?v=13"></script>
-<script src="shop-data.js"></script>
+<script src="auth.js?v=14"></script>
+<script src="shop-data.js?v=2"></script>
 <script>
 // My Ghar -- ONE ROOM PICTURE (v8).
 // The room is a single wide image (assets/images/myghar/room.jpg): one
@@ -423,6 +424,17 @@ function dogStage() {
   const bones = (window.GharAuth && GharAuth.syncBones) ? GharAuth.syncBones() : (parseInt(localStorage.getItem("ghar.dog.bones") || "0", 10) || 0);
   return dogStageFor(bones);
 }
+// The wallet balance (spendable XP) — the header and the Suga buttons
+// show what the child can actually spend, not the lifetime total.
+function spendableXP() {
+  if (window.GharAuth && GharAuth.spendable) return GharAuth.spendable();
+  return Math.max((parseInt(localStorage.getItem("ghar.xp.total") || "0", 10) || 0)
+    - (parseInt(localStorage.getItem("ghar.xp.spent") || "0", 10) || 0), 0);
+}
+function refreshXPLabel() {
+  const el = document.getElementById("xp-label");
+  if (el) el.textContent = spendableXP();
+}
 function readState() {
   const xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
   let missionsDone = 0, missionsVerified = 0, teenDone = 0;
@@ -669,7 +681,7 @@ function openMysteryBox(state) {
     const xp = (parseInt(localStorage.getItem("ghar.xp.total") || "0", 10) || 0) + 10;
     localStorage.setItem("ghar.xp.total", String(xp));
     if (window.GharAuth && GharAuth.addBones) GharAuth.addBones(10);
-    document.getElementById("xp-label").textContent = xp;
+    refreshXPLabel();
     if (window.GharAuth && GharAuth.pushTotals) GharAuth.pushTotals().catch(() => {});
     renderMysteryButton(readState());
     showCelebration("🎁 +10 XP!", "You found all the treasures — here's 10 XP!");
@@ -773,7 +785,7 @@ function renderDog(xp, state) {
     if (isGrownup && grownupLive && window.mygharGrownup && window.mygharGrownup.resize) window.mygharGrownup.resize();
   }
   document.getElementById("dog-stage-label").textContent = locked ? "Locked" : STAGE_NAMES[stage];
-  document.getElementById("xp-label").textContent = xp;
+  refreshXPLabel();
   document.getElementById("bones-label").textContent = (window.GharAuth && GharAuth.bones) ? GharAuth.bones() : (parseInt(localStorage.getItem("ghar.dog.bones") || "0", 10) || 0);
   document.getElementById("streak-label").textContent = (state && state.streak) || 0;
   const prev = parseInt(localStorage.getItem(DOG_STAGE_KEY) || "0", 10);
@@ -935,7 +947,7 @@ function awardFetchXP() {
   const xp = (parseInt(localStorage.getItem("ghar.xp.total") || "0", 10) || 0) + 2;
   localStorage.setItem("ghar.xp.total", String(xp));
   if (window.GharAuth && GharAuth.addBones) GharAuth.addBones(2);
-  document.getElementById("xp-label").textContent = xp;
+  refreshXPLabel();
   if (window.GharAuth && GharAuth.pushTotals) GharAuth.pushTotals().catch(() => {});
 }
 document.getElementById("pose-sleep-btn").addEventListener("click", () => {
@@ -1034,13 +1046,54 @@ function renderSugaName() {
   const feed = document.getElementById("suga-feed-btn");
   if (feed) feed.textContent = `🍌 Feed ${name} (5 XP)`;
 }
-document.getElementById("suga-rename-btn").addEventListener("click", () => {
+// Rename Suga — matches the app: 25 XP, 14 letters max, letters only
+// (Latin + Devanagari, space/hyphen/apostrophe), nothing rude. A failed
+// validation or an unaffordable rename deducts nothing.
+function showRenameError(msg) {
+  const el = document.getElementById("suga-rename-error");
+  if (!el) return;
+  if (msg) { el.textContent = msg; el.hidden = false; }
+  else { el.textContent = ""; el.hidden = true; }
+}
+document.getElementById("suga-rename-input").addEventListener("input", () => {
+  // Live validation, like the app's rename sheet (error under the field).
+  const err = (typeof sugaNameError === "function")
+    ? sugaNameError(document.getElementById("suga-rename-input").value) : null;
+  showRenameError(err);
+});
+document.getElementById("suga-rename-btn").addEventListener("click", async () => {
   const input = document.getElementById("suga-rename-input");
-  const name = (input.value || "").trim().slice(0, 14);
+  const name = (input.value || "").trim();
+  const err = (typeof sugaNameError === "function") ? sugaNameError(name) : null;
+  if (err) { showRenameError(err); return; }
+  const cost = (typeof SUGA_RENAME_COST === "number") ? SUGA_RENAME_COST : 25;
+  if (spendableXP() < cost) {
+    showRenameError(`Not enough XP to rename — you need ${cost} XP.`);
+    return;
+  }
+  showRenameError(null);
+  const btn = document.getElementById("suga-rename-btn");
+  btn.disabled = true;
+  let res;
+  if (window.GharAuth && GharAuth.spend) {
+    res = await GharAuth.spend(cost, "suga:rename");
+  } else {
+    // auth.js didn't load — local-only fallback (guest behaviour).
+    localStorage.setItem("ghar.xp.spent", String((parseInt(localStorage.getItem("ghar.xp.spent") || "0", 10) || 0) + cost));
+    res = { ok: true };
+  }
+  btn.disabled = spendableXP() < cost;
+  if (!res.ok) {
+    showRenameError(res.reason === "not enough"
+      ? `Not enough XP to rename — you need ${cost} XP.`
+      : `Couldn't rename right now — check your connection and try again.`);
+    return;
+  }
   localStorage.setItem(SUGA_NAME_KEY, name); // empty = back to "Suga"
   renderSugaName();
   document.getElementById("suga-knows").textContent = `${sugaName()} knows ${sugaTaught().length + 2} phrases.`;
   document.getElementById("suga-teach-status").textContent = name ? `🎉 Say hi to ${name}! 🦜` : "Back to Suga! 🦜";
+  refreshXPLabel();
   renderShopItems(); // refresh the room item's alt text with the new name
   syncPost("/suga", { name }).then((r) => {
     const el = document.getElementById("suga-teach-status");
@@ -1067,11 +1120,15 @@ function openSugaDialog() {
   });
   renderSugaFed();
   const btn = document.getElementById("suga-teach-btn");
-  const xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
+  const xp = spendableXP();
   btn.disabled = picker.options.length === 0 || xp < 10;
   btn.textContent = picker.options.length === 0 ? `🎓 ${sugaName()} knows every word!` : `🎓 Teach ${sugaName()} (10 XP)`;
   document.getElementById("suga-mimic-btn").disabled = xp < 20;
   document.getElementById("suga-feed-btn").disabled = xp < 5;
+  // The app disables Rename when the child has fewer than 25 XP.
+  document.getElementById("suga-rename-btn").disabled = xp < ((typeof SUGA_RENAME_COST === "number") ? SUGA_RENAME_COST : 25);
+  document.getElementById("suga-rename-error").textContent = "";
+  document.getElementById("suga-rename-error").hidden = true;
   document.getElementById("suga-dialog").showModal();
 }
 document.getElementById("suga-talk-btn").addEventListener("click", () => { sugaTalk(); });
@@ -1081,27 +1138,42 @@ document.getElementById("suga-dialog-close").addEventListener("click", () => {
 document.getElementById("suga-dialog").addEventListener("click", (e) => {
   if (e.target === document.getElementById("suga-dialog")) document.getElementById("suga-dialog").close();
 });
-document.getElementById("suga-teach-btn").addEventListener("click", () => {
+document.getElementById("suga-teach-btn").addEventListener("click", async () => {
   const picker = document.getElementById("suga-word-picker");
   const id = picker.value;
   const w = PACK_WORDS[id];
   if (!w) return;
-  let xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
-  if (xp < 10) return;
+  if (spendableXP() < 10) return;
   const taught = sugaTaught();
   if (taught.includes(id)) return;
-  xp -= 10;
-  localStorage.setItem("ghar.xp.total", String(xp));
+  // Spend through the server (POST /spend) so the 10 XP stays spent
+  // across devices and reloads. A failed spend teaches nothing.
+  const btn = document.getElementById("suga-teach-btn");
+  btn.disabled = true;
+  let res;
+  if (window.GharAuth && GharAuth.spend) {
+    res = await GharAuth.spend(10, "suga:teach:" + id);
+  } else {
+    // auth.js didn't load — local-only fallback (guest behaviour).
+    localStorage.setItem("ghar.xp.spent", String((parseInt(localStorage.getItem("ghar.xp.spent") || "0", 10) || 0) + 10));
+    res = { ok: true };
+  }
+  if (!res.ok) {
+    document.getElementById("suga-teach-status").textContent = res.reason === "not enough"
+      ? `Not enough XP to teach ${sugaName()} — he needs 10 XP.`
+      : `Couldn't teach right now — check your connection and try again.`;
+    openSugaDialog();
+    return;
+  }
   taught.push(id);
   localStorage.setItem(SUGA_TAUGHT_KEY, JSON.stringify(taught));
   syncPost("/suga", { word_id: id }).then((r) => {
     const el = document.getElementById("suga-teach-status");
     if (el) el.textContent += r.ok ? " ✅ Synced to server." : " ⚠️ Not synced: " + r.reason;
   });
-  if (window.GharAuth) GharAuth.pushTotals().catch(() => {});
   if (window.GharAuth && GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
   document.getElementById("suga-teach-status").textContent = `🎉 ${sugaName()} learned "${w.devanagari}"!`;
-  document.getElementById("xp-label").textContent = xp;
+  refreshXPLabel();
   openSugaDialog();
   // Suga squawks the new word back in his parrot voice.
   playSuga(asset(w.audio_url), 1.8);
@@ -1116,19 +1188,34 @@ function renderSugaFed() {
   const n = sugaFedCount();
   document.getElementById("suga-fed-line").textContent = n > 0 ? `Fed ${n} time${n === 1 ? "" : "s"} 🍌` : "";
 }
-document.getElementById("suga-feed-btn").addEventListener("click", () => {
-  let xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
-  if (xp < 5) { document.getElementById("suga-teach-status").textContent = `Not enough XP to feed ${sugaName()} — he needs 5 XP.`; return; }
-  xp -= 5;
-  localStorage.setItem("ghar.xp.total", String(xp));
+document.getElementById("suga-feed-btn").addEventListener("click", async () => {
+  if (spendableXP() < 5) { document.getElementById("suga-teach-status").textContent = `Not enough XP to feed ${sugaName()} — he needs 5 XP.`; return; }
+  // Spend through the server (POST /spend) so the 5 XP stays spent
+  // across devices and reloads. A failed spend feeds nothing.
+  const feedBtn = document.getElementById("suga-feed-btn");
+  feedBtn.disabled = true;
+  let res;
+  if (window.GharAuth && GharAuth.spend) {
+    res = await GharAuth.spend(5, "suga:feed");
+  } else {
+    // auth.js didn't load — local-only fallback (guest behaviour).
+    localStorage.setItem("ghar.xp.spent", String((parseInt(localStorage.getItem("ghar.xp.spent") || "0", 10) || 0) + 5));
+    res = { ok: true };
+  }
+  if (!res.ok) {
+    document.getElementById("suga-teach-status").textContent = res.reason === "not enough"
+      ? `Not enough XP to feed ${sugaName()} — he needs 5 XP.`
+      : `Couldn't feed right now — check your connection and try again.`;
+    feedBtn.disabled = false;
+    return;
+  }
   localStorage.setItem(SUGA_FED_KEY, String(sugaFedCount() + 1));
   const fedToday = new Date().toISOString().slice(0, 10);
   localStorage.setItem(SUGA_FED_DATE_KEY, fedToday);
   syncPost("/suga", { fed_date: fedToday, fed_count: sugaFedCount() });
-  if (window.GharAuth) GharAuth.pushTotals().catch(() => {});
   if (window.GharAuth && GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
   const yum = SUGA_TREATS[Math.floor(Math.random() * SUGA_TREATS.length)];
-  document.getElementById("xp-label").textContent = xp;
+  refreshXPLabel();
   document.getElementById("suga-teach-status").textContent = `${sugaName()} loved the ${yum}!`;
   renderSugaFed();
   // The treat pops up at Suga's beak in the room, then fades.
@@ -1147,14 +1234,29 @@ document.getElementById("suga-feed-btn").addEventListener("click", () => {
 // squawks it back pitched-up like a parrot. The recording stays in the
 // browser (blob URL) — nothing is uploaded.
 let mimicRec = null, mimicChunks = [], mimicURL = null;
-document.getElementById("suga-mimic-btn").addEventListener("click", () => {
-  let xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
-  if (xp < 20) { document.getElementById("suga-teach-status").textContent = `Not enough XP for mimic mode — ${sugaName()} needs 20 XP.`; return; }
-  xp -= 20;
-  localStorage.setItem("ghar.xp.total", String(xp));
-  if (window.GharAuth) GharAuth.pushTotals().catch(() => {});
+document.getElementById("suga-mimic-btn").addEventListener("click", async () => {
+  if (spendableXP() < 20) { document.getElementById("suga-teach-status").textContent = `Not enough XP for mimic mode — ${sugaName()} needs 20 XP.`; return; }
+  // Spend through the server (POST /spend) so the 20 XP stays spent
+  // across devices and reloads. A failed spend opens nothing.
+  const mimicBtn = document.getElementById("suga-mimic-btn");
+  mimicBtn.disabled = true;
+  let res;
+  if (window.GharAuth && GharAuth.spend) {
+    res = await GharAuth.spend(20, "suga:mimic");
+  } else {
+    // auth.js didn't load — local-only fallback (guest behaviour).
+    localStorage.setItem("ghar.xp.spent", String((parseInt(localStorage.getItem("ghar.xp.spent") || "0", 10) || 0) + 20));
+    res = { ok: true };
+  }
+  if (!res.ok) {
+    document.getElementById("suga-teach-status").textContent = res.reason === "not enough"
+      ? `Not enough XP for mimic mode — ${sugaName()} needs 20 XP.`
+      : `Couldn't start mimic mode — check your connection and try again.`;
+    mimicBtn.disabled = false;
+    return;
+  }
   if (window.GharAuth && GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
-  document.getElementById("xp-label").textContent = xp;
+  refreshXPLabel();
   document.getElementById("suga-mimic-row").hidden = false;
   document.getElementById("suga-mimic-play").hidden = true;
   document.getElementById("suga-mimic-status").textContent = "Tap Start recording, say something, then tap Stop.";

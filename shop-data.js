@@ -65,6 +65,41 @@ function sugaName() {
   const n = (localStorage.getItem(SUGA_NAME_KEY) || "").trim();
   return n === "" ? "Suga" : n;
 }
+// Parrot rename rules — copied EXACTLY from the app (ContentView.swift:
+// buddyNameError + BuddyBannedWords). A rename costs 25 XP and the name
+// must be short, letters only (Latin + Devanagari, plus space/hyphen/
+// apostrophe), with nothing rude. Empty is fine — it just resets to the
+// default "Suga". Matched case-insensitively, whole words only — so
+// "hello" stays legal.
+const BUDDY_BANNED_WORDS = [
+  "fuck", "fucking", "shit", "bitch", "ass", "asshole", "dick", "cock",
+  "pussy", "whore", "slut", "bastard", "damn", "dammit", "goddamn",
+  "crap", "piss", "douche", "retard", "fag", "nigga",
+];
+const SUGA_RENAME_COST = 25;
+// Count grapheme clusters (what Swift's String.count does) — a Devanagari
+// syllable like "मि" is ONE cluster, not two code points. Intl.Segmenter
+// is supported in all modern browsers; fall back to code points.
+function _graphemeLength(s) {
+  if (typeof Intl !== "undefined" && Intl.Segmenter) {
+    return [...new Intl.Segmenter("en", { granularity: "grapheme" }).segment(s)].length;
+  }
+  return [...s].length;
+}
+function sugaNameError(raw) {
+  const name = (raw || "").trim();
+  if (!name) return null; // empty is OK — resets to "Suga"
+  if (_graphemeLength(name) > 14) return "Keep it short — 14 letters max";
+  // \p{L} = letters, \p{M} = combining marks. Devanagari vowel signs /
+  // matras (ि ो) are MARKS, not letters — without \p{M} a name like
+  // "मिठो" would be wrongly rejected. This matches Swift's
+  // Character.isLetter, which treats a base letter + its matras as one
+  // letter cluster.
+  if (/[^\p{L}\p{M} \-']/u.test(name)) return "Letters only, please!";
+  const words = name.toLowerCase().split(/[^\p{L}\p{M}]+/u).filter(Boolean);
+  if (words.some(w => BUDDY_BANNED_WORDS.includes(w))) return "Let's pick a nicer name 🦜";
+  return null;
+}
 // First 3 decorations free (matches the app's free tier: 3 decorations).
 // The count is the number of FREE purchases made (0–3), not the owned
 // count — a paid purchase must not consume the allowance.

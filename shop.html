@@ -23,8 +23,8 @@
   <div class="shop-grid" id="shop-grid"></div>
   <div class="shop-owned" id="shop-owned"></div>
 </div>
-<script src="auth.js?v=13"></script>
-<script src="shop-data.js"></script>
+<script src="auth.js?v=14"></script>
+<script src="shop-data.js?v=2"></script>
 <script>
 // Ghar Shop -- buy room decorations and Suga the parrot with XP.
 // Prices are in XP. Buying deducts XP (localStorage ghar.xp.total, pushed
@@ -32,10 +32,12 @@
 // server too). Trophies are NOT sold here -- they are earned by learning.
 const player = new Audio();
 function play(url) { player.pause(); player.src = url; player.play().catch(() => {}); }
-function xp() { return parseInt(localStorage.getItem("ghar.xp.total") || "0", 10); }
-function saveXP(v) {
-  localStorage.setItem("ghar.xp.total", String(v));
-  if (window.GharAuth) GharAuth.pushTotals().catch(() => {});
+// The wallet balance (spendable XP), not the lifetime total — the shop
+// must never let the child spend XP they already spent (the refund bug).
+function xp() {
+  if (window.GharAuth && GharAuth.spendable) return GharAuth.spendable();
+  return Math.max((parseInt(localStorage.getItem("ghar.xp.total") || "0", 10) || 0)
+    - (parseInt(localStorage.getItem("ghar.xp.spent") || "0", 10) || 0), 0);
 }
 function render() {
   const balance = xp();
@@ -73,17 +75,31 @@ function render() {
       btn.className = "quiz-next shop-buy";
       btn.textContent = isFree ? "Get it free" : afford ? "Buy" : `Need ${item.price - balance} more XP`;
       btn.disabled = !afford;
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", async () => {
         const charge = isFree ? 0 : item.price;
         if (xp() < charge) return;
         if (!confirm(isFree ? `Get ${displayName} for FREE? (${freeLeft} of 3 free decorations left)` : `Buy ${displayName} for ${item.price} XP?`)) return;
+        btn.disabled = true; // no double-tap while the spend is in flight
         if (isFree) {
           shopUseFree();
           // Sync the used count (max-merged server-side) so another
           // device can't re-grant the freebies.
           if (window.GharAuth && GharAuth.childId()) GharAuth.api("/accounts/children/" + GharAuth.childId() + "/myghar", "POST", { free_used: shopFreeUsed() }).catch(() => {});
+        } else if (window.GharAuth && GharAuth.spend) {
+          // Spend through the server (POST /spend): the deduction sticks
+          // across devices and reloads. A failed spend buys nothing.
+          const res = await GharAuth.spend(charge, "shop:" + item.id);
+          if (!res.ok) {
+            document.getElementById("hint").textContent = res.reason === "not enough"
+              ? `Not enough XP to buy ${displayName} — you need ${item.price} XP.`
+              : `Couldn't complete the purchase — check your connection and try again.`;
+            render();
+            return;
+          }
         } else {
-          saveXP(xp() - item.price);
+          // auth.js didn't load — local-only fallback (guest behaviour).
+          const spent = (parseInt(localStorage.getItem("ghar.xp.spent") || "0", 10) || 0) + charge;
+          localStorage.setItem("ghar.xp.spent", String(spent));
         }
         if (window.GharAuth && GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
         const list = shopOwned();
@@ -123,6 +139,13 @@ GharAuth.pull().catch(() => {}).then(async () => {
       const local = shopOwned();
       const merged = [...new Set([...local, ...me.items])];
       shopSaveOwned(merged);
+      // First-sync push-back: items bought while offline live only in
+      // this browser — record them server-side so another device sees
+      // them (and can't charge for them again).
+      const serverSet = new Set(me.items);
+      merged.filter(id => !serverSet.has(id)).forEach(id => {
+        GharAuth.api("/accounts/children/" + GharAuth.childId() + "/shop", "POST", { item_id: id }).catch(() => {});
+      });
     }
   } catch (e) { /* guest or offline -- local list stands */ }
   // Pull the server's free-decoration count so a freebie used on another

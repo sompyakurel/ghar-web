@@ -73,7 +73,7 @@
   </div>
 </div>
 
-<script src="auth.js?v=13"></script>
+<script src="auth.js?v=14"></script>
 <script>
 // Bagh-Chal — the classic Nepali tiger-and-goats game, ported from the
 // app's BaghChalView.swift (which mirrors ~/workspace/baghchal/baghchal.py).
@@ -87,6 +87,13 @@ function asset(u) {
 }
 let xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
 function saveXP() { localStorage.setItem("ghar.xp.total", String(xp)); }
+// The wallet balance (spendable XP) — the header shows what the child
+// can actually spend, not the lifetime total (xp above stays lifetime,
+// for awards + the server's /progress total).
+function spendableXP() {
+  if (window.GharAuth && GharAuth.spendable) return GharAuth.spendable();
+  return Math.max(xp - (parseInt(localStorage.getItem("ghar.xp.spent") || "0", 10) || 0), 0);
+}
 
 // Cross-device sync for the daily paid-game cap. The server is the shared
 // record; local data is never wiped — latest day wins, same day takes the
@@ -420,7 +427,7 @@ function renderStatus() {
   } else {
     banner.style.display = "none";
   }
-  document.getElementById("xp-display").textContent = `⭐ ${xp} XP`;
+  document.getElementById("xp-display").textContent = `⭐ ${spendableXP()} XP`;
   const hb = document.getElementById("hint-btn");
   hb.style.display = twoPlayer ? "none" : "";
   hb.textContent = hintsLeft > 0 ? `💡 Hint (${hintsLeft})` : "💡 Hint · 5 XP";
@@ -666,14 +673,30 @@ document.getElementById("start-btn").addEventListener("click", startGame);
 document.getElementById("again-btn").addEventListener("click", startGame);
 document.getElementById("done-btn").addEventListener("click", () => { location.href = "index.html#games"; });
 document.getElementById("restart-btn").addEventListener("click", startGame);
-document.getElementById("hint-btn").addEventListener("click", () => {
+document.getElementById("hint-btn").addEventListener("click", async () => {
   if (twoPlayer || !engine.goatTurn || tigerThinking || phase !== "playing") return;
   if (hintsLeft > 0) {
     hint = goatHint(engine);
     hintsLeft -= 1;
-  } else if (xp >= 5) {
-    xp -= 5;
-    saveXP();
+  } else if (spendableXP() >= 5) {
+    // A paid hint costs 5 XP — spend through the server (POST /spend)
+    // so it stays spent across devices and reloads.
+    const hb = document.getElementById("hint-btn");
+    hb.disabled = true;
+    let res;
+    if (window.GharAuth && GharAuth.spend) {
+      res = await GharAuth.spend(5, "baghchal:hint");
+    } else {
+      // auth.js didn't load — local-only fallback (guest behaviour).
+      localStorage.setItem("ghar.xp.spent", String((parseInt(localStorage.getItem("ghar.xp.spent") || "0", 10) || 0) + 5));
+      res = { ok: true };
+    }
+    hb.disabled = false;
+    if (!res.ok) {
+      hb.textContent = "Need 5 XP ⭐";
+      setTimeout(renderStatus, 1600);
+      return;
+    }
     hint = goatHint(engine);
   } else {
     const hb = document.getElementById("hint-btn");
@@ -804,7 +827,7 @@ const Music = (() => {
 
 // Boot: pull server progress, sync the games cap, then show the ready screen.
 GharAuth.pull().catch(() => {}).then(() => syncBaghchalGames()).then(() => {
-  document.getElementById("xp-display").textContent = `⭐ ${xp} XP`;
+  document.getElementById("xp-display").textContent = `⭐ ${spendableXP()} XP`;
   setMode(false);
   renderBoard();
 });
