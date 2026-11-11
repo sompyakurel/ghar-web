@@ -15,7 +15,7 @@
   <div id="content"></div>
   <p class="error" id="error" hidden>Couldn't load the sentences. Check your connection and refresh.</p>
 </div>
-<script src="auth.js?v=12"></script>
+<script src="auth.js?v=13"></script>
 <script>
 function isTestUnlock() {
   const q = new URLSearchParams(location.search);
@@ -156,6 +156,7 @@ function pick(w) {
     xp += earned;
     earnedXP += earned;
     saveXP();
+    if (window.GharAuth && GharAuth.addBones) GharAuth.addBones(earned);
     GharAuth.pushTotals().catch(() => {});
     if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
     playDing();

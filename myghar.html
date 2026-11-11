@@ -18,7 +18,7 @@
   <div class="myghar-head">
     <div>
       <h1>🏠 <span id="house-name-label">My Ghar</span></h1>
-      <p class="myghar-sub"><span id="dog-name-label">Bhunte</span> · <span id="dog-stage-label">Puppy</span> · ⭐ <span id="xp-label">0</span> XP · 🔥 <span id="streak-label">0</span> days</p>
+      <p class="myghar-sub"><span id="dog-name-label">Bhunte</span> · <span id="dog-stage-label">Puppy</span> · ⭐ <span id="xp-label">0</span> XP · 🦴 <span id="bones-label">0</span> bones · 🔥 <span id="streak-label">0</span> days</p>
     </div>
     <a class="quiz-next shop-btn" href="shop.html">🛍️ Shop</a>
     <button class="quiz-next" id="mystery-btn">🎁 Mystery Box</button>
@@ -73,13 +73,17 @@
 </div>
 <dialog class="suga-dialog" id="suga-dialog">
   <button class="suga-dialog-close" id="suga-dialog-close" aria-label="Close">✕</button>
-  <h3>🦜 Suga the Parrot</h3>
+  <h3 id="suga-dialog-title">🦜 Suga the Parrot</h3>
   <p class="myghar-shelf-sub" id="suga-knows"></p>
   <p class="myghar-shelf-sub" id="suga-fed-line"></p>
   <div class="suga-teach">
     <button class="quiz-next" id="suga-talk-btn">💬 Hear Suga talk</button>
     <button class="quiz-next" id="suga-feed-btn">🍌 Feed Suga (5 XP)</button>
     <button class="quiz-next" id="suga-mimic-btn">🎤 Mimic me! (20 XP)</button>
+  </div>
+  <div class="suga-teach">
+    <input class="auth-input" id="suga-rename-input" maxlength="14" placeholder="Rename your parrot…" aria-label="Rename Suga">
+    <button class="quiz-next" id="suga-rename-btn">✏️ Rename</button>
   </div>
   <div class="suga-teach">
     <select class="auth-input" id="suga-word-picker" aria-label="Pick a word to teach Suga"></select>
@@ -92,7 +96,7 @@
   </div>
   <p class="auth-note" id="suga-teach-status"></p>
 </dialog>
-<script src="auth.js?v=12"></script>
+<script src="auth.js?v=13"></script>
 <script src="shop-data.js"></script>
 <script>
 // My Ghar -- ONE ROOM PICTURE (v8).
@@ -167,7 +171,7 @@ const STAGE_NAMES = ["Puppy", "Young Dog", "Big Dog"];
 const STAGE_WIDTH = [20, 25, 30]; // % of the stage width, per stage
 // Bhunte pose pictures (AI-generated).
 // Puppy poses match the baby puppy; grown-up poses match the Big-stage dog.
-// showPose picks the grown-up set at stage 2 (150+ XP) so Sleep/Feed/Fetch
+// showPose picks the grown-up set at stage 2 (150+ bones) so Sleep/Feed/Fetch
 // no longer swap the grown-up dog for a puppy.
 const POSE_IMGS = {
   sleep: "assets/images/myghar/bhunte_sleep.png",
@@ -179,8 +183,7 @@ const POSE_IMGS = {
   fetch_grownup: "assets/images/myghar/bhunte_grownup_fetch.png",
 };
 function poseImgFor(pose) {
-  const xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
-  const isGrownup = dogStageFor(xp) === 2;
+  const isGrownup = dogStage() === 2;
   if (isGrownup && POSE_IMGS[pose + "_grownup"]) return POSE_IMGS[pose + "_grownup"];
   return POSE_IMGS[pose];
 }
@@ -221,7 +224,7 @@ function setDogWalking(on) {
   // "walk" input; Puppy/Young ignore it). The CSS bob is the fallback
   // when the .riv is not loaded.
   try {
-    const stage = dogStageFor(readState().xp);
+    const stage = dogStage();
     const api = stage === 0 ? window.mygharPuppy
       : stage === 1 ? window.mygharBhunte : window.mygharGrownup;
     if (api && api.walk) api.walk(on);
@@ -279,7 +282,7 @@ function runFetchSequence() {
   // The mouth is at the FRONT of the head, ~31% of the dog's width out
   // from his centre — not 4%. A fixed 4% put the ball on his chest.
   // Scale it to the stage so it lands on the mouth at every size.
-  const stageW = STAGE_WIDTH[dogStageFor(readState().xp)] || 25;
+  const stageW = STAGE_WIDTH[dogStage()] || 25;
   const mouthOff = 0.31 * stageW;
   const mouthBottom = dogMouthBottomPct(); // ball height at the mouth
   // The ball starts at the mouth on whichever side he is facing.
@@ -367,6 +370,10 @@ function postMygharSoon() {
     syncPost("/myghar", {
       dog_name: localStorage.getItem(DOG_NAME_KEY) || "",
       house_name: localStorage.getItem(HOUSE_NAME_KEY) || "",
+      // Bones + free count ride along (max-merged server-side, so a
+      // name edit can never lower them).
+      bones: (window.GharAuth && GharAuth.bones) ? GharAuth.bones() : (parseInt(localStorage.getItem("ghar.dog.bones") || "0", 10) || 0),
+      free_used: shopFreeUsed(),
     });
   }, 800);
 }
@@ -409,6 +416,13 @@ document.getElementById("celebration").addEventListener("click", () => {
   document.getElementById("celebration").hidden = true;
 });
 function dogStageFor(xp) { return xp >= 150 ? 2 : xp >= 50 ? 1 : 0; }
+// The dog grows on BONES (lifetime XP earned), not spendable XP —
+// spending XP in the shop must never shrink him (matches the app).
+// syncBones() migrates bones to the current XP total on first call.
+function dogStage() {
+  const bones = (window.GharAuth && GharAuth.syncBones) ? GharAuth.syncBones() : (parseInt(localStorage.getItem("ghar.dog.bones") || "0", 10) || 0);
+  return dogStageFor(bones);
+}
 function readState() {
   const xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
   let missionsDone = 0, missionsVerified = 0, teenDone = 0;
@@ -549,7 +563,7 @@ function renderShopItems() {
     if (item.stand) {
       const st = document.createElement("img");
       st.src = `assets/images/myghar/${item.stand.img}`;
-      st.alt = "Suga's perch stand";
+      st.alt = sugaName() + "'s perch stand";
       st.className = "myghar-shop-item myghar-stand" + (arranging ? " arranging" : "");
       st.dataset.id = item.id + "-stand";
       st.style.left = ((item.stand.x + delta[0]) * 100) + "%";
@@ -559,7 +573,7 @@ function renderShopItems() {
     }
     const el = document.createElement("img");
     el.src = `assets/images/myghar/${item.img}`;
-    el.alt = item.en;
+    el.alt = item.id === "suga" ? sugaName() + " the parrot" : item.en;
     el.className = "myghar-shop-item" + (item.id === "suga" ? " myghar-suga" : "") + (arranging ? " arranging" : "");
     el.dataset.id = item.id;
     el.style.left = ((item.x + delta[0]) * 100) + "%";
@@ -654,6 +668,7 @@ function openMysteryBox(state) {
     // gift-box fallback), so leftover boxes stay openable and useful.
     const xp = (parseInt(localStorage.getItem("ghar.xp.total") || "0", 10) || 0) + 10;
     localStorage.setItem("ghar.xp.total", String(xp));
+    if (window.GharAuth && GharAuth.addBones) GharAuth.addBones(10);
     document.getElementById("xp-label").textContent = xp;
     if (window.GharAuth && GharAuth.pushTotals) GharAuth.pushTotals().catch(() => {});
     renderMysteryButton(readState());
@@ -708,7 +723,7 @@ function renderDog(xp, state) {
   const dog = document.getElementById("dog");
   const locked = (state ? state.missionsDone : 0) < 10;
   const lockEl = document.getElementById("dog-locked");
-  const stage = dogStageFor(xp);
+  const stage = dogStage();
   const isGrownup = stage === 2;
   const isPuppy = stage === 0;
   // Which Rive is live: Puppy uses the baby puppy .riv, Young uses Bhunte,
@@ -759,6 +774,7 @@ function renderDog(xp, state) {
   }
   document.getElementById("dog-stage-label").textContent = locked ? "Locked" : STAGE_NAMES[stage];
   document.getElementById("xp-label").textContent = xp;
+  document.getElementById("bones-label").textContent = (window.GharAuth && GharAuth.bones) ? GharAuth.bones() : (parseInt(localStorage.getItem("ghar.dog.bones") || "0", 10) || 0);
   document.getElementById("streak-label").textContent = (state && state.streak) || 0;
   const prev = parseInt(localStorage.getItem(DOG_STAGE_KEY) || "0", 10);
   if (stage > prev) {
@@ -842,7 +858,7 @@ function sugaTalk() {
   if (!options.length) return;
   const pick = options[Math.floor(Math.random() * options.length)];
   playSuga(pick.url, pick.rate);
-  document.getElementById("hint").textContent = `🦜 Suga says: ${pick.ne} (${pick.en})`;
+  document.getElementById("hint").textContent = `🦜 ${sugaName()} says: ${pick.ne} (${pick.en})`;
 }
 // All pack words by id (for the teach picker + Suga's taught words),
 // and the decks (for the teach picker's optgroups).
@@ -850,8 +866,7 @@ let PACK_WORDS = {};
 let PACK_DECKS = [];
 document.getElementById("dog").addEventListener("click", () => {
   if (document.getElementById("dog").style.display === "none") return;
-  const xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
-  const stage = dogStageFor(xp);
+  const stage = dogStage();
   const dog = document.getElementById("dog");
   dog.classList.remove("bounce");
   void dog.offsetWidth;
@@ -885,8 +900,7 @@ function showPose(pose) {
   } else {
     if (ball) ball.hidden = true;
   }
-  const xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
-  img.style.width = STAGE_WIDTH[dogStageFor(xp)] + "%";
+  img.style.width = STAGE_WIDTH[dogStage()] + "%";
   document.getElementById("hint").textContent =
     pose === "sleep" ? "💤 Bhunte is sleeping… tap him to wake him up!" :
     pose === "eat" ? "🍽️ Nom nom nom!" : "🎾 Go fetch!";
@@ -920,6 +934,7 @@ function awardFetchXP() {
   syncPost("/games", { game: "fetch", day: today, paid: count + 1, xp_today: (count + 1) * 2 });
   const xp = (parseInt(localStorage.getItem("ghar.xp.total") || "0", 10) || 0) + 2;
   localStorage.setItem("ghar.xp.total", String(xp));
+  if (window.GharAuth && GharAuth.addBones) GharAuth.addBones(2);
   document.getElementById("xp-label").textContent = xp;
   if (window.GharAuth && GharAuth.pushTotals) GharAuth.pushTotals().catch(() => {});
 }
@@ -944,8 +959,7 @@ document.getElementById("dog-pose").addEventListener("click", () => { clearPose(
 // flashes the wrong dog on load). When a .riv arrives, re-run renderDog
 // so the canvas gets the right stage width and the surface is resized.
 function barkForStage() {
-  const xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
-  const stage = dogStageFor(xp);
+  const stage = dogStage();
   play(stage === 0 ? "assets/audio/nepal-v1/dog_bark.m4a" : "assets/audio/nepal-v1/dog_bark_big.m4a");
   // A tap is a pet: the visible dog bounces happily (the static img has
   // its own click handler that does the same; this covers the Rive dogs).
@@ -1007,9 +1021,37 @@ document.getElementById("house-name").addEventListener("input", e => {
 // (ghar.suga.taught) and Suga squawks them back pitch-shifted.
 // Tapping Suga in the room opens his dialog (feed / teach / mimic all
 // live here, next to him — not buried at the bottom of the page).
+// Suga's name — "Suga" until the child renames him (sugaName() lives in
+// shop-data.js, so the shop and the room read the same name). Renaming is
+// free and has no profanity filter, per the task; the input caps at 14
+// letters like the app. The name syncs via /suga (last-writer-wins).
+function renderSugaName() {
+  const name = sugaName();
+  const title = document.getElementById("suga-dialog-title");
+  if (title) title.textContent = `🦜 ${name} the Parrot`;
+  const talk = document.getElementById("suga-talk-btn");
+  if (talk) talk.textContent = `💬 Hear ${name} talk`;
+  const feed = document.getElementById("suga-feed-btn");
+  if (feed) feed.textContent = `🍌 Feed ${name} (5 XP)`;
+}
+document.getElementById("suga-rename-btn").addEventListener("click", () => {
+  const input = document.getElementById("suga-rename-input");
+  const name = (input.value || "").trim().slice(0, 14);
+  localStorage.setItem(SUGA_NAME_KEY, name); // empty = back to "Suga"
+  renderSugaName();
+  document.getElementById("suga-knows").textContent = `${sugaName()} knows ${sugaTaught().length + 2} phrases.`;
+  document.getElementById("suga-teach-status").textContent = name ? `🎉 Say hi to ${name}! 🦜` : "Back to Suga! 🦜";
+  renderShopItems(); // refresh the room item's alt text with the new name
+  syncPost("/suga", { name }).then((r) => {
+    const el = document.getElementById("suga-teach-status");
+    if (el && !r.ok) el.textContent += " ⚠️ Not synced: " + r.reason;
+  });
+});
 function openSugaDialog() {
   const taught = sugaTaught();
-  document.getElementById("suga-knows").textContent = `Suga knows ${taught.length + 2} phrases.`;
+  document.getElementById("suga-knows").textContent = `${sugaName()} knows ${taught.length + 2} phrases.`;
+  renderSugaName();
+  document.getElementById("suga-rename-input").value = (localStorage.getItem(SUGA_NAME_KEY) || "");
   const picker = document.getElementById("suga-word-picker");
   picker.innerHTML = "";
   PACK_DECKS.forEach(d => {
@@ -1027,7 +1069,7 @@ function openSugaDialog() {
   const btn = document.getElementById("suga-teach-btn");
   const xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
   btn.disabled = picker.options.length === 0 || xp < 10;
-  btn.textContent = picker.options.length === 0 ? "🎓 Suga knows every word!" : "🎓 Teach Suga (10 XP)";
+  btn.textContent = picker.options.length === 0 ? `🎓 ${sugaName()} knows every word!` : `🎓 Teach ${sugaName()} (10 XP)`;
   document.getElementById("suga-mimic-btn").disabled = xp < 20;
   document.getElementById("suga-feed-btn").disabled = xp < 5;
   document.getElementById("suga-dialog").showModal();
@@ -1058,7 +1100,7 @@ document.getElementById("suga-teach-btn").addEventListener("click", () => {
   });
   if (window.GharAuth) GharAuth.pushTotals().catch(() => {});
   if (window.GharAuth && GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
-  document.getElementById("suga-teach-status").textContent = `🎉 Suga learned "${w.devanagari}"!`;
+  document.getElementById("suga-teach-status").textContent = `🎉 ${sugaName()} learned "${w.devanagari}"!`;
   document.getElementById("xp-label").textContent = xp;
   openSugaDialog();
   // Suga squawks the new word back in his parrot voice.
@@ -1076,7 +1118,7 @@ function renderSugaFed() {
 }
 document.getElementById("suga-feed-btn").addEventListener("click", () => {
   let xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
-  if (xp < 5) { document.getElementById("suga-teach-status").textContent = "Not enough XP to feed Suga — he needs 5 XP."; return; }
+  if (xp < 5) { document.getElementById("suga-teach-status").textContent = `Not enough XP to feed ${sugaName()} — he needs 5 XP.`; return; }
   xp -= 5;
   localStorage.setItem("ghar.xp.total", String(xp));
   localStorage.setItem(SUGA_FED_KEY, String(sugaFedCount() + 1));
@@ -1087,7 +1129,7 @@ document.getElementById("suga-feed-btn").addEventListener("click", () => {
   if (window.GharAuth && GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
   const yum = SUGA_TREATS[Math.floor(Math.random() * SUGA_TREATS.length)];
   document.getElementById("xp-label").textContent = xp;
-  document.getElementById("suga-teach-status").textContent = `Suga loved the ${yum}!`;
+  document.getElementById("suga-teach-status").textContent = `${sugaName()} loved the ${yum}!`;
   renderSugaFed();
   // The treat pops up at Suga's beak in the room, then fades.
   const stage = document.getElementById("stage");
@@ -1107,7 +1149,7 @@ document.getElementById("suga-feed-btn").addEventListener("click", () => {
 let mimicRec = null, mimicChunks = [], mimicURL = null;
 document.getElementById("suga-mimic-btn").addEventListener("click", () => {
   let xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
-  if (xp < 20) { document.getElementById("suga-teach-status").textContent = "Not enough XP for mimic mode — Suga needs 20 XP."; return; }
+  if (xp < 20) { document.getElementById("suga-teach-status").textContent = `Not enough XP for mimic mode — ${sugaName()} needs 20 XP.`; return; }
   xp -= 20;
   localStorage.setItem("ghar.xp.total", String(xp));
   if (window.GharAuth) GharAuth.pushTotals().catch(() => {});
@@ -1198,6 +1240,15 @@ GharAuth.pull().catch(() => {}).then(async () => {
   if (mg && typeof mg === "object") {
     if (mg.dog_name && !localStorage.getItem(DOG_NAME_KEY)) localStorage.setItem(DOG_NAME_KEY, mg.dog_name);
     if (mg.house_name && !localStorage.getItem(HOUSE_NAME_KEY)) localStorage.setItem(HOUSE_NAME_KEY, mg.house_name);
+    // Bones + free count: max-merge (the server is the shared record). A
+    // higher server value wins locally; a higher local value pushes up
+    // below, so a stale device can never lower either one.
+    const serverBones = (typeof mg.bones === "number" ? mg.bones : 0) || 0;
+    const localBones = (window.GharAuth && GharAuth.bones) ? GharAuth.bones() : (parseInt(localStorage.getItem("ghar.dog.bones") || "0", 10) || 0);
+    if (serverBones > localBones) localStorage.setItem("ghar.dog.bones", String(serverBones));
+    const serverFree = (typeof mg.free_used === "number" ? mg.free_used : 0) || 0;
+    const localFree = shopFreeUsed();
+    if (serverFree > localFree) localStorage.setItem(SHOP_FREE_USED_KEY, String(serverFree));
     let serverLayout = mg.layout;
     if (typeof serverLayout === "string") { try { serverLayout = JSON.parse(serverLayout); } catch (e) { serverLayout = null; } }
     if (serverLayout && typeof serverLayout === "object" && Object.keys(serverLayout).length > 0 && Object.keys(layout).length === 0) {
@@ -1210,6 +1261,9 @@ GharAuth.pull().catch(() => {}).then(async () => {
     const localHouse = localStorage.getItem(HOUSE_NAME_KEY) || "";
     if (localDog && !mg.dog_name) syncPost("/myghar", { dog_name: localDog });
     if (localHouse && !mg.house_name) syncPost("/myghar", { house_name: localHouse });
+    if (localBones > serverBones || localFree > serverFree) {
+      syncPost("/myghar", { bones: Math.max(localBones, serverBones), free_used: Math.max(localFree, serverFree) });
+    }
     const serverLayoutEmpty = !serverLayout || typeof serverLayout !== "object" || Object.keys(serverLayout).length === 0;
     if (serverLayoutEmpty && Object.keys(layout).length > 0) {
       syncPost("/myghar", { layout_json: JSON.stringify(layout) });
@@ -1234,6 +1288,13 @@ GharAuth.pull().catch(() => {}).then(async () => {
         }
       }
     }
+    // Suga's name: same convention as the dog/house names — the server
+    // wins only when this browser never renamed him.
+    if (typeof sg.name === "string" && sg.name) {
+      if (!(localStorage.getItem(SUGA_NAME_KEY) || "").trim()) {
+        localStorage.setItem(SUGA_NAME_KEY, sg.name);
+      }
+    }
     // First-sync push-back: words taught / feedings from before the sync
     // existed live only in this browser — POST each one the server lacks.
     // (Server inserts taught words idempotently and max-merges fed state.)
@@ -1248,6 +1309,11 @@ GharAuth.pull().catch(() => {}).then(async () => {
     if ((mergedFedDate && mergedFedDate > serverFedDate) || mergedFedCount > serverFedCount) {
       syncPost("/suga", { fed_date: mergedFedDate, fed_count: mergedFedCount });
     }
+    // First-sync push-back for the name: a rename from before the sync
+    // existed lives only in this browser — POST it up when the server
+    // has none.
+    const localSugaName = (localStorage.getItem(SUGA_NAME_KEY) || "").trim();
+    if (localSugaName && !sg.name) syncPost("/suga", { name: localSugaName });
   }
   const gm = await syncGet("/games");
   const localFetchDay = localStorage.getItem("ghar.fetch.day") || "";

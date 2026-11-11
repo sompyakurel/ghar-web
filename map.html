@@ -6,7 +6,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://backend-patient-wave-3724.fly.dev https://api.open-meteo.com https://unpkg.com https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self';">
 <title>Danfe's Map of Nepal — Ghar</title>
 <link rel="stylesheet" href="style.css?v=29">
-<script src="auth.js?v=12"></script>
+<script src="auth.js?v=13"></script>
 <script src="shop-data.js"></script>
 <script src="data/map-data.js"></script>
 <style>
@@ -469,6 +469,7 @@
     if (!already) {
       found[id] = true;
       xpTotal += DATA.xp.perFound;
+      if (window.GharAuth && GharAuth.addBones) GharAuth.addBones(DATA.xp.perFound);
       saveState();
       setXP();
       playDing();
@@ -562,6 +563,7 @@
       localStorage.setItem('ghar.mystery.opened', String(opened + 1));
       if (remaining.length === 0) {
         xpTotal += 10;
+        if (window.GharAuth && GharAuth.addBones) GharAuth.addBones(10);
         setXP();
         saveState();
         return { xpFallback: true };
@@ -585,6 +587,7 @@
     } catch (e) {}
     var treasure = grantMysteryTreasure();
     xpTotal += 25; // Explorer badge bonus
+    if (window.GharAuth && GharAuth.addBones) GharAuth.addBones(25);
     setXP();
     saveState();
     syncProgress();

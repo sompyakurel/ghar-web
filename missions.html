@@ -78,7 +78,7 @@
     <button type="button" class="back" id="dog-celebration-close">Keep exploring</button>
   </div>
 </div>
-<script src="auth.js?v=12"></script>
+<script src="auth.js?v=13"></script>
 <script>
 let pack = null;
 let completed = new Set();
@@ -239,8 +239,9 @@ function render() {
     if (doneBtn) doneBtn.addEventListener("click", () => {
       if (completed.has(m.id)) return; // already done — no double pay
       completed.add(m.id);
-      xp += (m.xp || 10);
-      xp += recordStreakAndDaily();
+      const earnedMission = (m.xp || 10) + recordStreakAndDaily();
+      xp += earnedMission;
+      if (window.GharAuth && GharAuth.addBones) GharAuth.addBones(earnedMission);
       saveSets(); saveXP();
       if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
       pushMission(m.id, "done");
@@ -279,6 +280,7 @@ function renderDaily() {
     b.addEventListener("click", () => {
       if (!GharStreak.claimDaily()) return;
       xp += 15;
+      if (window.GharAuth && GharAuth.addBones) GharAuth.addBones(15);
       saveXP();
       if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
       GharAuth.pushTotals().catch(() => {});
@@ -394,8 +396,9 @@ function markTeenDone(m) {
   if (completed.has(m.id)) return;
   completed.add(m.id);
   verified.add(m.id);
-  xp += (m.verifiedXp || 25);
-  xp += recordStreakAndDaily();
+  const earnedTeen = (m.verifiedXp || 25) + recordStreakAndDaily();
+  xp += earnedTeen;
+  if (window.GharAuth && GharAuth.addBones) GharAuth.addBones(earnedTeen);
   saveSets(); saveXP();
   if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
   pushMission(m.id, "verified");
@@ -462,8 +465,9 @@ document.getElementById("confirm-btn").addEventListener("click", () => {
   const alreadyDone = completed.has(recordMission.id);
   verified.add(recordMission.id);
   completed.add(recordMission.id);
-  xp += alreadyDone ? ((recordMission.verified_xp || 25) - (recordMission.xp || 10)) : (recordMission.verified_xp || 25);
-  xp += recordStreakAndDaily();
+  const earnedProve = (alreadyDone ? ((recordMission.verified_xp || 25) - (recordMission.xp || 10)) : (recordMission.verified_xp || 25)) + recordStreakAndDaily();
+  xp += earnedProve;
+  if (window.GharAuth && GharAuth.addBones) GharAuth.addBones(earnedProve);
   saveSets(); saveXP();
   if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
   pushMission(recordMission.id, "verified");
@@ -487,6 +491,7 @@ GharAuth.pull().catch(() => {}).then(async () => {
   if (typeof GharStreak !== "undefined" && GharStreak.todayChallenge().format === "mission" && GharStreak.missionDoneToday() && !GharStreak.dailyDoneToday()) {
     GharStreak.markDailyDone();
     xp += 15;
+    if (window.GharAuth && GharAuth.addBones) GharAuth.addBones(15);
     saveXP();
     if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
     GharAuth.pushTotals().catch(() => {});

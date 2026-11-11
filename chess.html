@@ -127,7 +127,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
 </div>
 <div id="toast"></div>
 
-<script src="auth.js?v=12"></script>
+<script src="auth.js?v=13"></script>
 <script src="assets/js/chess.js"></script>
 <script>
 (function () {
@@ -590,6 +590,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
     var xp = humanWon === true ? 10 : 2;
     var total = parseInt(localStorage.getItem('ghar.xp.total') || '0', 10) + xp;
     localStorage.setItem('ghar.xp.total', String(total));
+    if (window.GharAuth && GharAuth.addBones) GharAuth.addBones(xp);
     localStorage.setItem('ghar.chess.day', day);
     localStorage.setItem('ghar.chess.paid', String(paid + 1));
     pushChessGames();

@@ -58,6 +58,33 @@ const MYSTERY = [
 const MYSTERY_DECKS_PER_BOX = 3;
 const SHOP_KEY = "ghar.shop.owned";
 const MYSTERY_KEY = "ghar.mystery.owned";
+// Suga's name — "Suga" until the child renames him (myghar.html). Read on
+// display, so the shop and the room always show the same name.
+const SUGA_NAME_KEY = "ghar.suga.name";
+function sugaName() {
+  const n = (localStorage.getItem(SUGA_NAME_KEY) || "").trim();
+  return n === "" ? "Suga" : n;
+}
+// First 3 decorations free (matches the app's free tier: 3 decorations).
+// The count is the number of FREE purchases made (0–3), not the owned
+// count — a paid purchase must not consume the allowance.
+const SHOP_FREE_COUNT = 3;
+const SHOP_FREE_USED_KEY = "ghar.shop.freeUsed";
+function shopFreeUsed() {
+  // Migration: decorations already owned consume the allowance, so a
+  // child who already owns 3+ gets no extra freebies on deploy.
+  const raw = localStorage.getItem(SHOP_FREE_USED_KEY);
+  if (raw === null) {
+    const used = Math.min(SHOP_FREE_COUNT, shopOwned().length);
+    localStorage.setItem(SHOP_FREE_USED_KEY, String(used));
+    return used;
+  }
+  return Math.min(SHOP_FREE_COUNT, parseInt(raw, 10) || 0);
+}
+function shopFreeLeft() { return Math.max(0, SHOP_FREE_COUNT - shopFreeUsed()); }
+function shopUseFree() {
+  localStorage.setItem(SHOP_FREE_USED_KEY, String(Math.min(SHOP_FREE_COUNT, shopFreeUsed() + 1)));
+}
 function shopOwned() {
   try { return JSON.parse(localStorage.getItem(SHOP_KEY) || "[]"); }
   catch (e) { return []; }

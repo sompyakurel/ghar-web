@@ -23,6 +23,7 @@
       <p>② Surround every tiger so it can't move</p>
       <p>③ Tigers jump over goats to catch them — 5 caught and the goats lose!</p>
     </div>
+    <button class="quiz-next" id="rules-btn" type="button">🔊 Hear the rules in Nepali 🇳🇵</button>
     <div class="bagh-modes">
       <button class="bagh-mode" id="mode-phone" type="button">
         <span class="bagh-mode-icon">🧠</span>
@@ -72,7 +73,7 @@
   </div>
 </div>
 
-<script src="auth.js?v=12"></script>
+<script src="auth.js?v=13"></script>
 <script>
 // Bagh-Chal — the classic Nepali tiger-and-goats game, ported from the
 // app's BaghChalView.swift (which mirrors ~/workspace/baghchal/baghchal.py).
@@ -438,6 +439,9 @@ function currentLevel() {
 }
 
 function startGame() {
+  // Like the app's startGame(): the rules narration stops when the
+  // game starts. (Also covers Restart / Play again — same entry point.)
+  stopRules();
   // Clear any pending tiger/pass timers from the previous game, or they
   // would fire moveTiger()/passGoats() on this fresh engine mid-game.
   clearTimeout(tigerTimer); tigerTimer = null;
@@ -477,6 +481,7 @@ function checkDone() {
       xpEarned = (o === "goatsWin") ? 10 : 2;
       xp += xpEarned;
       saveXP();
+      if (window.GharAuth && GharAuth.addBones) GharAuth.addBones(xpEarned);
       GharAuth.pushTotals().catch(() => {});
       if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
     }
@@ -603,6 +608,43 @@ boardSvg.addEventListener("click", (ev) => {
   }
   if (bestP) tapPoint(bestP[0], bestP[1]);
 });
+
+// ---- Rules narration (mirrors the app's RulesNarrator) ----
+// Bundled Som-voice clip (baghchal_rules.m4a). Toggle-style: tap to
+// play, tap again to stop; flips back on its own when the clip ends.
+// Like the app (which only shows its button when the clip file exists),
+// a load/play failure hides the button instead of leaving a dead one.
+const rulesBtn = document.getElementById("rules-btn");
+const rulesAudio = new Audio("assets/audio/nepal-v1/baghchal_rules.m4a");
+const RULES_LABEL = "🔊 Hear the rules in Nepali 🇳🇵";
+let rulesPlaying = false;
+function stopRules() {
+  if (!rulesAudio.paused) rulesAudio.pause();
+  rulesAudio.currentTime = 0;
+  rulesPlaying = false;
+  if (rulesBtn) rulesBtn.textContent = RULES_LABEL;
+}
+rulesAudio.addEventListener("ended", () => {
+  rulesAudio.currentTime = 0;
+  rulesPlaying = false;
+  rulesBtn.textContent = RULES_LABEL;
+});
+rulesAudio.addEventListener("error", () => { rulesBtn.style.display = "none"; });
+rulesBtn.addEventListener("click", () => {
+  if (rulesPlaying) { stopRules(); return; }
+  const p = rulesAudio.play();
+  if (p && p.then) {
+    p.then(() => {
+      rulesPlaying = true;
+      rulesBtn.textContent = "⏹ Stop";
+    }).catch(() => { rulesBtn.style.display = "none"; });
+  } else {
+    rulesPlaying = true;
+    rulesBtn.textContent = "⏹ Stop";
+  }
+});
+// Leaving the page stops the narration, like the app's onDisappear.
+window.addEventListener("pagehide", stopRules);
 
 // ---- Controls ----
 function setMode(tp) {

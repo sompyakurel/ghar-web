@@ -52,7 +52,7 @@
   </div>
 </div>
 
-<script src="auth.js?v=12"></script>
+<script src="auth.js?v=13"></script>
 <script>
 function asset(u) {
   if (!u) return "";
@@ -271,6 +271,7 @@ function tapBalloon(id) {
     xpEarned += earned;
     xp += earned;
     saveXP();
+    if (window.GharAuth && GharAuth.addBones) GharAuth.addBones(earned);
     document.getElementById("hud-score").textContent = score;
     removeBalloon(b);
     spawnBalloon(false);

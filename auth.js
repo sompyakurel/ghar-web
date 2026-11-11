@@ -71,6 +71,40 @@ const GharAuth = {
     return res.json();
   },
   xp() { return parseInt(localStorage.getItem("ghar.xp.total") || "0", 10) || 0; },
+  // ---- Bones: the dog's growth counter (matches the app's bones) ----
+  // Bones only ever grow: every XP earned anywhere adds a bone, and
+  // spending XP never takes one back — so the dog can never shrink.
+  // Bones are incremented AT each XP award site (addBones), never derived
+  // from the XP total: the total falls when XP is spent and rises again
+  // on the next server pull, so a delta would double-count refunded XP.
+  // Migration: the first call sets bones to the current XP total (after
+  // pull() merges it with the server's lifetime total), so no existing
+  // dog shrinks on deploy. The server copy lives in the myghar row
+  // (max-merged), so a stale device can never lower it.
+  bones() { return parseInt(localStorage.getItem("ghar.dog.bones") || "0", 10) || 0; },
+  syncBones() {
+    if (localStorage.getItem("ghar.dog.bonesInit") !== "1") {
+      localStorage.setItem("ghar.dog.bones", String(this.xp()));
+      localStorage.setItem("ghar.dog.bonesInit", "1");
+      // Push the migrated value up so other devices start from it too.
+      if (this.signedIn() && this.childId()) {
+        this.api("/accounts/children/" + this.childId() + "/myghar", "POST", { bones: this.bones() }).catch(() => {});
+      }
+    }
+    return this.bones();
+  },
+  // Add n bones for n XP just earned. Fire-and-forget server push (the
+  // myghar row max-merges, so a stale device can never lower it).
+  addBones(n) {
+    n = Math.floor(n) || 0;
+    if (n <= 0) return this.bones();
+    const b = this.bones() + n;
+    localStorage.setItem("ghar.dog.bones", String(b));
+    if (this.signedIn() && this.childId()) {
+      this.api("/accounts/children/" + this.childId() + "/myghar", "POST", { bones: b }).catch(() => {});
+    }
+    return b;
+  },
   quizFreeUsed() { return parseInt(localStorage.getItem("ghar.quiz.freeUsed") || "0", 10) || 0; },
   heard(deckId) {
     try { return JSON.parse(localStorage.getItem("ghar.heard." + deckId) || "[]"); }
@@ -103,6 +137,9 @@ const GharAuth = {
     // clobbering the local progress on the next load.
     const mergedXp = Math.max(this.xp(), p.xp || 0);
     localStorage.setItem("ghar.xp.total", String(mergedXp));
+    // Bones migrate from the merged (lifetime) total on first call, so a
+    // signed-in child starts at lifetime XP, not the spendable balance.
+    this.syncBones();
     const mergedQuiz = Math.max(this.quizFreeUsed(), p.quiz_free_used || 0);
     localStorage.setItem("ghar.quiz.freeUsed", String(mergedQuiz));
     const heard = p.heard || {};

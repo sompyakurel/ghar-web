@@ -25,7 +25,7 @@
     </div>
   </div>
 </div>
-<script src="auth.js?v=12"></script>
+<script src="auth.js?v=13"></script>
 <script>
 const TIERS = { beginner: "🌱 Beginner", intermediate: "🌿 Intermediate", hard: "🌳 Hard", teen: "🔥 Teen" };
 function isTestUnlock() {
@@ -266,6 +266,7 @@ function answer(i, btn) {
     const earned = wrongIDs.size === 0 ? 5 : 2;
     xp += earned;
     saveXP();
+    if (window.GharAuth && GharAuth.addBones) GharAuth.addBones(earned);
     quizCorrect++;
     quizStreak++;
     if (quizStreak > quizStreakBest) quizStreakBest = quizStreak;
@@ -284,6 +285,7 @@ function answer(i, btn) {
       GharStreak.recordQuizSolve();
       if (GharStreak.checkBlitzComplete()) {
         blitz = true; xp += 15; saveXP();
+        if (window.GharAuth && GharAuth.addBones) GharAuth.addBones(15);
         const n = GharStreak.count();
         document.getElementById("blitz-celebration-sub").textContent =
           `Daily challenge done! +15 XP · 🔥 ${n} day${n === 1 ? "" : "s"} streak`;
