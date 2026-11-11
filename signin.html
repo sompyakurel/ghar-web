@@ -18,10 +18,16 @@
     <p class="auth-sub">Parents sign in with an email link — no password to remember. Each child's progress is saved to their profile.</p>
     <div id="form-view">
       <input class="auth-input" id="email" type="email" placeholder="Parent's email address" autocomplete="email">
-      <button class="quiz-next" id="send-link">Send me a sign-in link →</button>
+      <button class="quiz-next" id="send-link">Send me a sign-in code →</button>
       <p class="error" id="error" hidden></p>
-      <p class="auth-note" id="sent" hidden>✅ Link sent! Check your email — it works once and expires in 15 minutes.</p>
+      <p class="auth-note" id="sent" hidden>✅ Code sent! Enter the 6-digit code from your email below — it expires in 10 minutes. You can also just click the sign-in link in the email.</p>
       <p class="auth-note" id="dev-link" hidden>Testing link (no email configured): <a id="dev-link-a" href="#">sign in</a></p>
+      <div id="code-view" hidden>
+        <input class="auth-input" id="code" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="6-digit code" maxlength="6">
+        <button class="quiz-next" id="verify-code">Verify code →</button>
+        <p class="error" id="code-error" hidden></p>
+        <p class="auth-note">Didn't get it? Check spam, or press "Send me a sign-in code" again for a fresh code.</p>
+      </div>
     </div>
     <div id="verifying-view" hidden>
       <p>Signing you in…</p>
@@ -57,6 +63,9 @@ document.getElementById("send-link").addEventListener("click", async () => {
   err.hidden = true;
   document.getElementById("sent").hidden = true;
   document.getElementById("dev-link").hidden = true;
+  document.getElementById("code-view").hidden = true;
+  document.getElementById("code-error").hidden = true;
+  document.getElementById("code").value = "";
   if (!email || !email.includes("@")) {
     err.hidden = false;
     err.textContent = "Enter a valid email address.";
@@ -70,14 +79,43 @@ document.getElementById("send-link").addEventListener("click", async () => {
       document.getElementById("dev-link").hidden = false;
     } else {
       document.getElementById("sent").hidden = false;
+      document.getElementById("code-view").hidden = false;
+      document.getElementById("code").focus();
     }
   } catch (e) {
     err.hidden = false;
-    err.textContent = "Couldn't send the link. Check your connection and try again.";
+    err.textContent = "Couldn't send the code. Check your connection and try again.";
   }
 });
 document.getElementById("email").addEventListener("keydown", e => {
   if (e.key === "Enter") document.getElementById("send-link").click();
+});
+// 6-digit code sign-in (code-first; the magic link in the email stays as
+// a backup). The code input only accepts digits.
+document.getElementById("code").addEventListener("input", e => {
+  e.target.value = e.target.value.replace(/\D/g, "").slice(0, 6);
+});
+document.getElementById("verify-code").addEventListener("click", async () => {
+  const email = document.getElementById("email").value.trim();
+  const code = document.getElementById("code").value.trim();
+  const err = document.getElementById("code-error");
+  err.hidden = true;
+  if (!/^\d{6}$/.test(code)) {
+    err.hidden = false;
+    err.textContent = "Enter the 6-digit code from your email.";
+    return;
+  }
+  try {
+    const d = await GharAuth.api("/accounts/verify-code", "POST", { email, code });
+    localStorage.setItem(SESSION_KEY, d.session_token);
+    location.href = "dashboard.html";
+  } catch (e) {
+    err.hidden = false;
+    err.textContent = "That code didn't match or expired — check it and try again, or ask for a fresh one.";
+  }
+});
+document.getElementById("code").addEventListener("keydown", e => {
+  if (e.key === "Enter") document.getElementById("verify-code").click();
 });
 </script>
 <div class="prayer-bunting prayer-bottom" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span></div></div>
