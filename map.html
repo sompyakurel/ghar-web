@@ -43,6 +43,10 @@
   /* Sticker popup ON the map — no scrolling needed to see the photo */
   #fact-card { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-1.5deg); width: min(430px, 92%); background: #fff; border: 6px solid #fff; border-radius: 20px; box-shadow: 0 16px 40px rgba(0,0,0,.35); padding: 12px 16px 16px; z-index: 10; text-align: center; animation: sticker-pop .4s cubic-bezier(.2,1.6,.4,1); }
   #fact-card[hidden] { display: none; }
+  /* Backdrop for the sticker popup (mobile only — desktop close already works) */
+  #fact-backdrop { position: fixed; inset: 0; background: rgba(20,16,12,.45); z-index: 9; }
+  #fact-backdrop[hidden] { display: none; }
+  @media (min-width: 641px) { #fact-backdrop { display: none; } }
   @keyframes sticker-pop { from { transform: translate(-50%, -50%) scale(.4) rotate(-8deg); opacity: 0; } to { transform: translate(-50%, -50%) scale(1) rotate(-1.5deg); opacity: 1; } }
   #fact-card .sticker-x { position: absolute; top: -14px; right: -14px; width: 36px; height: 36px; border-radius: 50%; background: #e53935; color: #fff; font-size: 19px; font-weight: 700; border: 3px solid #fff; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.3); line-height: 1; }
   #fact-visual { font-size: 72px; text-align: center; line-height: 1; animation: visual-pop .45s cubic-bezier(.2,1.6,.4,1); }
@@ -101,6 +105,14 @@
     #fact-card h2 { font-size: 19px; }
     #fact-visual { font-size: 56px; }
     .completion-card h2 { font-size: 22px; }
+    /* Mobile fact card: viewport-fixed so it escapes the map frame's
+       overflow:hidden clipping, capped to the viewport, internally
+       scrollable, with the close button stuck to the top-right and
+       big enough to tap. Rotation kept (-1.5deg shifts a corner by
+       ~5px, inside the 12px viewport margin). */
+    #fact-card { position: fixed; width: min(430px, calc(100vw - 24px)); max-height: calc(100vh - 24px); max-height: calc(100dvh - 24px); overflow-y: auto; }
+    #fact-card .sticker-x { position: sticky; top: 8px; right: auto; display: block; margin: 0 0 -44px auto; width: 44px; height: 44px; font-size: 22px; z-index: 2; }
+    #fact-photo { max-height: 36vh; max-height: 36dvh; object-fit: cover; }
   }
 </style>
 </head>
@@ -194,6 +206,7 @@
 <g transform="translate(900,460)"><circle cx="0" cy="-3" r="2.2" fill="#ba68c8"/><circle cx="3" cy="0" r="2.2" fill="#ba68c8"/><circle cx="0" cy="3" r="2.2" fill="#ba68c8"/><circle cx="-3" cy="0" r="2.2" fill="#ba68c8"/><circle cx="0" cy="0" r="2" fill="#ffeb3b"/></g>
 </svg>
         <div id="danfe-flyer" class="idle"><img id="danfe-img" src="assets/images/danfe/danfe_perched.png" alt="Danfe the Himalayan monal"></div>
+        <div id="fact-backdrop" hidden></div>
         <div id="fact-card" hidden>
           <button class="sticker-x" id="fact-x" aria-label="Close">✕</button>
           <div id="fact-visual" aria-hidden="true"></div>
@@ -470,6 +483,7 @@
     if (already) { xpEl.textContent = '✓ Found — +5 XP earned'; xpEl.className = 'fact-xp earned'; }
     else { xpEl.textContent = '+5 XP when found'; xpEl.className = 'fact-xp'; }
     document.getElementById('fact-card').hidden = false;
+    document.getElementById('fact-backdrop').hidden = false;
     playAudio(d.audioName);
     audio.onended = function () { playAudio(d.audioFact); audio.onended = null; };
     if (!already) {
@@ -503,14 +517,14 @@
     playAudio(currentPlace.data.audioName);
     audio.onended = function () { playAudio(currentPlace.data.audioFact); audio.onended = null; };
   });
-  document.getElementById('fact-x').addEventListener('click', function () {
+  function closeFact() {
     document.getElementById('fact-card').hidden = true;
+    document.getElementById('fact-backdrop').hidden = true;
     try { audio.pause(); } catch (e) {}
-  });
-  document.getElementById('fact-close').addEventListener('click', function () {
-    document.getElementById('fact-card').hidden = true;
-    try { audio.pause(); } catch (e) {}
-  });
+  }
+  document.getElementById('fact-x').addEventListener('click', closeFact);
+  document.getElementById('fact-close').addEventListener('click', closeFact);
+  document.getElementById('fact-backdrop').addEventListener('click', closeFact);
 
   // ---- Province stamp check ----
   function checkProvinceStamp(provinceId) {
