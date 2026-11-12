@@ -198,22 +198,22 @@ const bhuntePlayer = new Audio();
 // clicking "Next lesson" stores the next deck's id in ghar.speakGuide
 // (see evaluateCompletion); on arrival at that deck we say its guide
 // line ("...now let's move to ...!") once. A stale flag for a
-// different deck is dropped, not saved for later. If the browser
-// blocks autoplay after navigation, the first tap anywhere plays it.
-try {
-  const speakId = localStorage.getItem("ghar.speakGuide");
-  if (speakId) {
+// different deck is dropped, not saved for later. Fired AFTER the
+// deck renders - the same point the home page fires its guidance
+// from; a play() during page parse proved unreliable in live testing
+// (2026-11-12). If the browser still blocks it, first tap plays it.
+function playArrivalGuide() {
+  try {
+    const speakId = localStorage.getItem("ghar.speakGuide");
+    if (!speakId) return;
     localStorage.removeItem("ghar.speakGuide");
-    if (speakId === deckId) {
-      setTimeout(() => {
-        bhuntePlayer.src = "assets/audio/bhunte/guide_next_" + deckId + ".m4a";
-        bhuntePlayer.play().catch(() => {
-          document.addEventListener("pointerdown", () => bhuntePlayer.play().catch(() => {}), { once: true });
-        });
-      }, 500);
-    }
-  }
-} catch (e) {}
+    if (speakId !== deckId) return;
+    bhuntePlayer.src = "assets/audio/bhunte/guide_next_" + deckId + ".m4a";
+    bhuntePlayer.play().catch(() => {
+      document.addEventListener("pointerdown", () => bhuntePlayer.play().catch(() => {}), { once: true });
+    });
+  } catch (e) {}
+}
 // Heard-count for any deck (safe read), used to find the next lesson.
 function heardCountFor(id) {
   try {
@@ -461,6 +461,7 @@ GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => 
       if (done) evaluateCompletion();
     }
     updateProgress();
+    playArrivalGuide();
   })
   .catch(() => { document.getElementById("error").hidden = false; });
 </script>
