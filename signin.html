@@ -23,7 +23,6 @@
       <button class="quiz-next" id="send-link">Send me a sign-in code →</button>
       <p class="error" id="error" hidden></p>
       <p class="auth-note" id="sent" hidden>✅ Code sent! Enter the 6-digit code from your email below — it expires in 10 minutes. You can also just click the sign-in link in the email.</p>
-      <p class="auth-note" id="dev-link" hidden>Testing link (no email configured): <a id="dev-link-a" href="#">sign in</a></p>
       <div id="code-view" hidden>
         <input class="auth-input" id="code" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="6-digit code" maxlength="6">
         <button class="quiz-next" id="verify-code">Verify code →</button>
@@ -64,7 +63,6 @@ document.getElementById("send-link").addEventListener("click", async () => {
   const err = document.getElementById("error");
   err.hidden = true;
   document.getElementById("sent").hidden = true;
-  document.getElementById("dev-link").hidden = true;
   document.getElementById("code-view").hidden = true;
   document.getElementById("code-error").hidden = true;
   document.getElementById("code").value = "";
@@ -74,16 +72,10 @@ document.getElementById("send-link").addEventListener("click", async () => {
     return;
   }
   try {
-    const d = await GharAuth.api("/accounts/request-link", "POST", { email });
-    if (d.dev_link) {
-      const a = document.getElementById("dev-link-a");
-      a.href = d.dev_link;
-      document.getElementById("dev-link").hidden = false;
-    } else {
-      document.getElementById("sent").hidden = false;
-      document.getElementById("code-view").hidden = false;
-      document.getElementById("code").focus();
-    }
+    await GharAuth.api("/accounts/request-link", "POST", { email });
+    document.getElementById("sent").hidden = false;
+    document.getElementById("code-view").hidden = false;
+    document.getElementById("code").focus();
   } catch (e) {
     err.hidden = false;
     err.textContent = "Couldn't send the code. Check your connection and try again.";
