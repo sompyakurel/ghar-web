@@ -26,6 +26,20 @@ const GharAuth = {
   childId() { return localStorage.getItem(CHILD_KEY) || ""; },
   signedIn() { return !!this.session(); },
   signOut() {
+    // Also delete the session on the server (2026-11-12), so signing out
+    // really signs out — wiping only this browser's copy would leave a
+    // copied token working until it expired. keepalive lets the request
+    // finish even though the page navigates away immediately after.
+    const t = this.session();
+    if (t) {
+      try {
+        fetch(GHAR_API + "/accounts/sign-out", {
+          method: "POST",
+          headers: { Authorization: "Bearer " + t },
+          keepalive: true,
+        }).catch(() => {});
+      } catch (e) {}
+    }
     localStorage.removeItem(SESSION_KEY);
     localStorage.removeItem(CHILD_KEY);
     localStorage.removeItem(UNLOCK_KEY);
