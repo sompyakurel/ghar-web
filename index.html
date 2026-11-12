@@ -99,6 +99,7 @@
         <div class="motivation-body">
           <p class="motivation-bubble" id="bhunte-says"><span class="bubble-ne" id="bhunte-ne">नमस्ते! म भुन्ते हुँ। सँगै नेपाली सिकौं। एउटा पाठ पूरा गरेर XP कमाऔं!</span><span class="bubble-en" id="bhunte-en">Namaste! I'm Bhunte. Let's learn Nepali together. Finish a lesson to earn XP!</span></p>
           <p class="motivation-hint">👆 Tap Bhunte to hear him talk</p>
+          <button type="button" class="guide-pill" id="guide-pill" hidden>▶ Hear what's next</button>
           <p class="motivation-xp">⭐ <span id="xp-total">0</span> XP</p>
           <p class="motivation-cert">📜 Certificate: <span id="cert-done">0</span> of 22 lessons done</p>
           <div class="progress motivation-progress"><div id="cert-bar"></div></div>
@@ -348,6 +349,7 @@ function toast(msg, ms) {
 const homePlayer = new Audio();
 const bhuntePlayer = new Audio();
 let bhunteLine = "assets/audio/bhunte/bhunte_hello.m4a";
+function hideGuidePill() { const p = document.getElementById("guide-pill"); if (p) p.hidden = true; }
 const bhunteDog = document.getElementById("bhunte-dog");
 bhunteDog.addEventListener("click", () => {
   bhunteDog.classList.remove("bounce");
@@ -355,16 +357,21 @@ bhunteDog.addEventListener("click", () => {
   bhunteDog.classList.add("bounce");
   bhuntePlayer.pause();
   bhuntePlayer.src = bhunteLine;
-  bhuntePlayer.play().catch(() => {});
+  bhuntePlayer.play().then(hideGuidePill).catch(() => {});
 });
 // Live Rive Bhunte: when assets/rive/bhunte.riv is published, the canvas
 // replaces the static picture (Idle loop, Pet on tap, Celebrate on a deck
 // completion). Until then the picture above stays and nothing changes.
+document.getElementById("guide-pill").addEventListener("click", () => {
+  bhuntePlayer.pause();
+  bhuntePlayer.src = bhunteLine;
+  bhuntePlayer.play().then(hideGuidePill).catch(() => {});
+});
 const homeBhunte = (window.GharBhunte && window.GharBhunte.mount) ? window.GharBhunte.mount("bhunte-dog", {
   onTap: () => {
     bhuntePlayer.pause();
     bhuntePlayer.src = bhunteLine;
-    bhuntePlayer.play().catch(() => {});
+    bhuntePlayer.play().then(hideGuidePill).catch(() => {});
   },
 }) : null;
 // Spirit row: tap a picture to hear a fact about Nepal (and see it as a toast).
@@ -578,7 +585,12 @@ GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => 
       bhuntePlayer.pause();
       bhuntePlayer.src = bhunteLine;
       bhuntePlayer.play().catch(() => {
-        document.addEventListener("pointerdown", () => bhuntePlayer.play().catch(() => {}), { once: true });
+        // Autoplay blocked (Safari's rule for sound on arrival): show
+        // the "Hear what's next" pill so one tap plays the line - and
+        // let the first tap anywhere on the page do it too.
+        const pill = document.getElementById("guide-pill");
+        if (pill) pill.hidden = false;
+        document.addEventListener("pointerdown", () => bhuntePlayer.play().then(hideGuidePill).catch(() => {}), { once: true });
       });
       // Land on the next lesson in the path (not the top of the page) when
       // returning after a completion — so "back" flows into the next lesson.
@@ -755,6 +767,11 @@ GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => 
   }
 })();
 </script>
+<style>
+.guide-pill { margin-top: 8px; background: #fb8c00; color: #fff; border: none; border-radius: 999px; padding: 10px 20px; font-size: 15px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,.18); }
+.guide-pill:hover { background: #f57c00; }
+.guide-pill[hidden] { display: none; }
+</style>
 <style>
 .site-footer { text-align: center; padding: 28px 16px 36px; margin-top: 40px; border-top: 1px solid #e5e0d8; color: #666; font-size: 14px; }
 .site-footer p { margin: 4px 0; }
