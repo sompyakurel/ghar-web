@@ -448,23 +448,42 @@ function dogStageFor(xp) { return xp >= 150 ? 2 : xp >= 50 ? 1 : 0; }
 // past a threshold until the child taps "Level Up!". Bones keep
 // accumulating normally; only the stage display waits on the claim.
 // Claimed stages persist in localStorage AND sync through the existing
-// /myghar sync (level_claimed_json, union-merged — append-only, so a
-// second device can never un-claim or double-claim a stage).
+// /myghar sync (level_claimed_json: the server keeps ONE max stage
+// number, max-merged, so a second device can never un-claim a stage).
 const LEVEL_CLAIMED_KEY = "ghar.dog.levelClaimed";
 const LEVEL_MIGRATED_KEY = "ghar.dog.levelMigrated";
 function levelClaimed() {
-  try { return JSON.parse(localStorage.getItem(LEVEL_CLAIMED_KEY) || "[]"); }
+  try { return levelStagesFrom(localStorage.getItem(LEVEL_CLAIMED_KEY) || "[]"); }
   catch (e) { return []; }
+}
+// The server stores the claimed level as ONE max stage ("0"/"1"/"2" —
+// its column default is '0'), while this browser keeps the list of
+// claimed stages ([1, 2]). Any level value, from either side, in either
+// shape, goes through here before it is treated as a list: a bare
+// number is NOT a list (JSON.parse("2") gives the number 2, and
+// (2).includes is not a function — that crash killed this whole page
+// for every signed-in user, because the server always sends a bare
+// stage number in this field, never a list).
+function levelStagesFrom(v) {
+  if (typeof v === "string") {
+    try { v = JSON.parse(v); } catch (e) { v = parseInt(v, 10); }
+  }
+  if (Array.isArray(v)) return [...new Set(v.map(n => parseInt(n, 10)).filter(n => n === 1 || n === 2))];
+  const n = parseInt(v, 10);
+  if (n >= 2) return [1, 2];
+  if (n === 1) return [1];
+  return [];
 }
 function levelClaimedStage() {
   const c = levelClaimed();
   return c.length ? Math.max(...c) : 0;
 }
-function levelSyncPayload() { return { level_claimed_json: JSON.stringify(levelClaimed()) }; }
+// The server max-merges a single stage number (it int()-parses this
+// field), so send the highest claimed stage as a plain number string —
+// NOT the JSON list, which the server cannot parse and silently drops.
+function levelSyncPayload() { return { level_claimed_json: String(levelClaimedStage()) }; }
 function levelMergeAwarded(serverValue) {
-  let incoming = [];
-  if (Array.isArray(serverValue)) incoming = serverValue;
-  else if (typeof serverValue === "string") { try { incoming = JSON.parse(serverValue) || []; } catch (e) { incoming = []; } }
+  const incoming = levelStagesFrom(serverValue);
   if (!incoming.length) return levelClaimed();
   localStorage.setItem(LEVEL_CLAIMED_KEY, JSON.stringify([...new Set([...levelClaimed(), ...incoming])]));
   return levelClaimed();
@@ -1577,7 +1596,7 @@ GharAuth.pull().catch(() => {}).then(async () => {
     // (newer side wins), then push back anything the server lacks.
     if (mg.level_claimed_json) levelMergeAwarded(mg.level_claimed_json);
     if (mg.stored_json) shopStoredMerge(mg.stored_json);
-    const serverLevels = (() => { try { return JSON.parse(mg.level_claimed_json || "[]"); } catch (e) { return []; } })();
+    const serverLevels = levelStagesFrom(mg.level_claimed_json);
     if (levelClaimed().some(s => !serverLevels.includes(s))) syncPost("/myghar", levelSyncPayload());
     if (shopStored().length) syncPost("/myghar", shopStoredPayload());
   }
