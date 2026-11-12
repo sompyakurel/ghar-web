@@ -745,14 +745,14 @@ EOF'
 /* Lessons: Bhunte's guide panel on one side, the learning path on the
    other. The panel sticks while the path scrolls, so Bhunte stays beside
    the journey. */
-.lessons-layout { display: flex; gap: 96px; align-items: flex-start; }
-.lessons-layout .motivation { flex: 0 0 340px; flex-direction: column; align-items: center; text-align: center; margin-bottom: 0; position: sticky; top: 64px; }
+.lessons-layout { display: flex; gap: 40px; align-items: flex-start; }
+.lessons-layout .motivation { flex: 0 0 460px; flex-direction: column; align-items: center; text-align: center; margin-bottom: 0; position: sticky; top: 64px; max-height: calc(100vh - 88px); overflow-y: auto; scrollbar-width: thin; }
 .lessons-layout .motivation-body { width: 100%; }
-.lessons-layout .motivation-dog { width: 120px; height: 120px; margin-bottom: 4px; }
+.lessons-layout .motivation-dog { width: 150px; height: 150px; margin-bottom: 4px; }
 .lessons-layout .lessons-right { flex: 1; min-width: 0; }
 @media (max-width: 760px) {
   .lessons-layout { flex-direction: column; }
-  .lessons-layout .motivation { flex: none; width: 100%; position: static; }
+  .lessons-layout .motivation { flex: none; width: 100%; position: static; max-height: none; overflow: visible; }
 }
 
 /* ---- Flashy subnav (2026-11-08): each top link is a bright, bold pill ---- */

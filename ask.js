@@ -49,7 +49,8 @@
   function headHtml() {
     return (
       '<div class="ask-head"><span class="ask-dog" aria-hidden="true">🐶</span>' +
-      "<h3>Ask Bhunte</h3></div>" +
+      "<h3>Ask Bhunte</h3>" +
+      '<span class="ask-ai-badge" title="Bhunte is an AI helper">✨ AI</span></div>' +
       '<p class="ask-disclosure">Bhunte is an AI helper who answers from ' +
       "Ghar's lessons. A grown-up can read these chats in the parent dashboard.</p>"
     );
