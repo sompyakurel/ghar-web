@@ -37,7 +37,13 @@
     <button class="quiz-next" id="add-child">Add child →</button>
     <p class="error" id="add-error" hidden></p>
   </div>
-  <p class="auth-note">One unlock covers the whole family. A child's progress is saved to their profile — it follows them across devices. Delete a child any time and their data goes with them. <a href="certificate.html?preview">Preview the certificate →</a> · <a href="db-browser.html">Browse the database →</a></p>
+  <div class="danger-zone">
+    <h2>Delete account</h2>
+    <p class="auth-note" style="margin:0 0 12px;">Deleting your account permanently removes every child profile, all their progress, and your email address from our server. This cannot be undone.</p>
+    <button type="button" id="delete-account">Delete my account</button>
+    <p class="error" id="delete-error" hidden></p>
+  </div>
+  <p class="auth-note">One unlock covers the whole family. A child's progress is saved to their profile — it follows them across devices. Delete a child any time and their data goes with them. <a href="certificate.html?preview">Preview the certificate →</a></p>
 </div>
 <script src="auth.js?v=15"></script>
 <script src="ask.js?v=2"></script>
@@ -221,12 +227,23 @@ async function load() {
         const d = new Date(p.cert_earned_at * 1000).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
         html += `<p class="cert-line">📜 Certificate earned ${d}</p>`;
       }
+      html += `<div class="child-danger"><button type="button" class="child-delete">Delete ${esc(child.name)}'s profile</button></div>`;
       html += `</div>`;
       card.innerHTML = html;
       card.querySelector(".child-play").addEventListener("click", async () => {
         localStorage.setItem(CHILD_KEY, child.id);
         try { await GharAuth.carryOver(); } catch (e) { /* progress sync failed — still open the game */ }
         location.href = "index.html";
+      });
+      card.querySelector(".child-delete").addEventListener("click", async () => {
+        if (!confirm("Delete " + child.name + "'s profile? Their progress, leaderboard place, and Ask Bhunte history will be permanently removed. This cannot be undone.")) return;
+        try {
+          await GharAuth.api("/accounts/children/" + child.id, "DELETE");
+          if (GharAuth.childId() === child.id) localStorage.removeItem(CHILD_KEY);
+          load();
+        } catch (e) {
+          alert("Couldn't delete the profile. Check your connection and try again.");
+        }
       });
       list.appendChild(card);
     }
@@ -235,6 +252,22 @@ async function load() {
   }
 }
 document.getElementById("sign-out").addEventListener("click", () => GharAuth.signOut());
+document.getElementById("delete-account").addEventListener("click", async () => {
+  const err = document.getElementById("delete-error");
+  err.hidden = true;
+  if (!confirm("Delete your whole account? Every child profile and all their progress will be permanently removed. This cannot be undone.")) return;
+  if (!confirm("Are you sure? This is the last step — the data cannot be recovered afterwards.")) return;
+  try {
+    await GharAuth.api("/accounts/me", "DELETE");
+    localStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(CHILD_KEY);
+    localStorage.removeItem(UNLOCK_KEY);
+    location.href = "index.html";
+  } catch (e) {
+    err.hidden = false;
+    err.textContent = "Couldn't delete the account. Check your connection and try again.";
+  }
+});
 document.getElementById("add-child").addEventListener("click", async () => {
   const name = document.getElementById("child-name").value.trim();
   const err = document.getElementById("add-error");
@@ -256,6 +289,14 @@ document.getElementById("child-name").addEventListener("keydown", e => {
 load();
 </script>
 <div class="prayer-bunting prayer-bottom" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span></div></div>
+<style>
+.child-danger { margin-top: 14px; text-align: right; }
+.child-delete { background: none; border: 1px solid #e0b4b4; color: #b3261e; border-radius: 999px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; }
+.child-delete:hover { background: #fdecea; }
+.danger-zone { border: 1px solid #e0b4b4; border-radius: 12px; padding: 20px 24px; margin: 24px 0; text-align: center; }
+.danger-zone h2 { color: #b3261e; font-size: 18px; margin: 0 0 8px; }
+#delete-account { background: #b3261e; color: #fff; border: none; border-radius: 999px; padding: 11px 22px; font-size: 15px; font-weight: 700; cursor: pointer; }
+</style>
 <style>
 .site-footer { text-align: center; padding: 28px 16px 36px; margin-top: 40px; border-top: 1px solid #e5e0d8; color: #666; font-size: 14px; }
 .site-footer p { margin: 4px 0; }
