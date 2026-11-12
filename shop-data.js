@@ -14,53 +14,90 @@
 // (myghar_<id>_np.m4a when it exists, else null -- the item just pops).
 // Shop items also carry a price (XP). Mystery items do not.
 const SHOP = [
-  { id: "suga", ne: "सुगा", en: "Suga the parrot", emoji: "🦜", price: 100,
+  { id: "suga", ne: "सुगा", en: "Suga the parrot", emoji: "🦜", price: 150,
     img: "suga.png", x: 0.90, y: 0.60, w: 12, audio: "suga",
     stand: { img: "suga_stand.png", x: 0.90, y: 0.84, w: 15 } },
-  { id: "tulsi", ne: "तुलसी", en: "Tulsi plant", emoji: "🪴", price: 30,
+  { id: "tulsi", ne: "तुलसी", en: "Tulsi plant", emoji: "🪴", price: 45,
     img: "tulsi.png", x: 0.83, y: 0.88, w: 8, audio: "tulsi" },
-  { id: "mandir", ne: "मन्दिर", en: "Mini temple", emoji: "🛕", price: 50,
+  { id: "mandir", ne: "मन्दिर", en: "Mini temple", emoji: "🛕", price: 75,
     img: "mandir.png", x: 0.32, y: 0.88, w: 10, audio: "mandir" },
-  { id: "ghanta", ne: "घण्टा", en: "Temple bell", emoji: "🔔", price: 40,
+  { id: "ghanta", ne: "घण्टा", en: "Temple bell", emoji: "🔔", price: 60,
     img: "ghanta.png", x: 0.15, y: 0.25, w: 6, audio: "ghanta" },
-  { id: "rangoli", ne: "रङ्गोली", en: "Rangoli", emoji: "🎨", price: 25,
+  { id: "rangoli", ne: "रङ्गोली", en: "Rangoli", emoji: "🎨", price: 38,
     img: "rangoli.png", x: 0.50, y: 0.93, w: 10, audio: "rangoli" },
-  { id: "diyo", ne: "दियो", en: "Oil lamp", emoji: "🪔", price: 20,
+  { id: "diyo", ne: "दियो", en: "Oil lamp", emoji: "🪔", price: 30,
     img: "diyo.png", x: 0.08, y: 0.93, w: 5, audio: "diyo" },
-  { id: "jamara", ne: "जमरा", en: "Jamara shoots", emoji: "🌿", price: 15,
+  { id: "jamara", ne: "जमरा", en: "Jamara shoots", emoji: "🌿", price: 23,
     img: "jamara.png", x: 0.89, y: 0.92, w: 6, audio: "jamara" },
-  { id: "sayapatri", ne: "सयपत्री", en: "Marigold", emoji: "🌼", price: 15,
+  { id: "sayapatri", ne: "सयपत्री", en: "Marigold", emoji: "🌼", price: 23,
     img: "sayapatri.png", x: 0.71, y: 0.88, w: 6, audio: "sayapatri" },
-  { id: "changa", ne: "चङ्गा", en: "Kite", emoji: "🪁", price: 35,
+  { id: "changa", ne: "चङ्गा", en: "Kite", emoji: "🪁", price: 53,
     img: "changa.png", x: 0.65, y: 0.18, w: 10, audio: "changa" },
-  { id: "chautari", ne: "चौतारी", en: "Resting platform", emoji: "🌳", price: 60,
+  { id: "chautari", ne: "चौतारी", en: "Resting platform", emoji: "🌳", price: 90,
     img: "chautari.png", x: 0.05, y: 0.80, w: 14, audio: "chautari" },
-  { id: "garden", ne: "बगैंचा", en: "Garden", emoji: "🌻", price: 55,
+  { id: "garden", ne: "बगैंचा", en: "Garden", emoji: "🌻", price: 83,
     img: "garden.png", x: 0.12, y: 0.92, w: 10, audio: "garden" },
-  { id: "mala", ne: "माला", en: "Garland", emoji: "📿", price: 20,
+  { id: "mala", ne: "माला", en: "Garland", emoji: "📿", price: 30,
     img: "mala.png", x: 0.85, y: 0.30, w: 8, audio: "mala" },
   // Added for the app's DecoSets (feature #4). No picture file ships for
   // these yet, so they render as their emoji (emojiOnly) in the shop and
   // in the room — never as a broken image. Prices are the app's prices.
-  { id: "door", ne: "ढोका", en: "Door", emoji: "🚪", price: 20,
+  { id: "door", ne: "ढोका", en: "Door", emoji: "🚪", price: 30,
     img: null, emojiOnly: true, x: 0.62, y: 0.88, w: 9, audio: "door" },
-  { id: "windows", ne: "झ्याल", en: "Windows", emoji: "🪟", price: 10,
+  { id: "windows", ne: "झ्याल", en: "Windows", emoji: "🪟", price: 15,
     img: null, emojiOnly: true, x: 0.78, y: 0.42, w: 9, audio: "windows" },
-  { id: "flags", ne: "झण्डा", en: "Prayer flags", emoji: "🚩", price: 35,
+  { id: "flags", ne: "झण्डा", en: "Prayer flags", emoji: "🚩", price: 53,
     img: null, emojiOnly: true, x: 0.30, y: 0.15, w: 10, audio: "flags" },
-  { id: "himal", ne: "हिमाल", en: "Himalaya mountains", emoji: "🏔️", price: 105,
+  { id: "himal", ne: "हिमाल", en: "Himalaya mountains", emoji: "🏔️", price: 158,
     img: null, emojiOnly: true, x: 0.50, y: 0.22, w: 12, audio: "himal" },
+  // Emoji-only decorations added 2026-11-12 (Som): more for learners to
+  // spend XP on. No picture files and no name clips (audio: null - the
+  // item just pops when tapped, same as the other emoji-only pieces).
+  { id: "sofa", ne: "\u0938\u094b\u092b\u093e", en: "Sofa", emoji: "\U0001F6CB\uFE0F", price: 90,
+    img: null, emojiOnly: true, x: 0.50, y: 0.88, w: 16, audio: null },
+  { id: "bed", ne: "\u0913\u091b\u094d\u092f\u093e\u0928", en: "Bed", emoji: "\U0001F6CF\uFE0F", price: 120,
+    img: null, emojiOnly: true, x: 0.18, y: 0.86, w: 15, audio: null },
+  { id: "kursi", ne: "\u0915\u0941\u0930\u094d\u0938\u0940", en: "Chair", emoji: "\U0001FA91", price: 45,
+    img: null, emojiOnly: true, x: 0.68, y: 0.88, w: 7, audio: null },
+  { id: "kitab", ne: "\u0915\u093f\u0924\u093e\u092c", en: "Books", emoji: "\U0001F4DA", price: 55,
+    img: null, emojiOnly: true, x: 0.30, y: 0.90, w: 8, audio: null },
+  { id: "ghadi", ne: "\u0918\u0921\u0940", en: "Clock", emoji: "\U0001F570\uFE0F", price: 40,
+    img: null, emojiOnly: true, x: 0.50, y: 0.25, w: 6, audio: null },
+  { id: "tasbir", ne: "\u0924\u0938\u094d\u092c\u093f\u0930", en: "Picture", emoji: "\U0001F5BC\uFE0F", price: 30,
+    img: null, emojiOnly: true, x: 0.22, y: 0.30, w: 8, audio: null },
+  { id: "madal", ne: "\u092e\u093e\u0926\u0932", en: "Madal drum", emoji: "\U0001F941", price: 70,
+    img: null, emojiOnly: true, x: 0.80, y: 0.90, w: 8, audio: null },
+  { id: "chiya", ne: "\u091a\u093f\u092f\u093e", en: "Tea", emoji: "\U0001F375", price: 25,
+    img: null, emojiOnly: true, x: 0.58, y: 0.92, w: 6, audio: null },
+  { id: "khelauna", ne: "\u0916\u0947\u0932\u094c\u0928\u093e", en: "Teddy toy", emoji: "\U0001F9F8", price: 35,
+    img: null, emojiOnly: true, x: 0.40, y: 0.90, w: 7, audio: null },
+  { id: "football", ne: "\u092b\u0941\u091f\u092c\u0932", en: "Football", emoji: "\u26BD", price: 20,
+    img: null, emojiOnly: true, x: 0.60, y: 0.94, w: 6, audio: null },
+  { id: "phool", ne: "\u092b\u0942\u0932", en: "Flowers", emoji: "\U0001F490", price: 30,
+    img: null, emojiOnly: true, x: 0.76, y: 0.30, w: 7, audio: null },
+  { id: "mainbatti", ne: "\u092e\u0948\u0928\u092c\u0924\u094d\u0924\u0940", en: "Candle", emoji: "\U0001F56F\uFE0F", price: 15,
+    img: null, emojiOnly: true, x: 0.12, y: 0.55, w: 5, audio: null },
+  { id: "radio", ne: "\u0930\u0947\u0921\u093f\u092f\u094b", en: "Radio", emoji: "\U0001F4FB", price: 50,
+    img: null, emojiOnly: true, x: 0.86, y: 0.45, w: 8, audio: null },
+  { id: "hatti", ne: "\u0939\u093e\u0924\u094d\u0924\u0940", en: "Elephant statue", emoji: "\U0001F418", price: 80,
+    img: null, emojiOnly: true, x: 0.08, y: 0.86, w: 11, audio: null },
+  { id: "mayur", ne: "\u092e\u092f\u0942\u0930", en: "Peacock", emoji: "\U0001F99A", price: 65,
+    img: null, emojiOnly: true, x: 0.94, y: 0.86, w: 9, audio: null },
+  { id: "laltin", ne: "\u0932\u093e\u0932\u091f\u093f\u0928", en: "Lantern", emoji: "\U0001F3EE", price: 45,
+    img: null, emojiOnly: true, x: 0.35, y: 0.20, w: 6, audio: null },
 ];
-// ---- DecoSets (feature #4, exact app sets + bonuses; total 250 XP) ----
+// ---- DecoSets (feature #4, the app's sets) ----
+// Website change 2026-11-12 (Som): completing a set earns its badge and
+// celebration only - no bonus XP. Spending XP should not earn XP.
 // "buddy" in the app's Home Set is Suga on the site (same item, site id
 // "suga"). Chautari and Garden are buyable but in no app set — set-less.
 const DECO_SETS = [
-  { id: "tihar", name: "Tihar Set", emoji: "🪔", items: ["diyo", "sayapatri", "rangoli", "mala"], bonus: 40 },
-  { id: "garden", name: "Garden Set", emoji: "🌿", items: ["tulsi", "jamara"], bonus: 50 },
-  { id: "home", name: "Home Set", emoji: "🏠", items: ["door", "windows", "flags", "suga"], bonus: 60 },
-  { id: "sky-temple", name: "Sky & Temple Set", emoji: "🏔️", items: ["changa", "himal", "ghanta", "mandir"], bonus: 100 },
+  { id: "tihar", name: "Tihar Set", emoji: "🪔", items: ["diyo", "sayapatri", "rangoli", "mala"], bonus: 0 },
+  { id: "garden", name: "Garden Set", emoji: "🌿", items: ["tulsi", "jamara"], bonus: 0 },
+  { id: "home", name: "Home Set", emoji: "🏠", items: ["door", "windows", "flags", "suga"], bonus: 0 },
+  { id: "sky-temple", name: "Sky & Temple Set", emoji: "🏔️", items: ["changa", "himal", "ghanta", "mandir"], bonus: 0 },
 ];
-const DECO_SET_TOTAL_BONUS = 250;
+const DECO_SET_TOTAL_BONUS = 0;
 // Awarded set bonuses, persisted locally AND pushed through the existing
 // /myghar sync (set_bonuses_json) so a second device never re-awards.
 // Append-only: a set is awarded once, ever — union-merge is safe.

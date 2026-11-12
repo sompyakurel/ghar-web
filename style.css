@@ -405,6 +405,18 @@ EOF'
 .shop-balance { background: #fff3cd; border: 1px solid #d4a017; border-radius: 999px; padding: 8px 16px; font-size: 18px; font-weight: 700; white-space: nowrap; }
 .shop-hint { text-align: center; color: #666; font-size: 14px; margin: 12px 0; }
 .shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; margin: 16px 0; }
+/* Shop layout (2026-11-12): DecoSets shelf and the item grid sit side
+   by side - sets in a sticky left column, items filling the right.
+   Stacks back to one column on narrow screens. */
+.shop-layout { display: flex; gap: 24px; align-items: flex-start; }
+.shop-layout .myghar-shelf { flex: 0 0 340px; position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto; margin-bottom: 0; }
+.shop-layout .shelf-row { flex-wrap: wrap; overflow-x: visible; }
+.shop-layout .shop-grid { flex: 1 1 auto; margin: 0; min-width: 0; }
+@media (max-width: 900px) {
+  .shop-layout { flex-direction: column; }
+  .shop-layout .myghar-shelf { flex: none; width: auto; position: static; max-height: none; overflow-y: visible; }
+  .shop-layout .shop-grid { width: 100%; }
+}
 .shop-card { background: #fff; border: 1px solid #e5e0d8; border-radius: 12px; padding: 16px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,.05); display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .shop-card.owned { border-color: #81c784; background: #f1f8e9; }
 .shop-card.too-expensive { opacity: 0.75; }
@@ -745,14 +757,14 @@ EOF'
 /* Lessons: Bhunte's guide panel on one side, the learning path on the
    other. The panel sticks while the path scrolls, so Bhunte stays beside
    the journey. */
-.lessons-layout { display: flex; gap: 40px; align-items: flex-start; }
-.lessons-layout .motivation { flex: 0 0 460px; flex-direction: column; align-items: center; text-align: center; margin-bottom: 0; position: sticky; top: 64px; max-height: calc(100vh - 88px); overflow-y: auto; scrollbar-width: thin; }
+.lessons-layout { display: flex; gap: 96px; align-items: flex-start; }
+.lessons-layout .motivation { flex: 0 0 340px; flex-direction: column; align-items: center; text-align: center; margin-bottom: 0; position: sticky; top: 64px; }
 .lessons-layout .motivation-body { width: 100%; }
-.lessons-layout .motivation-dog { width: 150px; height: 150px; margin-bottom: 4px; }
+.lessons-layout .motivation-dog { width: 120px; height: 120px; margin-bottom: 4px; }
 .lessons-layout .lessons-right { flex: 1; min-width: 0; }
 @media (max-width: 760px) {
   .lessons-layout { flex-direction: column; }
-  .lessons-layout .motivation { flex: none; width: 100%; position: static; max-height: none; overflow: visible; }
+  .lessons-layout .motivation { flex: none; width: 100%; position: static; }
 }
 
 /* ---- Flashy subnav (2026-11-08): each top link is a bright, bold pill ---- */

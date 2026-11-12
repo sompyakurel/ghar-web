@@ -12,7 +12,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://backend-patient-wave-3724.fly.dev https://api.open-meteo.com https://unpkg.com https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self';">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Ghar — Shop</title>
-<link rel="stylesheet" href="style.css?v=29">
+<link rel="stylesheet" href="style.css?v=32">
 </head>
 <body>
 <div class="prayer-bunting" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span></div></div>
@@ -28,12 +28,14 @@
     <div class="shop-balance">⭐ <span id="xp-label">0</span> XP</div>
   </div>
   <p class="shop-hint" id="hint">Tap an item to buy it. Bought things appear in your room — drag them around in Arrange mode.</p>
+  <div class="shop-layout">
   <div class="myghar-shelf" id="deco-sets-shelf">
     <h3>🎨 Decoration Sets</h3>
-    <p class="myghar-shelf-sub">Own every item in a set to earn its bonus XP — once per set, 250 XP in total. Free decorations count toward their set.</p>
+    <p class="myghar-shelf-sub">Own every item in a set to complete it and earn its badge. Free decorations count toward their set.</p>
     <div id="deco-sets"></div>
   </div>
   <div class="shop-grid" id="shop-grid"></div>
+  </div>
   <div class="shop-owned" id="shop-owned"></div>
   <div class="celebration" id="set-celebration" hidden>
     <div class="confetti" id="set-confetti"></div>
@@ -45,7 +47,7 @@
   </div>
 </div>
 <script src="auth.js?v=15"></script>
-<script src="shop-data.js?v=2"></script>
+<script src="shop-data.js?v=3"></script>
 <script>
 // Ghar Shop -- buy room decorations and Suga the parrot with XP.
 // Prices are in XP. Buying deducts XP (localStorage ghar.xp.total, pushed
@@ -64,7 +66,7 @@ function shopItemById(id) { return SHOP.find(it => it.id === id) || null; }
 // ---- DecoSet celebration (same confetti/fanfare style as My Ghar) ----
 function showSetCelebration(set) {
   document.getElementById("set-celebration-title").textContent = `${set.emoji} ${set.name} complete!`;
-  document.getElementById("set-celebration-sub").textContent = `You own every item — +${set.bonus} XP bonus!`;
+  document.getElementById("set-celebration-sub").textContent = "You own every item in the set!";
   const c = document.getElementById("set-celebration");
   c.hidden = false;
   const box = document.getElementById("set-confetti");
@@ -85,11 +87,11 @@ function showSetCelebration(set) {
 document.getElementById("set-celebration").addEventListener("click", () => {
   document.getElementById("set-celebration").hidden = true;
 });
-// ---- DecoSets (feature #4): check on each purchase, award once ----
-// A set bonus is earned XP: it raises the lifetime total (and bones),
-// never the spent total. The awarded flag is persisted locally AND
-// pushed through the existing /myghar sync, so a second device that
-// pulls the flag cannot award the same set again.
+// ---- DecoSets (feature #4): check on each purchase, complete once ----
+// Since 2026-11-12 a completed set earns its badge and celebration
+// only - no XP (spending XP should not earn XP). The completed flag
+// is persisted locally AND pushed through the existing /myghar sync,
+// so a second device that pulls the flag cannot re-celebrate it.
 function awardNewDecoSets() {
   const newly = (typeof decoSetsNewlyCompleted === "function") ? decoSetsNewlyCompleted(shopOwned()) : [];
   newly.forEach(set => {
@@ -97,11 +99,6 @@ function awardNewDecoSets() {
     if (window.GharAuth && GharAuth.childId()) {
       GharAuth.api("/accounts/children/" + GharAuth.childId() + "/myghar", "POST", decoSetPayload()).catch(() => {});
     }
-    const total = (parseInt(localStorage.getItem("ghar.xp.total") || "0", 10) || 0) + set.bonus;
-    localStorage.setItem("ghar.xp.total", String(total));
-    if (window.GharAuth && GharAuth.addBones) GharAuth.addBones(set.bonus);
-    if (window.GharAuth && GharAuth.pushTotals) GharAuth.pushTotals().catch(() => {});
-    if (window.GharAuth && GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
   });
   return newly;
 }
@@ -119,8 +116,8 @@ function renderDecoSets(owned) {
       const label = it ? `${it.emoji} ${it.en}` : id;
       return owned.includes(id) ? `✅ ${label}` : `⬜ ${label}`;
     }).join(" · ");
-    row.innerHTML = `<span class="shelf-name-en">${set.emoji} ${set.name} — +${set.bonus} XP</span>
-      <span class="shelf-status">${awarded ? "✅ Complete — bonus earned!" : `${prog.have.length} of ${set.items.length} owned`}</span>
+    row.innerHTML = `<span class="shelf-name-en">${set.emoji} ${set.name}</span>
+      <span class="shelf-status">${awarded ? "✅ Complete!" : `${prog.have.length} of ${set.items.length} owned`}</span>
       <span class="shelf-status">${itemsHtml}</span>`;
     box.appendChild(row);
   });
@@ -204,7 +201,7 @@ function render() {
         list.push(item.id);
         shopSaveOwned(list);
         if (window.GharAuth) GharAuth.api("/accounts/children/" + GharAuth.childId() + "/shop", "POST", { item_id: item.id }).catch(() => {});
-        // DecoSet check (feature #4): completing a set pays its bonus
+        // DecoSet check (feature #4): completing a set earns its badge
         // exactly once. A free item counts — it is in the owned list.
         const completedSets = awardNewDecoSets();
         if (item.audio === "suga") {
