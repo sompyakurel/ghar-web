@@ -9,10 +9,14 @@
 <link rel="manifest" href="/site.webmanifest">
 <meta name="theme-color" content="#a31721">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://backend-patient-wave-3724.fly.dev https://api.open-meteo.com https://unpkg.com https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com https://accounts.google.com 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; frame-src https://accounts.google.com; connect-src 'self' https://backend-patient-wave-3724.fly.dev https://api.open-meteo.com https://unpkg.com https://cdn.jsdelivr.net https://accounts.google.com; object-src 'none'; base-uri 'self';">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Ghar — Sign in</title>
 <link rel="stylesheet" href="style.css?v=29">
+<style>
+#google-btn { display: flex; justify-content: center; }
+.auth-divider { text-align: center; color: #999; font-size: 13px; margin: 12px 0 14px; }
+</style>
 </head>
 <body>
 <div class="prayer-bunting" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span></div></div>
@@ -23,8 +27,12 @@
   <div class="auth-card">
     <img class="auth-dog" src="assets/images/bhunte.svg" alt="Bhunte">
     <h1>Sign in to Ghar</h1>
-    <p class="auth-sub">Parents sign in with an email link — no password to remember. Each child's progress is saved to their profile.</p>
+    <p class="auth-sub">Parents sign in with Google or an email code — no password to remember. Each child's progress is saved to their profile.</p>
     <div id="form-view">
+      <div id="google-wrap" hidden>
+        <div id="google-btn"></div>
+        <p class="auth-divider">— or use email —</p>
+      </div>
       <input class="auth-input" id="email" type="email" placeholder="Parent's email address" autocomplete="email">
       <button class="quiz-next" id="send-link">Send me a sign-in code →</button>
       <p class="error" id="error" hidden></p>
@@ -42,6 +50,7 @@
     </div>
   </div>
 </div>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="auth.js?v=15"></script>
 <script>
 const params = new URLSearchParams(location.search);
@@ -117,6 +126,40 @@ document.getElementById("verify-code").addEventListener("click", async () => {
 document.getElementById("code").addEventListener("keydown", e => {
   if (e.key === "Enter") document.getElementById("verify-code").click();
 });
+// Sign in with Google (ID-token flow): Google renders its own button;
+// the ID token it returns goes to our backend, which verifies it with
+// Google and issues our normal session. The client id is public (it
+// ships in this page). Until it's filled in below, the Google block
+// stays hidden and email sign-in works exactly as before.
+const GOOGLE_CLIENT_ID = "920044510258-4s9su5q38a1fs89pfe5l49hgkrohc58h.apps.googleusercontent.com";
+if (GOOGLE_CLIENT_ID.includes(".apps.googleusercontent.com")) {
+  const initGoogle = () => {
+    if (!window.google || !google.accounts || !google.accounts.id) return false;
+    google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: async (resp) => {
+        const err = document.getElementById("error");
+        err.hidden = true;
+        try {
+          const d = await GharAuth.api("/accounts/google", "POST", { id_token: resp.credential });
+          localStorage.setItem(SESSION_KEY, d.session_token);
+          location.href = "dashboard.html";
+        } catch (e) {
+          err.hidden = false;
+          err.textContent = "Google sign-in didn't go through — try again, or use the email code below.";
+        }
+      }
+    });
+    google.accounts.id.renderButton(document.getElementById("google-btn"),
+      { theme: "outline", size: "large", width: 300, text: "signin_with" });
+    document.getElementById("google-wrap").hidden = false;
+    return true;
+  };
+  if (!initGoogle()) {
+    const t = setInterval(() => { if (initGoogle()) clearInterval(t); }, 300);
+    setTimeout(() => clearInterval(t), 6000);
+  }
+}
 </script>
 <div class="prayer-bunting prayer-bottom" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span></div></div>
 <style>
