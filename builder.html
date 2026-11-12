@@ -88,7 +88,7 @@ const ROUNDS = [
   [
     { english: "I eat mangoes", emoji: "🥭", wordIDs: ["sent_ma", "aanp", "khaanchhu"] },
     { english: "I drink milk", emoji: "🥛", wordIDs: ["sent_ma", "doodh", "piunchhu"] },
-    { english: "I write in a notebook", emoji: "📓", wordIDs: ["sent_ma", "kapi", "lekhchhu"] },
+    { english: "I write in a notebook", emoji: "📓", wordIDs: ["sent_ma", "kapi", "ma_loc", "lekhchhu"] },
     { english: "I go to school", emoji: "🏫", wordIDs: ["sent_ma", "skool", "jaanchhu"] },
     { english: "I read my notebook", emoji: "📓", wordIDs: ["sent_ma", "kapi", "padhchhu"] },
     { english: "I sing the festival songs", emoji: "🎉", wordIDs: ["sent_ma", "tihar_deusi", "gauchhu"] },
@@ -98,7 +98,7 @@ const ROUNDS = [
   [
     { english: "I watch the teacher", emoji: "👩‍🏫", wordIDs: ["sent_ma", "shikshak", "herchhu"] },
     { english: "I cook food", emoji: "🍲", wordIDs: ["sent_ma", "khana", "pakauchhu"] },
-    { english: "I play with my friend", emoji: "🧑‍🤝‍🧑", wordIDs: ["sent_ma", "saathi", "khelchhu"] },
+    { english: "I play with my friend", emoji: "🧑‍🤝‍🧑", wordIDs: ["sent_ma", "saathi", "sanga", "khelchhu"] },
     { english: "I play on the swing", emoji: "🎠", wordIDs: ["sent_ma", "dash_ping", "khelchhu"] },
     { english: "I wash my hands", emoji: "🧼", wordIDs: ["sent_ma", "haat", "dhunchhu"] },
     { english: "I fly the kite", emoji: "🪁", wordIDs: ["sent_ma", "dash_changa", "udauchhu"] },
@@ -279,7 +279,7 @@ function render() {
     </div>`;
   const row = document.getElementById("answer-row");
   if (placedIDs.length === 0) {
-    row.innerHTML = `<span class="builder-blank">___ ___ ___।</span>`;
+    row.innerHTML = `<span class="builder-blank">${s.wordIDs.map(() => "___").join(" ")}।</span>`;
   } else {
     placedIDs.forEach(id => {
       const w = byID[id];
@@ -309,7 +309,7 @@ function render() {
     pool.appendChild(tile);
   });
 }
-GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => false)).then(() => fetch("data/nepal-v1.json?v=3"))
+GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => false)).then(() => fetch("data/nepal-v1.json?v=4"))
   .then(r => { if (!r.ok) throw new Error("load failed"); return r.json(); })
   .then(pack => {
     xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);

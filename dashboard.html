@@ -74,7 +74,7 @@ async function load() {
     await GharAuth.pull().catch(() => {});
     const me = await GharAuth.api("/accounts/me");
     document.getElementById("parent-email").textContent = "Signed in as " + me.email;
-    pack = await (await fetch("data/nepal-v1.json?v=3")).json();
+    pack = await (await fetch("data/nepal-v1.json?v=4")).json();
     const list = document.getElementById("children-list");
     if (me.children.length === 0) {
       list.innerHTML = `<p class="auth-note">No children yet — add one below to get started.</p>`;

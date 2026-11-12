@@ -389,7 +389,7 @@ document.getElementById("replay-btn").addEventListener("click", () => playWord(t
 // Boot: pull server progress, then load the pack and keep words that
 // have BOTH a picture and audio (hear it, find the picture).
 document.getElementById("ready-best").textContent = best > 0 ? ("Best: " + best + " pops") : "";
-GharAuth.pull().catch(() => {}).then(() => (GharAuth.refreshUnlock ? GharAuth.refreshUnlock().catch(() => false) : false)).then(() => syncBalloonGames()).then(() => fetch("data/nepal-v1.json?v=3"))
+GharAuth.pull().catch(() => {}).then(() => (GharAuth.refreshUnlock ? GharAuth.refreshUnlock().catch(() => false) : false)).then(() => syncBalloonGames()).then(() => fetch("data/nepal-v1.json?v=4"))
   .then(r => r.json())
   .then(pack => {
     // Free users only pop words from the free decks (alphabet + numbers);

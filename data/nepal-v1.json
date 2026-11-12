@@ -27266,6 +27266,28 @@
           "image": "/images/nepal-v1/sent_ma.jpg"
         },
         {
+          "id": "sanga",
+          "devanagari": "सँग",
+          "romanized": "sanga",
+          "english": "with",
+          "audio_url": "/audio/nepal-v1/sent_sanga_np.m4a",
+          "has_audio": true,
+          "section": "Words to know",
+          "example_sentence_np": "Ma saathi sanga khelchhu.",
+          "example_sentence_en": "I play with my friend."
+        },
+        {
+          "id": "ma_loc",
+          "devanagari": "मा",
+          "romanized": "ma",
+          "english": "in / on",
+          "audio_url": "/audio/nepal-v1/sent_ma_loc_np.m4a",
+          "has_audio": true,
+          "section": "Words to know",
+          "example_sentence_np": "Ma kapi ma lekhchhu.",
+          "example_sentence_en": "I write in a notebook."
+        },
+        {
           "id": "geet",
           "devanagari": "गीत",
           "romanized": "geet",
@@ -68648,7 +68670,7 @@
           "english": "I play",
           "audio_url": "/audio/nepal-v1/act_khelchhu_np.m4a",
           "has_audio": true,
-          "example_sentence_np": "Ma saathi khelchhu.",
+          "example_sentence_np": "Ma saathi sanga khelchhu.",
           "example_sentence_en": "I play with my friend."
         },
         {
