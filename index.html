@@ -573,9 +573,13 @@ GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => 
         bhunteLine = "assets/audio/bhunte/guide_next_certificate.m4a";
       }
       // Speak the guidance now if the browser allows it; otherwise tap Bhunte to hear it.
+      // If autoplay is blocked on arrival, the first tap anywhere plays
+      // it - a silent no-play here reads as "the guidance is broken".
       bhuntePlayer.pause();
       bhuntePlayer.src = bhunteLine;
-      bhuntePlayer.play().catch(() => {});
+      bhuntePlayer.play().catch(() => {
+        document.addEventListener("pointerdown", () => bhuntePlayer.play().catch(() => {}), { once: true });
+      });
       // Land on the next lesson in the path (not the top of the page) when
       // returning after a completion — so "back" flows into the next lesson.
       if (nextDeck) {

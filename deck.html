@@ -238,7 +238,11 @@ function showCelebration(title, allDone, isTeen, nextId) {
     bhuntePlayer.src = allDone ? "assets/audio/bhunte/guide_next_certificate.m4a" : "assets/audio/bhunte/deck_complete.m4a";
     setTimeout(() => bhuntePlayer.play().catch(() => {}), 600);
   }
-  setTimeout(() => { ov.hidden = true; }, 3000);
+  // The celebration STAYS until it is tapped or a button is chosen.
+  // It used to vanish after 3s - fine when completion was a deliberate
+  // final tap, unusable now that hearing the last word completes the
+  // deck mid-activity: the Next lesson button disappeared before
+  // anyone could read it (Som, 2026-11-12).
 }
 document.getElementById("celebration").addEventListener("click", () => {
   document.getElementById("celebration").hidden = true;
