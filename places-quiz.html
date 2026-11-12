@@ -205,43 +205,58 @@ const BEST_KEY = "ghar.placesquiz.best";
 
 function buildRun() {
   if (!pqUnlocked) return buildFreeRun();
+  // Paid run: 15 questions — more of the 27 places per run, two mountain
+  // rounds, and the province capitals (both directions).
   const places = shuffle(PLACES);
+  const used = new Set();
+  const take = pl => { used.add(pl.id); return pl; };
   const qs = [];
-  places.slice(0, 3).forEach(pl => qs.push({ type: "tap", place: pl }));
-  qs.push({ type: "listen", place: places[3] });
-  places.slice(4, 7).forEach(pl => qs.push({ type: "mcq-province", place: pl }));
+  places.slice(0, 4).forEach(pl => qs.push({ type: "tap", place: take(pl) }));
+  places.slice(4, 6).forEach(pl => qs.push({ type: "listen", place: take(pl) }));
+  places.slice(6, 9).forEach(pl => qs.push({ type: "mcq-province", place: take(pl) }));
   sample(PROVINCES, 2).forEach(pv => {
     const inP = PLACES.filter(x => x.province === pv.id);
-    qs.push({ type: "mcq-place", province: pv, place: inP[Math.floor(Math.random() * inP.length)] });
+    const fresh = inP.filter(x => !used.has(x.id));
+    const subject = (fresh.length ? fresh : inP)[Math.floor(Math.random() * (fresh.length ? fresh : inP).length)];
+    qs.push({ type: "mcq-place", province: pv, place: take(subject) });
   });
-  const pair = sample(PEAKS, 2);
-  qs.push({ type: "peaks", a: pair[0], b: pair[1] });
-  return shuffle(qs);
-}
-
-function buildFreeRun() {
-  const free = PLACES.filter(p => FREE_PLACE_IDS[p.id]);
-  const qs = [];
-  free.forEach(pl => qs.push({ type: "tap", place: pl }));
-  free.forEach(pl => qs.push({ type: "listen", place: pl }));
-  free.forEach(pl => qs.push({ type: "mcq-province", place: pl }));
-  free.forEach(pl => qs.push({ type: "mcq-place", province: PROV[pl.province], place: pl }));
+  const capProvs = sample(PROVINCES, 2);
+  qs.push({ type: "capital", form: "capital-of", province: capProvs[0] });
+  qs.push({ type: "capital", form: "province-of", province: capProvs[1] });
   const pair1 = sample(PEAKS, 2), pair2 = sample(PEAKS, 2);
   qs.push({ type: "peaks", a: pair1[0], b: pair1[1] });
   qs.push({ type: "peaks", a: pair2[0], b: pair2[1] });
   return shuffle(qs);
 }
 
+function buildFreeRun() {
+  // Free = exactly 4 questions (Som, 2026-11-11): one tap and one
+  // listening question covering the two free places between them, one
+  // multiple-choice, and one mountain question. Everything else is paid.
+  const free = shuffle(PLACES.filter(p => FREE_PLACE_IDS[p.id]));
+  const qs = [];
+  qs.push({ type: "tap", place: free[0] });
+  qs.push({ type: "listen", place: free[1] });
+  qs.push({ type: "mcq-province", place: free[Math.floor(Math.random() * free.length)] });
+  const pair = sample(PEAKS, 2);
+  qs.push({ type: "peaks", a: pair[0], b: pair[1] });
+  return shuffle(qs);
+}
+
+function bestKey() { return pqUnlocked ? "ghar.placesquiz.bestPaid" : BEST_KEY; }
+function runLength() { return pqUnlocked ? 15 : 4; }
+
 function startScreen() {
   document.getElementById("pq-progress").textContent = "";
-  const best = parseInt(localStorage.getItem(BEST_KEY) || "-1", 10);
+  const best = parseInt(localStorage.getItem(bestKey()) || "-1", 10);
   stage.innerHTML =
     '<div class="pq-card pq-start"><div class="pq-big">🗺️</div>' +
-    "<p><b>10 questions</b> about the places on Danfe's map.<br>" +
-    "Tap provinces on the map, listen to names in Nepali, pick answers, and race the mountains.<br>" +
+    "<p><b>" + runLength() + " questions</b> about the places on Danfe's map.<br>" +
+    "Tap provinces on the map, listen to names in Nepali, pick answers, and race the mountains" +
+    (pqUnlocked ? " — plus the province capitals" : "") + ".<br>" +
     "+5 XP for a clean answer · +2 XP after a miss.</p>" +
-    (pqUnlocked ? "" : "<p>🆓 Free version: questions on <b>Kathmandu</b> &amp; <b>Pokhara</b>, plus the mountains. Premium unlocks all 27 places.</p>") +
-    (best >= 0 ? "<p>🏅 Your best so far: <b>" + best + " / 10</b></p>" : "") +
+    (pqUnlocked ? "" : "<p>🆓 Free version: <b>4 questions</b> on Kathmandu &amp; Pokhara, plus a mountain. Premium unlocks the full 15-question run — all 27 places and the capitals.</p>") +
+    (best >= 0 ? "<p>🏅 Your best so far: <b>" + best + " / " + runLength() + "</b></p>" : "") +
     '<button class="pq-next" id="pq-start-btn" type="button">▶ Start the quiz</button></div>';
   document.getElementById("pq-start-btn").addEventListener("click", startRun);
 }
@@ -259,6 +274,7 @@ function showQuestion() {
   if (q.type === "tap" || q.type === "listen") renderTap(q);
   else if (q.type === "mcq-province") renderMcqProvince(q);
   else if (q.type === "mcq-place") renderMcqPlace(q);
+  else if (q.type === "capital") renderCapital(q);
   else renderPeaks(q);
 }
 
@@ -309,7 +325,7 @@ function renderTap(q) {
     mapSVG() + feedbackHTML() + "</div>";
   const hear = () => playClip(pl.audioName);
   document.getElementById("pq-listen-btn").addEventListener("click", hear);
-  if (isListen) hear();
+  hear(); // the name plays by itself as the question arrives (Som, 2026-11-11)
   stage.querySelectorAll(".province").forEach(path => {
     path.addEventListener("click", () => {
       if (qState.solved) return;
@@ -353,6 +369,7 @@ function renderMcqProvince(q) {
     '<button class="pq-listen" id="pq-listen-btn" type="button">🔊 Hear the name</button>' +
     '<div id="pq-options"></div>' + feedbackHTML() + "</div>";
   document.getElementById("pq-listen-btn").addEventListener("click", () => playClip(pl.audioName));
+  playClip(pl.audioName); // auto-play the name as the question arrives
   const wrap = optionButtons(options,
     p => '<span class="opt-eng">' + esc(p.name) + " Province</span>",
     (p, btn) => {
@@ -397,6 +414,41 @@ function renderMcqPlace(q) {
   document.getElementById("pq-options").appendChild(wrap);
 }
 
+function renderCapital(q) {
+  const pv = q.province;
+  const factText = pv.capital + " is the capital of " + pv.name + " Province — " + pv.terrain.toLowerCase() + ".";
+  let prompt, options, label, isRight;
+  if (q.form === "capital-of") {
+    prompt = "🏛️ What is the capital of <b>" + esc(pv.name) + " Province</b>?<br>" +
+      '<span class="pq-nep">' + esc(pv.nepali) + "</span>";
+    options = shuffle([pv].concat(sample(PROVINCES.filter(p => p.id !== pv.id), 3)));
+    label = p => '<span class="opt-eng">' + esc(p.capital) + '</span><span class="opt-deva">' + esc(p.capitalNepali) + "</span>";
+    isRight = p => p.id === pv.id;
+  } else {
+    prompt = "🏛️ <b>" + esc(pv.capital) + "</b> is the capital of which province?<br>" +
+      '<span class="pq-nep">' + esc(pv.capitalNepali) + "</span>";
+    options = shuffle([pv].concat(sample(PROVINCES.filter(p => p.id !== pv.id), 3)));
+    label = p => '<span class="opt-eng">' + esc(p.name) + " Province</span>";
+    isRight = p => p.id === pv.id;
+  }
+  stage.innerHTML =
+    '<div class="pq-card"><div class="pq-q">' + prompt + "</div>" +
+    '<div id="pq-options"></div>' + feedbackHTML() + "</div>";
+  const wrap = optionButtons(options, label, (p, btn) => {
+    if (qState.solved) return;
+    if (isRight(p)) {
+      btn.classList.add("correct");
+      onCorrect(q, factText);
+    } else {
+      onWrongTap();
+      btn.classList.add("wrong");
+      btn.disabled = true;
+      setFeedback("✗ Not that one — try again!", false);
+    }
+  });
+  document.getElementById("pq-options").appendChild(wrap);
+}
+
 function renderPeaks(q) {
   const taller = q.a.h > q.b.h ? q.a : q.b;
   const shorter = taller === q.a ? q.b : q.a;
@@ -434,13 +486,14 @@ function renderPeaks(q) {
 
 function showResults() {
   document.getElementById("pq-progress").textContent = "Run complete!";
-  const best = parseInt(localStorage.getItem(BEST_KEY) || "-1", 10);
-  if (run.correct > best) localStorage.setItem(BEST_KEY, String(run.correct));
-  const stars = run.correct >= 9 ? 3 : run.correct >= 7 ? 2 : run.correct >= 4 ? 1 : 0;
+  const best = parseInt(localStorage.getItem(bestKey()) || "-1", 10);
+  if (run.correct > best) localStorage.setItem(bestKey(), String(run.correct));
+  const frac = run.questions.length ? run.correct / run.questions.length : 0;
+  const stars = frac >= 0.85 ? 3 : frac >= 0.65 ? 2 : frac >= 0.4 ? 1 : 0;
   const starStr = "⭐".repeat(stars) + "☆".repeat(3 - stars);
-  const msg = run.correct >= 9 ? "Nepal expert! Danfe is impressed. 🦚" :
-    run.correct >= 7 ? "Great exploring!" :
-    run.correct >= 4 ? "Good start — the map is waiting for another look!" :
+  const msg = frac >= 0.85 ? "Nepal expert! Danfe is impressed. 🦚" :
+    frac >= 0.65 ? "Great exploring!" :
+    frac >= 0.4 ? "Good start — the map is waiting for another look!" :
     "Every explorer starts somewhere — try the map, then quiz again!";
   stage.innerHTML =
     '<div class="pq-card pq-score"><div class="pq-stars">' + starStr + "</div>" +
