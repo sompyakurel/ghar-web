@@ -43,13 +43,13 @@ const SHOP = [
   // these yet, so they render as their emoji (emojiOnly) in the shop and
   // in the room — never as a broken image. Prices are the app's prices.
   { id: "door", ne: "ढोका", en: "Door", emoji: "🚪", price: 20,
-    img: null, emojiOnly: true, x: 0.62, y: 0.88, w: 9, audio: null },
+    img: null, emojiOnly: true, x: 0.62, y: 0.88, w: 9, audio: "door" },
   { id: "windows", ne: "झ्याल", en: "Windows", emoji: "🪟", price: 10,
-    img: null, emojiOnly: true, x: 0.78, y: 0.42, w: 9, audio: null },
+    img: null, emojiOnly: true, x: 0.78, y: 0.42, w: 9, audio: "windows" },
   { id: "flags", ne: "झण्डा", en: "Prayer flags", emoji: "🚩", price: 35,
-    img: null, emojiOnly: true, x: 0.30, y: 0.15, w: 10, audio: null },
+    img: null, emojiOnly: true, x: 0.30, y: 0.15, w: 10, audio: "flags" },
   { id: "himal", ne: "हिमाल", en: "Himalaya mountains", emoji: "🏔️", price: 105,
-    img: null, emojiOnly: true, x: 0.50, y: 0.22, w: 12, audio: null },
+    img: null, emojiOnly: true, x: 0.50, y: 0.22, w: 12, audio: "himal" },
 ];
 // ---- DecoSets (feature #4, exact app sets + bonuses; total 250 XP) ----
 // "buddy" in the app's Home Set is Suga on the site (same item, site id
