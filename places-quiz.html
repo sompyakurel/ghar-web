@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://backend-patient-wave-3724.fly.dev https://api.open-meteo.com https://unpkg.com https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self';">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>Places Quiz · Ghar — Learn Nepali</title>
+<link rel="stylesheet" href="style.css?v=29">
+<script src="auth.js?v=14"></script>
+<script src="data/map-data.js"></script>
+<style>
+  .pq-hud { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin: 10px 0 4px; font-weight: 700; }
+  .pq-progress { color: #8d6e63; }
+  .pq-card { background: #fff; border: 3px solid #ffe0b2; border-radius: 18px; padding: 18px 16px; box-shadow: 0 2px 10px rgba(0,0,0,.08); margin-top: 10px; }
+  .pq-q { font-size: 21px; font-weight: 700; text-align: center; margin: 2px 0 6px; }
+  .pq-q .pq-visual { font-size: 44px; display: block; margin-bottom: 4px; }
+  .pq-q .pq-nep { color: #bf360c; }
+  .pq-listen { display: block; margin: 10px auto; font-size: 20px; font-weight: 700; border: 3px solid #fb8c00; background: #fff3e0; border-radius: 999px; padding: 10px 22px; cursor: pointer; }
+  .pq-map { margin-top: 8px; }
+  .pq-map svg { display: block; width: 100%; height: auto; }
+  .pq-map .province { cursor: pointer; stroke: #ffffff; stroke-width: 3; stroke-linejoin: round; }
+  .pq-map .province:hover { filter: brightness(1.07); }
+  .pq-map .province.right { fill: #66bb6a !important; }
+  .pq-map .province.wrong { fill: #ef5350 !important; }
+  .pq-map text { pointer-events: none; font-weight: 700; fill: #4e342e; }
+  .pq-feedback { text-align: center; font-size: 18px; font-weight: 700; min-height: 26px; margin-top: 12px; }
+  .pq-feedback.good { color: #2e7d32; }
+  .pq-feedback.bad { color: #c62828; }
+  .pq-fact { text-align: center; color: #5d4037; margin-top: 6px; }
+  .pq-next { display: block; margin: 14px auto 2px; font-size: 18px; font-weight: 700; border: none; background: #fb8c00; color: #fff; border-radius: 999px; padding: 12px 30px; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,.2); }
+  .pq-start { text-align: center; }
+  .pq-start .pq-big { font-size: 56px; }
+  .pq-score { text-align: center; }
+  .pq-score .pq-stars { font-size: 34px; letter-spacing: 4px; }
+  .pq-peakbtn { font-size: 19px; }
+  .pq-peakbtn .pq-h { display: block; font-size: 15px; color: #2e7d32; font-weight: 700; margin-top: 3px; }
+</style>
+</head>
+<body>
+<div class="prayer-side left" aria-hidden="true"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span></div>
+<div class="prayer-side right" aria-hidden="true"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span></div>
+<div class="wrap">
+  <p><a href="map.html">← Back to the Map</a></p>
+  <h1>🗺️ Places Quiz</h1>
+  <p class="section-sub">How well do you know Nepal's places? Tap provinces on the map, pick answers, and race the mountains!</p>
+
+  <div class="pq-hud">
+    <span class="pq-progress" id="pq-progress"></span>
+    <span id="pq-xp"></span>
+  </div>
+  <div id="pq-stage"></div>
+  <audio id="pq-audio" preload="auto"></audio>
+</div>
+
+<script>
+"use strict";
+// ---- Places Quiz ----
+// Questions are generated from the Danfe Map's own data (data/map-data.js):
+// 27 places (6 pins + 21 landmarks), 7 provinces, and the 9 peaks whose
+// heights are printed on the map itself. No new content, no new audio —
+// the name clips are Som's voice, recorded for the map.
+// XP + quiz stats use the exact same plumbing as quiz.html (+5 clean /
+// +2 after a miss, ghar.xp.total, addBones, quiz-stats POST, leaderboard
+// share), so Places Quiz answers count on the Quiz board like any quiz.
+const MD = window.GHAR_MAP_DATA || { provinces: [], pins: [], landmarks: [] };
+const PROVINCES = MD.provinces || [];
+const PROV = {};
+PROVINCES.forEach(p => { PROV[p.id] = p; });
+const PLACES = (MD.pins || []).concat(MD.landmarks || []);
+// Heights exactly as printed on the map (Everest 8,848 m matches the audio).
+const PEAKS = [
+  { name: "Mount Everest", nepali: "सगरमाथा", h: 8848 },
+  { name: "Kanchenjunga", nepali: "कञ्चनजङ्घा", h: 8586 },
+  { name: "Lhotse", nepali: "", h: 8516 },
+  { name: "Makalu", nepali: "", h: 8485 },
+  { name: "Cho Oyu", nepali: "", h: 8188 },
+  { name: "Dhaulagiri", nepali: "", h: 8167 },
+  { name: "Manaslu", nepali: "", h: 8163 },
+  { name: "Annapurna", nepali: "अन्नपूर्ण", h: 8091 },
+  { name: "Api", nepali: "", h: 7132 }
+];
+// Province borders copied verbatim from map.html, so the quiz map IS the
+// map the kids explored (same shapes, same colours).
+const PROVINCE_PATHS = {
+  sudurpashchim: "M153.5,70.6 L135.6,73.8 L123.4,45.0 L66.2,19.9 L106.0,59.9 L44.3,108.5 L49.4,127.9 L29.5,147.2 L36.0,177.5 L17.6,190.5 L9.2,226.0 L62.6,260.7 L60.9,246.3 L68.7,243.4 L128.8,280.7 L155.3,246.5 L145.6,221.3 L133.0,223.4 L120.5,209.4 L172.7,215.0 L190.5,234.6 L170.1,204.0 L188.8,187.6 L179.4,181.6 L181.9,163.6 L194.6,156.5 L209.8,161.1 L216.8,151.9 L216.9,130.3 L204.7,117.3 L217.0,89.0 L198.5,83.0 L177.4,90.4 L175.8,76.2 L153.5,70.6 Z",
+  karnali: "M443.6,187.9 L417.4,168.4 L395.2,131.2 L340.8,115.8 L307.4,81.0 L261.9,68.1 L266.0,56.8 L253.0,45.9 L253.9,31.9 L239.8,35.5 L195.4,19.4 L187.2,29.3 L169.9,22.8 L168.5,49.8 L151.6,57.7 L153.5,70.6 L176.5,76.9 L177.4,90.4 L198.5,83.0 L217.0,89.0 L204.7,117.3 L216.9,130.3 L216.8,151.9 L209.8,161.1 L194.6,156.5 L181.9,163.6 L179.4,181.6 L188.8,187.6 L170.1,204.0 L190.7,234.3 L183.4,235.6 L172.7,215.0 L118.4,211.4 L133.0,223.4 L145.5,221.2 L158.8,249.8 L242.1,311.7 L253.3,298.0 L289.0,309.4 L293.9,299.5 L283.4,277.2 L311.1,256.3 L300.2,247.0 L315.4,243.1 L308.9,233.2 L318.7,220.6 L405.3,237.5 L419.9,231.3 L443.6,187.9 Z",
+  lumbini: "M379.2,235.8 L318.7,220.6 L308.9,233.2 L315.4,243.1 L300.2,247.0 L311.1,256.3 L283.4,277.2 L293.9,299.5 L289.0,309.4 L253.3,298.0 L242.1,311.7 L157.7,245.3 L127.8,279.0 L146.4,285.3 L159.0,313.9 L174.4,310.4 L227.4,349.1 L249.7,340.8 L295.3,371.8 L326.5,366.3 L329.8,394.2 L384.3,400.4 L398.4,416.0 L411.0,405.7 L408.5,397.2 L435.8,398.4 L466.0,414.0 L469.8,394.5 L459.5,373.9 L443.3,366.7 L481.0,362.8 L485.6,349.2 L415.7,340.0 L434.4,331.3 L428.5,316.0 L356.2,285.1 L346.9,265.3 L359.0,261.4 L358.9,250.9 L375.6,250.6 L379.2,235.8 Z",
+  gandaki: "M609.3,289.1 L625.4,249.3 L609.7,244.1 L585.5,258.3 L557.7,237.2 L537.7,235.3 L531.5,222.3 L509.4,217.1 L506.4,173.1 L477.7,161.5 L440.7,177.7 L443.7,187.9 L419.9,231.3 L379.2,235.8 L375.6,250.6 L358.9,250.9 L359.0,261.4 L346.9,265.3 L373.0,298.2 L428.5,316.0 L434.4,331.3 L414.7,339.5 L485.6,349.2 L481.0,362.8 L443.3,366.7 L459.5,373.9 L469.6,402.5 L478.4,393.2 L473.1,388.9 L496.0,387.8 L533.9,368.5 L535.8,353.5 L557.0,346.1 L576.4,354.7 L572.1,336.0 L583.8,316.1 L597.5,314.8 L609.3,289.1 Z",
+  bagmati: "M785.3,336.5 L772.7,342.8 L751.3,334.2 L745.7,308.8 L733.1,319.4 L738.1,340.2 L721.8,341.4 L688.4,281.8 L676.0,298.2 L663.7,288.4 L648.2,295.5 L612.4,286.9 L597.5,314.8 L583.8,316.1 L572.1,336.0 L576.4,354.7 L557.0,346.1 L535.8,353.5 L534.0,368.5 L496.0,387.8 L473.1,388.9 L473.9,401.0 L499.7,392.2 L517.3,409.2 L538.9,413.0 L549.9,399.3 L577.5,402.5 L663.0,440.0 L702.8,436.9 L754.5,468.5 L767.2,460.8 L760.1,444.4 L770.1,435.3 L747.7,426.4 L749.9,409.6 L788.0,372.9 L785.3,336.5 Z",
+  madhesh: "M624.5,425.8 L613.2,412.3 L577.5,402.5 L549.9,399.3 L540.5,411.6 L557.2,415.4 L565.3,429.8 L559.6,452.3 L598.1,463.2 L605.3,476.7 L625.6,474.8 L628.2,489.0 L643.0,491.1 L679.1,474.5 L705.0,513.1 L726.4,500.6 L749.4,510.6 L763.3,506.7 L811.2,531.7 L842.7,512.7 L844.9,495.0 L834.2,487.9 L825.4,497.5 L796.7,497.8 L781.0,472.4 L752.6,475.4 L742.0,468.5 L750.0,472.4 L751.4,464.6 L722.2,455.1 L709.5,439.7 L689.9,433.4 L663.0,440.0 L624.5,425.8 Z",
+  koshi: "M832.1,523.4 L852.3,510.9 L854.7,528.2 L884.8,541.2 L899.8,529.5 L916.5,537.0 L950.7,523.5 L965.0,539.5 L972.8,533.6 L986.8,487.3 L980.5,460.1 L962.7,443.0 L987.8,349.5 L943.9,336.9 L931.1,355.7 L911.4,347.9 L864.4,353.7 L812.1,317.7 L791.0,317.2 L788.0,372.9 L749.9,409.6 L747.7,426.4 L770.1,435.3 L760.1,444.4 L767.2,460.6 L749.9,472.4 L742.0,468.5 L781.0,472.4 L796.7,497.8 L825.4,497.5 L834.3,488.0 L845.3,500.0 L832.1,523.4 Z"
+};
+const PROVINCE_LABELS = {
+  sudurpashchim: [118, 155], karnali: [305, 175], lumbini: [330, 335],
+  gandaki: [505, 285], bagmati: [672, 368], madhesh: [712, 478], koshi: [892, 432]
+};
+
+// ---- XP + quiz stats (same keys/plumbing as quiz.html) ----
+let xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
+let quizCorrect = parseInt(localStorage.getItem("ghar.quiz.correctTotal") || "0", 10);
+let quizStreak = parseInt(localStorage.getItem("ghar.quiz.streak") || "0", 10);
+let quizStreakBest = parseInt(localStorage.getItem("ghar.quiz.streakBest") || "0", 10);
+function saveXP() { localStorage.setItem("ghar.xp.total", String(xp)); }
+function saveQuizStats() {
+  localStorage.setItem("ghar.quiz.correctTotal", String(quizCorrect));
+  localStorage.setItem("ghar.quiz.streak", String(quizStreak));
+  localStorage.setItem("ghar.quiz.streakBest", String(quizStreakBest));
+}
+function awardCorrect(firstTry) {
+  const earned = firstTry ? 5 : 2;
+  xp += earned; saveXP();
+  if (window.GharAuth && GharAuth.addBones) GharAuth.addBones(earned);
+  quizCorrect++; quizStreak++;
+  if (quizStreak > quizStreakBest) quizStreakBest = quizStreak;
+  saveQuizStats();
+  if (window.GharAuth && GharAuth.signedIn && GharAuth.signedIn() && GharAuth.childId()) {
+    GharAuth.api("/accounts/children/" + GharAuth.childId() + "/quiz-stats", "POST",
+      { streak_best: quizStreakBest, correct_total: quizCorrect }).catch(() => {});
+  }
+  if (typeof GharStreak !== "undefined") GharStreak.recordQuizSolve();
+  if (window.GharAuth) {
+    if (GharAuth.pushTotals) GharAuth.pushTotals().catch(() => {});
+    if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
+  }
+  renderXP();
+  return earned;
+}
+function recordWrong() { quizStreak = 0; saveQuizStats(); }
+
+// ---- Sounds (tiny WebAudio synth, like quiz.html's ding) ----
+let audioCtx = null;
+function getCtx() {
+  if (!audioCtx) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) audioCtx = new AC(); }
+  return audioCtx;
+}
+function tone(freq, delay, dur, vol, type) {
+  try {
+    const ctx = getCtx(); if (!ctx) return;
+    const t = ctx.currentTime + (delay || 0);
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type || "sine"; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol || 0.2, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + (dur || 0.35));
+    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + (dur || 0.35) + 0.05);
+  } catch (e) {}
+}
+function playDing() { tone(880, 0, 0.5, 0.22); tone(1318, 0.08, 0.6, 0.12); }
+function playBuzz() { tone(180, 0, 0.25, 0.15, "square"); }
+
+// ---- Helpers ----
+const stage = document.getElementById("pq-stage");
+const audioEl = document.getElementById("pq-audio");
+function playClip(url) { if (!url) return; try { audioEl.src = url; audioEl.play().catch(() => {}); } catch (e) {} }
+function shuffle(a) { const r = a.slice(); for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; } return r; }
+function sample(a, n) { return shuffle(a).slice(0, n); }
+function renderXP() { document.getElementById("pq-xp").textContent = "⭐ " + xp + " XP"; }
+function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+
+function mapSVG() {
+  let paths = "";
+  PROVINCES.forEach(p => {
+    paths += '<path class="province" data-province="' + p.id + '" d="' + PROVINCE_PATHS[p.id] + '" fill="' + p.color + '"/>';
+  });
+  let labels = "";
+  PROVINCES.forEach(p => {
+    const xy = PROVINCE_LABELS[p.id];
+    labels += '<text x="' + xy[0] + '" y="' + xy[1] + '" font-size="17" text-anchor="middle">' + esc(p.name) + "</text>";
+  });
+  return '<div class="pq-map"><svg viewBox="0 0 1000 560" role="img" aria-label="Map of Nepal" xmlns="http://www.w3.org/2000/svg">' +
+    '<rect width="1000" height="560" fill="#dff0e0" rx="16"/>' + paths + labels + "</svg></div>";
+}
+// ---- Server quiz-stats pull (max-merge, same as quiz.html) ----
+async function pullQuizStats() {
+  if (!window.GharAuth || !GharAuth.signedIn || !GharAuth.signedIn() || !GharAuth.childId()) return;
+  try {
+    const s = await GharAuth.api("/accounts/children/" + GharAuth.childId() + "/quiz-stats");
+    if (s) {
+      if ((s.correct_total || 0) > quizCorrect) quizCorrect = s.correct_total;
+      if ((s.streak_best || 0) > quizStreakBest) quizStreakBest = s.streak_best;
+      saveQuizStats();
+    }
+  } catch (e) {}
+}
+
+// ---- Unlock state ----
+// The split Som signed off with the quiz plan (2026-11-11): Premium and
+// test mode get all 27 places; free players get questions on the two
+// free places (Kathmandu + Pokhara) plus a taste of the mountains.
+let pqUnlocked = (function () {
+  try {
+    if (new URLSearchParams(location.search).has("test")) localStorage.setItem("ghar.testUnlock", "1");
+    if (localStorage.getItem("ghar.testUnlock") === "1") return true;
+    if (localStorage.getItem("ghar.unlocked") === "1") return true;
+  } catch (e) {}
+  if (window.GharAuth && GharAuth.isUnlocked && GharAuth.isUnlocked()) return true;
+  return false;
+})();
+const FREE_PLACE_IDS = { kathmandu: true, pokhara: true };
+
+// ---- Run engine ----
+let run = null;
+let qState = null;
+const BEST_KEY = "ghar.placesquiz.best";
+
+function buildRun() {
+  if (!pqUnlocked) return buildFreeRun();
+  const places = shuffle(PLACES);
+  const qs = [];
+  places.slice(0, 3).forEach(pl => qs.push({ type: "tap", place: pl }));
+  qs.push({ type: "listen", place: places[3] });
+  places.slice(4, 7).forEach(pl => qs.push({ type: "mcq-province", place: pl }));
+  sample(PROVINCES, 2).forEach(pv => {
+    const inP = PLACES.filter(x => x.province === pv.id);
+    qs.push({ type: "mcq-place", province: pv, place: inP[Math.floor(Math.random() * inP.length)] });
+  });
+  const pair = sample(PEAKS, 2);
+  qs.push({ type: "peaks", a: pair[0], b: pair[1] });
+  return shuffle(qs);
+}
+
+function buildFreeRun() {
+  const free = PLACES.filter(p => FREE_PLACE_IDS[p.id]);
+  const qs = [];
+  free.forEach(pl => qs.push({ type: "tap", place: pl }));
+  free.forEach(pl => qs.push({ type: "listen", place: pl }));
+  free.forEach(pl => qs.push({ type: "mcq-province", place: pl }));
+  free.forEach(pl => qs.push({ type: "mcq-place", province: PROV[pl.province], place: pl }));
+  const pair1 = sample(PEAKS, 2), pair2 = sample(PEAKS, 2);
+  qs.push({ type: "peaks", a: pair1[0], b: pair1[1] });
+  qs.push({ type: "peaks", a: pair2[0], b: pair2[1] });
+  return shuffle(qs);
+}
+
+function startScreen() {
+  document.getElementById("pq-progress").textContent = "";
+  const best = parseInt(localStorage.getItem(BEST_KEY) || "-1", 10);
+  stage.innerHTML =
+    '<div class="pq-card pq-start"><div class="pq-big">🗺️</div>' +
+    "<p><b>10 questions</b> about the places on Danfe's map.<br>" +
+    "Tap provinces on the map, listen to names in Nepali, pick answers, and race the mountains.<br>" +
+    "+5 XP for a clean answer · +2 XP after a miss.</p>" +
+    (pqUnlocked ? "" : "<p>🆓 Free version: questions on <b>Kathmandu</b> &amp; <b>Pokhara</b>, plus the mountains. Premium unlocks all 27 places.</p>") +
+    (best >= 0 ? "<p>🏅 Your best so far: <b>" + best + " / 10</b></p>" : "") +
+    '<button class="pq-next" id="pq-start-btn" type="button">▶ Start the quiz</button></div>';
+  document.getElementById("pq-start-btn").addEventListener("click", startRun);
+}
+
+function startRun() {
+  run = { questions: buildRun(), idx: 0, correct: 0, xpEarned: 0 };
+  showQuestion();
+}
+
+function showQuestion() {
+  const q = run.questions[run.idx];
+  qState = { wrongs: 0, solved: false };
+  document.getElementById("pq-progress").textContent =
+    "Question " + (run.idx + 1) + " of " + run.questions.length + " · ✅ " + run.correct + " so far";
+  if (q.type === "tap" || q.type === "listen") renderTap(q);
+  else if (q.type === "mcq-province") renderMcqProvince(q);
+  else if (q.type === "mcq-place") renderMcqPlace(q);
+  else renderPeaks(q);
+}
+
+function feedbackHTML() { return '<div class="pq-feedback" id="pq-feedback"></div><div class="pq-fact" id="pq-fact"></div><div id="pq-next-slot"></div>'; }
+function setFeedback(text, good) {
+  const fb = document.getElementById("pq-feedback");
+  fb.textContent = text;
+  fb.className = "pq-feedback " + (good ? "good" : "bad");
+}
+function showFact(text) {
+  const f = document.getElementById("pq-fact");
+  if (f && text) f.textContent = "💡 " + text;
+}
+function showNext() {
+  const slot = document.getElementById("pq-next-slot");
+  const last = run.idx >= run.questions.length - 1;
+  slot.innerHTML = '<button class="pq-next" id="pq-next-btn" type="button">' + (last ? "See my score 🏁" : "Next question →") + "</button>";
+  document.getElementById("pq-next-btn").addEventListener("click", () => {
+    run.idx++;
+    if (run.idx >= run.questions.length) showResults(); else showQuestion();
+  });
+}
+function onCorrect(q, factText) {
+  qState.solved = true;
+  const earned = awardCorrect(qState.wrongs === 0);
+  run.correct++; run.xpEarned += earned;
+  playDing();
+  setFeedback("✅ Correct! +" + earned + " XP", true);
+  showFact(factText || (q.place ? q.place.fact : ""));
+  showNext();
+}
+function onWrongTap() {
+  qState.wrongs++;
+  recordWrong();
+  playBuzz();
+}
+
+function renderTap(q) {
+  const pl = q.place;
+  const isListen = q.type === "listen";
+  const prompt = isListen
+    ? "🔊 Listen to the name — then tap its province on the map!"
+    : '<span class="pq-visual">' + esc(pl.visual || "📍") + "</span>Where is <b>" + esc(pl.name) + "</b>? " +
+      '<span class="pq-nep">' + esc(pl.nepali) + "</span><br>Tap its province on the map.";
+  stage.innerHTML =
+    '<div class="pq-card"><div class="pq-q">' + prompt + "</div>" +
+    '<button class="pq-listen" id="pq-listen-btn" type="button">🔊 Hear the name</button>' +
+    mapSVG() + feedbackHTML() + "</div>";
+  const hear = () => playClip(pl.audioName);
+  document.getElementById("pq-listen-btn").addEventListener("click", hear);
+  if (isListen) hear();
+  stage.querySelectorAll(".province").forEach(path => {
+    path.addEventListener("click", () => {
+      if (qState.solved) return;
+      const tapped = path.dataset.province;
+      if (tapped === pl.province) {
+        path.classList.add("right");
+        playClip(pl.audioName);
+        onCorrect(q, pl.fact);
+      } else {
+        onWrongTap();
+        path.classList.add("wrong");
+        setTimeout(() => path.classList.remove("wrong"), 900);
+        setFeedback("✗ That's " + (PROV[tapped] ? PROV[tapped].name : "") + " — try again!", false);
+      }
+    });
+  });
+}
+
+function optionButtons(options, renderLabel, onPick) {
+  const wrap = document.createElement("div");
+  wrap.className = "quiz-options";
+  options.forEach(opt => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "quiz-option";
+    b.innerHTML = renderLabel(opt);
+    b.addEventListener("click", () => onPick(opt, b));
+    wrap.appendChild(b);
+  });
+  return wrap;
+}
+
+function renderMcqProvince(q) {
+  const pl = q.place;
+  const others = sample(PROVINCES.filter(p => p.id !== pl.province), 3);
+  const options = shuffle([PROV[pl.province]].concat(others));
+  stage.innerHTML =
+    '<div class="pq-card"><div class="pq-q"><span class="pq-visual">' + esc(pl.visual || "📍") + "</span>" +
+    "Which province is <b>" + esc(pl.name) + "</b> in?<br>" +
+    '<span class="pq-nep">' + esc(pl.nepali) + "</span></div>" +
+    '<button class="pq-listen" id="pq-listen-btn" type="button">🔊 Hear the name</button>' +
+    '<div id="pq-options"></div>' + feedbackHTML() + "</div>";
+  document.getElementById("pq-listen-btn").addEventListener("click", () => playClip(pl.audioName));
+  const wrap = optionButtons(options,
+    p => '<span class="opt-eng">' + esc(p.name) + " Province</span>",
+    (p, btn) => {
+      if (qState.solved) return;
+      if (p.id === pl.province) {
+        btn.classList.add("correct");
+        playClip(pl.audioName);
+        onCorrect(q, pl.fact);
+      } else {
+        onWrongTap();
+        btn.classList.add("wrong");
+        btn.disabled = true;
+        setFeedback("✗ Not " + p.name + " — try again!", false);
+      }
+    });
+  document.getElementById("pq-options").appendChild(wrap);
+}
+
+function renderMcqPlace(q) {
+  const pv = q.province, pl = q.place;
+  const others = sample(PLACES.filter(x => x.province !== pv.id), 3);
+  const options = shuffle([pl].concat(others));
+  stage.innerHTML =
+    '<div class="pq-card"><div class="pq-q">Which of these places is in <b>' + esc(pv.name) + " Province</b>?<br>" +
+    '<span class="pq-nep">' + esc(pv.nepali) + "</span></div>" +
+    '<div id="pq-options"></div>' + feedbackHTML() + "</div>";
+  const wrap = optionButtons(options,
+    x => '<span class="opt-eng">' + esc(x.visual || "📍") + " " + esc(x.name) + '</span><span class="opt-deva">' + esc(x.nepali) + "</span>",
+    (x, btn) => {
+      if (qState.solved) return;
+      if (x.id === pl.id) {
+        btn.classList.add("correct");
+        playClip(pl.audioName);
+        onCorrect(q, pl.fact);
+      } else {
+        onWrongTap();
+        btn.classList.add("wrong");
+        btn.disabled = true;
+        setFeedback("✗ " + x.name + " is in " + (PROV[x.province] ? PROV[x.province].name : "") + " — try again!", false);
+      }
+    });
+  document.getElementById("pq-options").appendChild(wrap);
+}
+
+function renderPeaks(q) {
+  const taller = q.a.h > q.b.h ? q.a : q.b;
+  const shorter = taller === q.a ? q.b : q.a;
+  stage.innerHTML =
+    '<div class="pq-card"><div class="pq-q"><span class="pq-visual">🏔️</span>Which mountain is <b>taller</b>?</div>' +
+    '<div id="pq-options"></div>' + feedbackHTML() + "</div>";
+  const wrap = optionButtons([q.a, q.b],
+    p => '<span class="opt-eng">🏔️ ' + esc(p.name) + "</span>" + (p.nepali ? '<span class="opt-deva">' + esc(p.nepali) + "</span>" : ""),
+    (p, btn) => {
+      if (qState.solved) return;
+      // Reveal both heights either way — that's the learning moment.
+      wrap.querySelectorAll(".quiz-option").forEach((b, i) => {
+        const pk = [q.a, q.b][i];
+        if (!b.querySelector(".pq-h")) {
+          const s = document.createElement("span");
+          s.className = "pq-h";
+          s.textContent = pk.h.toLocaleString("en-US") + " m";
+          b.appendChild(s);
+        }
+      });
+      if (p === taller) {
+        btn.classList.add("correct");
+        onCorrect(q, taller.name + " is " + taller.h.toLocaleString("en-US") + " m tall — " +
+          (taller.h - shorter.h).toLocaleString("en-US") + " m taller than " + shorter.name + " (" + shorter.h.toLocaleString("en-US") + " m).");
+      } else {
+        onWrongTap();
+        btn.classList.add("wrong");
+        btn.disabled = true;
+        setFeedback("✗ " + p.name + " is " + p.h.toLocaleString("en-US") + " m — the other one is taller!", false);
+      }
+    });
+  wrap.querySelectorAll(".quiz-option").forEach(b => b.classList.add("pq-peakbtn"));
+  document.getElementById("pq-options").appendChild(wrap);
+}
+
+function showResults() {
+  document.getElementById("pq-progress").textContent = "Run complete!";
+  const best = parseInt(localStorage.getItem(BEST_KEY) || "-1", 10);
+  if (run.correct > best) localStorage.setItem(BEST_KEY, String(run.correct));
+  const stars = run.correct >= 9 ? 3 : run.correct >= 7 ? 2 : run.correct >= 4 ? 1 : 0;
+  const starStr = "⭐".repeat(stars) + "☆".repeat(3 - stars);
+  const msg = run.correct >= 9 ? "Nepal expert! Danfe is impressed. 🦚" :
+    run.correct >= 7 ? "Great exploring!" :
+    run.correct >= 4 ? "Good start — the map is waiting for another look!" :
+    "Every explorer starts somewhere — try the map, then quiz again!";
+  stage.innerHTML =
+    '<div class="pq-card pq-score"><div class="pq-stars">' + starStr + "</div>" +
+    "<h2>You scored " + run.correct + " / " + run.questions.length + "</h2>" +
+    "<p>+" + run.xpEarned + " XP this run · ⭐ " + xp + " XP total</p>" +
+    "<p>" + msg + "</p>" +
+    '<button class="pq-next" id="pq-again-btn" type="button">↻ Play again</button>' +
+    '<p style="margin-top:12px"><a href="map.html">← Back to the Map</a> · <a href="index.html">Home</a></p></div>';
+  document.getElementById("pq-again-btn").addEventListener("click", startRun);
+}
+
+renderXP();
+startScreen();
+pullQuizStats();
+if (window.GharAuth && GharAuth.pull) GharAuth.pull().catch(() => {});
+</script>
+<script>
+// Unlock refresh: the cached flag picks the question pool at load; the
+// server re-check upgrades this page to the full pool if the account is
+// actually unlocked (the start screen re-renders to match, unless a run
+// is already going).
+(function () {
+  if (!window.GharAuth) return;
+  if (GharAuth.pull) GharAuth.pull().catch(function () {});
+  if (GharAuth.refreshUnlock) GharAuth.refreshUnlock().then(function (u) {
+    if (u && !pqUnlocked) { pqUnlocked = true; if (!run) startScreen(); }
+  }).catch(function () {});
+})();
+</script>
+</body>
+</html>
