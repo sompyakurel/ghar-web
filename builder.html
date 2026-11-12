@@ -32,6 +32,13 @@ function asset(u) {
 }
 let xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
 function saveXP() { localStorage.setItem("ghar.xp.total", String(xp)); }
+// The balance this page shows is the spendable wallet (lifetime minus
+// what has been spent), matching the home page, the map and the shop -
+// xp above stays the lifetime total that awards keep adding to.
+function dispXP() {
+  if (window.GharAuth && GharAuth.spendable) return GharAuth.spendable();
+  return Math.max(xp - (parseInt(localStorage.getItem("ghar.xp.spent") || "0", 10) || 0), 0);
+}
 let audioCtx = null;
 function getAudioCtx() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -266,7 +273,7 @@ function render() {
   content.innerHTML = `
     <div class="quiz-player">
       <h1>🧱 Round ${roundIndex + 1}</h1>
-      <p class="quiz-xp">⭐ ${xp} XP · ${sentenceIndex + 1} / ${round().length}</p>
+      <p class="quiz-xp">⭐ ${dispXP()} XP · ${sentenceIndex + 1} / ${round().length}</p>
       <div class="progress"><div style="width:${(sentenceIndex / round().length * 100)}%"></div></div>
       <div class="builder-prompt">
         <div class="builder-emoji">${s.emoji}</div>

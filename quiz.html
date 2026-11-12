@@ -46,6 +46,13 @@ let quizCorrect = parseInt(localStorage.getItem("ghar.quiz.correctTotal") || "0"
 let quizStreak = parseInt(localStorage.getItem("ghar.quiz.streak") || "0", 10);
 let quizStreakBest = parseInt(localStorage.getItem("ghar.quiz.streakBest") || "0", 10);
 function saveXP() { localStorage.setItem("ghar.xp.total", String(xp)); }
+// The balance this page shows is the spendable wallet (lifetime minus
+// what has been spent), matching the home page, the map and the shop -
+// xp above stays the lifetime total that awards keep adding to.
+function dispXP() {
+  if (window.GharAuth && GharAuth.spendable) return GharAuth.spendable();
+  return Math.max(xp - (parseInt(localStorage.getItem("ghar.xp.spent") || "0", 10) || 0), 0);
+}
 function saveFree() { localStorage.setItem("ghar.quiz.freeUsed", String(freeUsed)); }
 function saveQuizStats() {
   localStorage.setItem("ghar.quiz.correctTotal", String(quizCorrect));
@@ -155,7 +162,7 @@ function freeLeft() { return TEST ? "unlimited" : `${FREE_LIMIT - freeUsed} of $
 function showMenu() {
   section = null;
   const content = document.getElementById("content");
-  let html = `<div class="deck-head"><h1>🎮 Pick a quiz</h1><p>+5 XP per correct answer · ⭐ ${xp} XP · ${freeLeft()}</p></div>`;
+  let html = `<div class="deck-head"><h1>🎮 Pick a quiz</h1><p>+5 XP per correct answer · ⭐ ${dispXP()} XP · ${freeLeft()}</p></div>`;
   ["beginner", "intermediate", "hard", "teen"].forEach(tier => {
     const secs = sections.filter(s => s.tier === tier);
     if (!secs.length) return;
@@ -242,7 +249,7 @@ function renderPlayer() {
     <div class="quiz-player">
       <button type="button" class="quiz-back" id="quiz-back">← Quiz menu</button>
       <h1>${section.icon} ${esc(section.title)}</h1>
-      <p class="quiz-xp">⭐ ${xp} XP · ${freeLeft()}</p>
+      <p class="quiz-xp">⭐ ${dispXP()} XP · ${freeLeft()}</p>
       <p class="quiz-prompt">${isPicture ? "What is this?" : "What did you hear?"}</p>
       ${questionHTML}
       <p class="quiz-stake ${stakeClass}" id="stake">${stake}</p>
@@ -300,7 +307,7 @@ function answer(i, btn) {
     const fb = document.getElementById("feedback");
     fb.textContent = blitz ? `✅ Correct! +${earned} XP · ⚡ Quiz Blitz complete! +15 XP` : `✅ Correct! +${earned} XP`;
     fb.className = "quiz-feedback good";
-    document.querySelector(".quiz-xp").textContent = `⭐ ${xp} XP · ${freeLeft()}`;
+    document.querySelector(".quiz-xp").textContent = `⭐ ${dispXP()} XP · ${freeLeft()}`;
     document.querySelectorAll(".quiz-option").forEach(b => { b.disabled = true; });
     document.getElementById("next-word").hidden = false;
   } else {

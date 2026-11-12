@@ -102,6 +102,13 @@ let quizCorrect = parseInt(localStorage.getItem("ghar.quiz.correctTotal") || "0"
 let quizStreak = parseInt(localStorage.getItem("ghar.quiz.streak") || "0", 10);
 let quizStreakBest = parseInt(localStorage.getItem("ghar.quiz.streakBest") || "0", 10);
 function saveXP() { localStorage.setItem("ghar.xp.total", String(xp)); }
+// The balance this page shows is the spendable wallet (lifetime minus
+// what has been spent), matching the home page, the map and the shop -
+// xp above stays the lifetime total that awards keep adding to.
+function dispXP() {
+  if (window.GharAuth && GharAuth.spendable) return GharAuth.spendable();
+  return Math.max(xp - (parseInt(localStorage.getItem("ghar.xp.spent") || "0", 10) || 0), 0);
+}
 function saveQuizStats() {
   localStorage.setItem("ghar.quiz.correctTotal", String(quizCorrect));
   localStorage.setItem("ghar.quiz.streak", String(quizStreak));
@@ -154,7 +161,7 @@ const audioEl = document.getElementById("pq-audio");
 function playClip(url) { if (!url) return; try { audioEl.src = url; audioEl.play().catch(() => {}); } catch (e) {} }
 function shuffle(a) { const r = a.slice(); for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]]; } return r; }
 function sample(a, n) { return shuffle(a).slice(0, n); }
-function renderXP() { document.getElementById("pq-xp").textContent = "⭐ " + xp + " XP"; }
+function renderXP() { document.getElementById("pq-xp").textContent = "⭐ " + dispXP() + " XP"; }
 function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
 
 function mapSVG() {
@@ -498,7 +505,7 @@ function showResults() {
   stage.innerHTML =
     '<div class="pq-card pq-score"><div class="pq-stars">' + starStr + "</div>" +
     "<h2>You scored " + run.correct + " / " + run.questions.length + "</h2>" +
-    "<p>+" + run.xpEarned + " XP this run · ⭐ " + xp + " XP total</p>" +
+    "<p>+" + run.xpEarned + " XP this run · ⭐ " + dispXP() + " XP</p>" +
     "<p>" + msg + "</p>" +
     '<button class="pq-next" id="pq-again-btn" type="button">↻ Play again</button>' +
     '<p style="margin-top:12px"><a href="map.html">← Back to the Map</a> · <a href="index.html">Home</a></p></div>';
@@ -517,7 +524,10 @@ if (window.GharAuth && GharAuth.pull) GharAuth.pull().catch(() => {});
 // is already going).
 (function () {
   if (!window.GharAuth) return;
-  if (GharAuth.pull) GharAuth.pull().catch(function () {});
+  if (GharAuth.pull) GharAuth.pull().then(function () {
+    xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10) || 0;
+    renderXP();
+  }).catch(function () {});
   if (GharAuth.refreshUnlock) GharAuth.refreshUnlock().then(function (u) {
     if (u && !pqUnlocked) { pqUnlocked = true; if (!run) startScreen(); }
   }).catch(function () {});
