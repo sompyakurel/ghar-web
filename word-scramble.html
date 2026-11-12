@@ -80,6 +80,12 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
       <button id="mode-hard" type="button">🌳 Hard · the longest words<br><span style="font-size:14px;font-weight:400">6+ letters — for word masters</span></button>
     </div>
 
+    <div class="quiz-lock" id="game-lock" hidden>
+      <div class="big">🔒</div>
+      <h1>Word Scramble</h1>
+      <p>This game unlocks with Ghar Premium. Balloon Pop is the free game.</p>
+    </div>
+
     <div id="game" hidden>
       <div class="ws-toggles">
         <button id="btn-music" type="button">🎵 Music: On</button>
@@ -238,10 +244,11 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
   }
 
   // ---- Game ----
-  // Premium lock (match the app): Word Scramble itself is free, but it
-  // only uses words from decks you have unlocked. Only Alphabets +
-  // Numbers are free; the rest is Premium. TEST mode and a server
-  // unlock open the full pool.
+  // Premium lock (Som's rule, 2026-11-11): on the free tier only
+  // Balloon Pop is free — Word Scramble itself unlocks with Ghar
+  // Premium (the gate is applyGameGate(), at the bottom). For unlocked
+  // and TEST users the word pool is the full pack; the FREE_DECKS pool
+  // restriction below stays as a second line of defence.
   function isTestUnlock() {
     var q = new URLSearchParams(location.search);
     if (q.has("test")) localStorage.setItem("ghar.testUnlock", q.get("test") === "off" ? "" : "1");
@@ -608,6 +615,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
   }
 
   function startGame(d) {
+    if (gameGated) return;
     diff = d;
     roundIdx = 0; correct = 0; gameXp = 0;
     document.getElementById('ws-win').hidden = true;
@@ -677,11 +685,23 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
     if (sfxOn) sfxTap();
   });
 
+  // The Premium gate: the cached flag decides immediately, then the
+  // server refresh re-checks — it lifts the gate if this browser is
+  // actually unlocked, and drops it if a cached unlock is wrong.
+  var gameGated = true;
+  function applyGameGate() {
+    gameGated = !premiumOpen();
+    var lockEl = document.getElementById('game-lock');
+    if (lockEl) lockEl.hidden = !gameGated;
+    var mp = document.getElementById('mode-pick');
+    if (mp) mp.hidden = gameGated;
+  }
+  applyGameGate();
   if (window.GharAuth) {
     GharAuth.pull().catch(function () {});
-    // Refresh the Premium flag so the word pool is gated on the server
-    // value, not a stale cache (same as songs/deck).
-    if (GharAuth.refreshUnlock) GharAuth.refreshUnlock().catch(function () {});
+    // Refresh the Premium flag so the gate uses the server value, not
+    // a stale cache (same as songs/deck).
+    if (GharAuth.refreshUnlock) GharAuth.refreshUnlock().catch(function () {}).then(applyGameGate);
   }
   syncScrambleGames();
 })();

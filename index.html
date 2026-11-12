@@ -168,22 +168,22 @@
     </a>
     <a class="quiz-cta" href="bagh-chal.html">
       <span class="quiz-cta-icon">🐯</span>
-      <span><strong>Bagh-Chal</strong><br>All levels · trap the tigers with your goats! · Win +10 XP</span>
+      <span><strong>Bagh-Chal</strong> <span class="badge locked" data-game-lock>🔒 Premium</span><br>All levels · trap the tigers with your goats! · Win +10 XP</span>
       <span class="quiz-cta-arrow">→</span>
     </a>
     <a class="quiz-cta" href="chess.html">
       <span class="quiz-cta-icon">♟️</span>
-      <span><strong>Chess</strong><br>All levels · 2 players or vs the computer! · Win +10 XP</span>
+      <span><strong>Chess</strong> <span class="badge locked" data-game-lock>🔒 Premium</span><br>All levels · 2 players or vs the computer! · Win +10 XP</span>
       <span class="quiz-cta-arrow">→</span>
     </a>
     <a class="quiz-cta" href="memory-match.html">
       <span class="quiz-cta-icon">🧠</span>
-      <span><strong>Memory Match</strong><br>All levels · match each picture to its Nepali word! · Win +10 XP</span>
+      <span><strong>Memory Match</strong> <span class="badge locked" data-game-lock>🔒 Premium</span><br>All levels · match each picture to its Nepali word! · Win +10 XP</span>
       <span class="quiz-cta-arrow">→</span>
     </a>
     <a class="quiz-cta" href="word-scramble.html">
       <span class="quiz-cta-icon">🔤</span>
-      <span><strong>Word Scramble</strong><br>All levels · unscramble the letters to spell the word! · +5 XP a word</span>
+      <span><strong>Word Scramble</strong> <span class="badge locked" data-game-lock>🔒 Premium</span><br>All levels · unscramble the letters to spell the word! · +5 XP a word</span>
       <span class="quiz-cta-arrow">→</span>
     </a>
   </section>
@@ -250,6 +250,7 @@ if (TEST) {
   document.getElementById("badge-rhymes").className = "badge free";
   document.getElementById("badge-sentences").textContent = "TEST";
   document.getElementById("badge-sentences").className = "badge free";
+  document.querySelectorAll("[data-game-lock]").forEach(b => { b.hidden = true; });
   document.getElementById("songs-lock").hidden = true;
   document.getElementById("rhymes-lock").hidden = true;
   document.getElementById("songs-list").hidden = false;
@@ -303,6 +304,7 @@ function loadHomeMedia() {
 }
 function applyUnlockUI() {
   if (!TEST && !GharAuth.isUnlocked()) return;
+  document.querySelectorAll("[data-game-lock]").forEach(b => { b.hidden = true; });
   document.getElementById("badge-songs").textContent = TEST ? "TEST" : "✓ Unlocked";
   document.getElementById("badge-songs").className = "badge free";
   document.getElementById("badge-rhymes").textContent = TEST ? "TEST" : "✓ Unlocked";

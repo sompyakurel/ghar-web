@@ -835,5 +835,33 @@ GharAuth.pull().catch(() => {}).then(() => syncBaghchalGames()).then(() => {
 });
 </script>
 <div class="prayer-bunting prayer-bottom" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span></div></div>
+<script>
+// Premium gate (Som's rule, 2026-11-11): on the free tier only Balloon
+// Pop is free — Bagh-Chal unlocks with Ghar Premium. A full-screen lock
+// covers the board when the cached state says locked; the server
+// refresh then confirms — it lifts the lock if this browser is actually
+// unlocked, and drops it if a cached unlock turns out to be wrong. The
+// board itself is never touched, so an unlocked player loses nothing.
+(function () {
+  var q = new URLSearchParams(location.search);
+  if (q.has("test")) localStorage.setItem("ghar.testUnlock", q.get("test") === "off" ? "" : "1");
+  var TEST = localStorage.getItem("ghar.testUnlock") === "1";
+  var lockEl = null;
+  function showLock() {
+    if (lockEl) { lockEl.style.display = "flex"; return; }
+    lockEl = document.createElement("div");
+    lockEl.style.cssText = "position:fixed;inset:0;z-index:999;background:#fff3e0;display:flex;align-items:center;justify-content:center;padding:20px;";
+    lockEl.innerHTML = '<div class="quiz-lock"><div class="big">🔒</div><h1>Bagh-Chal</h1><p>This game unlocks with Ghar Premium. Balloon Pop is the free game.</p><p><a href="index.html">← Home</a></p></div>';
+    document.body.appendChild(lockEl);
+  }
+  function hideLock() { if (lockEl) lockEl.style.display = "none"; }
+  function unlocked() { try { return !!(window.GharAuth && GharAuth.isUnlocked && GharAuth.isUnlocked()); } catch (e) { return false; } }
+  function applyGate() { if (TEST || unlocked()) hideLock(); else showLock(); }
+  applyGate();
+  if (window.GharAuth && GharAuth.pull) {
+    GharAuth.pull().catch(function () {}).then(function () { return GharAuth.refreshUnlock().catch(function () { return false; }); }).then(applyGate);
+  }
+})();
+</script>
 </body>
 </html>

@@ -118,10 +118,11 @@
   // the six traceable sections, in the order Som gave them
   var TRACE_DECKS = ['alphabet', 'myname', 'numbers', 'fruits', 'bodyparts', 'animals'];
   var TRACE_TITLES = { alphabet: 'Alphabets', myname: 'My Name', numbers: 'Numbers', fruits: 'Fruits', bodyparts: 'Body Parts', animals: 'Animals' };
-  // Premium trace sections (match the app): only Alphabets, My Name and
-  // Numbers are free. Fruits, Body Parts and Animals are Premium — the
-  // same as their decks. TEST mode and a server unlock open everything.
-  var FREE_TRACE_DECKS = { alphabet: true, myname: true, numbers: true };
+  // Premium trace sections. TEST mode and a server unlock open
+  // everything. Free tier (Som's rule, 2026-11-11): exactly ONE writing
+  // section is free — Alphabets. Every other section (My Name, Numbers,
+  // Fruits, Body Parts, Animals) unlocks with Ghar Premium.
+  var FREE_TRACE_DECKS = { alphabet: true };
   function isTestUnlock() {
     var q = new URLSearchParams(location.search);
     if (q.has("test")) localStorage.setItem("ghar.testUnlock", q.get("test") === "off" ? "" : "1");
