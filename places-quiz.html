@@ -34,6 +34,8 @@
   .pq-feedback.good { color: #2e7d32; }
   .pq-feedback.bad { color: #c62828; }
   .pq-fact { text-align: center; color: #5d4037; margin-top: 6px; }
+  .pq-hint { text-align: center; color: #5d4037; background: #fff8ee; border: 1px dashed #e8c98a; border-radius: 10px; padding: 9px 12px; margin: 10px auto 2px; font-size: 15px; max-width: 520px; }
+  .pq-hint[hidden] { display: none; }
   .pq-next { display: block; margin: 14px auto 2px; font-size: 18px; font-weight: 700; border: none; background: #fb8c00; color: #fff; border-radius: 999px; padding: 12px 30px; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,.2); }
   .pq-start { text-align: center; }
   .pq-start .pq-big { font-size: 56px; }
@@ -214,7 +216,7 @@ const FREE_PLACE_IDS = { kathmandu: true, pokhara: true };
 // ---- Run engine ----
 let run = null;
 let qState = null;
-const BEST_KEY = "ghar.placesquiz.best";
+const BEST_KEY = "ghar.placesquiz.best.v2"; // v2: the score counts clean answers only
 
 function buildRun() {
   if (!pqUnlocked) return buildFreeRun();
@@ -256,7 +258,7 @@ function buildFreeRun() {
   return shuffle(qs);
 }
 
-function bestKey() { return pqUnlocked ? "ghar.placesquiz.bestPaid" : BEST_KEY; }
+function bestKey() { return pqUnlocked ? "ghar.placesquiz.bestPaid.v2" : BEST_KEY; }
 function runLength() { return pqUnlocked ? 15 : 4; }
 
 function startScreen() {
@@ -275,6 +277,8 @@ function startScreen() {
 }
 
 function startRun() {
+  // "correct" counts CLEAN answers only (first try, no misses) - that is
+  // what the score and stars mean; solving after a miss still earns XP.
   run = { questions: buildRun(), idx: 0, correct: 0, xpEarned: 0 };
   showQuestion();
 }
@@ -301,6 +305,11 @@ function showFact(text) {
   const f = document.getElementById("pq-fact");
   if (f && text) f.textContent = "💡 " + text;
 }
+function hintHTML() { return '<div class="pq-hint" id="pq-hint" hidden></div>'; }
+function showHint(text) {
+  const h = document.getElementById("pq-hint");
+  if (h && text) { h.textContent = "💡 " + text; h.hidden = false; qState.hintShown = true; }
+}
 function showNext() {
   const slot = document.getElementById("pq-next-slot");
   const last = run.idx >= run.questions.length - 1;
@@ -313,16 +322,20 @@ function showNext() {
 function onCorrect(q, factText) {
   qState.solved = true;
   const earned = awardCorrect(qState.wrongs === 0);
-  run.correct++; run.xpEarned += earned;
+  if (qState.wrongs === 0) run.correct++; // the score counts clean answers only
+  run.xpEarned += earned;
   playDing();
   setFeedback("✅ Correct! +" + earned + " XP", true);
-  showFact(factText || (q.place ? q.place.fact : ""));
+  if (!qState.hintShown) showFact(factText || (q.place ? q.place.fact : ""));
   showNext();
 }
 function onWrongTap() {
   qState.wrongs++;
   recordWrong();
   playBuzz();
+  // First miss: surface the fact up by the question as a hint, where it
+  // can actually help with the retry (Som, 2026-11-12).
+  if (qState.wrongs === 1) showHint(qState.fact);
 }
 
 function renderTap(q) {
@@ -335,7 +348,8 @@ function renderTap(q) {
   stage.innerHTML =
     '<div class="pq-card"><div class="pq-q">' + prompt + "</div>" +
     '<button class="pq-listen" id="pq-listen-btn" type="button">🔊 Hear the name</button>' +
-    mapSVG() + feedbackHTML() + "</div>";
+    hintHTML() + mapSVG() + feedbackHTML() + "</div>";
+  qState.fact = pl.fact;
   const hear = () => playClip(pl.audioName);
   document.getElementById("pq-listen-btn").addEventListener("click", hear);
   hear(); // the name plays by itself as the question arrives (Som, 2026-11-11)
@@ -380,7 +394,8 @@ function renderMcqProvince(q) {
     "Which province is <b>" + esc(pl.name) + "</b> in?<br>" +
     '<span class="pq-nep">' + esc(pl.nepali) + "</span></div>" +
     '<button class="pq-listen" id="pq-listen-btn" type="button">🔊 Hear the name</button>' +
-    '<div id="pq-options"></div>' + feedbackHTML() + "</div>";
+    hintHTML() + '<div id="pq-options"></div>' + feedbackHTML() + "</div>";
+  qState.fact = pl.fact;
   document.getElementById("pq-listen-btn").addEventListener("click", () => playClip(pl.audioName));
   playClip(pl.audioName); // auto-play the name as the question arrives
   const wrap = optionButtons(options,
@@ -408,7 +423,8 @@ function renderMcqPlace(q) {
   stage.innerHTML =
     '<div class="pq-card"><div class="pq-q">Which of these places is in <b>' + esc(pv.name) + " Province</b>?<br>" +
     '<span class="pq-nep">' + esc(pv.nepali) + "</span></div>" +
-    '<div id="pq-options"></div>' + feedbackHTML() + "</div>";
+    hintHTML() + '<div id="pq-options"></div>' + feedbackHTML() + "</div>";
+  qState.fact = pl.fact;
   const wrap = optionButtons(options,
     x => '<span class="opt-eng">' + esc(x.visual || "📍") + " " + esc(x.name) + '</span><span class="opt-deva">' + esc(x.nepali) + "</span>",
     (x, btn) => {
@@ -446,7 +462,8 @@ function renderCapital(q) {
   }
   stage.innerHTML =
     '<div class="pq-card"><div class="pq-q">' + prompt + "</div>" +
-    '<div id="pq-options"></div>' + feedbackHTML() + "</div>";
+    hintHTML() + '<div id="pq-options"></div>' + feedbackHTML() + "</div>";
+  qState.fact = factText;
   const wrap = optionButtons(options, label, (p, btn) => {
     if (qState.solved) return;
     if (isRight(p)) {
@@ -465,9 +482,12 @@ function renderCapital(q) {
 function renderPeaks(q) {
   const taller = q.a.h > q.b.h ? q.a : q.b;
   const shorter = taller === q.a ? q.b : q.a;
+  const factText = taller.name + " is " + taller.h.toLocaleString("en-US") + " m tall — " +
+    (taller.h - shorter.h).toLocaleString("en-US") + " m taller than " + shorter.name + " (" + shorter.h.toLocaleString("en-US") + " m).";
   stage.innerHTML =
     '<div class="pq-card"><div class="pq-q"><span class="pq-visual">🏔️</span>Which mountain is <b>taller</b>?</div>' +
-    '<div id="pq-options"></div>' + feedbackHTML() + "</div>";
+    hintHTML() + '<div id="pq-options"></div>' + feedbackHTML() + "</div>";
+  qState.fact = factText;
   const wrap = optionButtons([q.a, q.b],
     p => '<span class="opt-eng">🏔️ ' + esc(p.name) + "</span>" + (p.nepali ? '<span class="opt-deva">' + esc(p.nepali) + "</span>" : ""),
     (p, btn) => {
@@ -484,8 +504,7 @@ function renderPeaks(q) {
       });
       if (p === taller) {
         btn.classList.add("correct");
-        onCorrect(q, taller.name + " is " + taller.h.toLocaleString("en-US") + " m tall — " +
-          (taller.h - shorter.h).toLocaleString("en-US") + " m taller than " + shorter.name + " (" + shorter.h.toLocaleString("en-US") + " m).");
+        onCorrect(q, factText);
       } else {
         onWrongTap();
         btn.classList.add("wrong");
@@ -511,6 +530,7 @@ function showResults() {
   stage.innerHTML =
     '<div class="pq-card pq-score"><div class="pq-stars">' + starStr + "</div>" +
     "<h2>You scored " + run.correct + " / " + run.questions.length + "</h2>" +
+    "<p>Score counts answers right on the first try — solving after a miss still earns XP.</p>" +
     "<p>+" + run.xpEarned + " XP this run · ⭐ " + dispXP() + " XP</p>" +
     "<p>" + msg + "</p>" +
     '<button class="pq-next" id="pq-again-btn" type="button">↻ Play again</button>' +
