@@ -27,7 +27,7 @@
     </div>
     <div class="shop-balance">⭐ <span id="xp-label">0</span> XP</div>
   </div>
-  <p class="shop-hint" id="hint">Tap an item to buy it. Bought things appear in your room — drag them around in Arrange mode.</p>
+  <p class="shop-hint" id="hint">Tap a picture to hear its name. Bought things appear in your room — drag them around in Arrange mode.</p>
   <div class="shop-layout">
   <div class="myghar-shelf" id="deco-sets-shelf">
     <h3>🎨 Decoration Sets</h3>
@@ -152,6 +152,18 @@ function render() {
       img.className = "shop-img";
       img.onerror = () => { img.style.display = "none"; };
       card.appendChild(img);
+    }
+    // Tap the picture to hear the item's Nepali name - the same clips
+    // the room plays, and it works before buying, so learners can
+    // preview a word before spending XP on it.
+    const pic = card.querySelector(".shop-img");
+    if (pic && item.audio) {
+      pic.style.cursor = "pointer";
+      pic.title = "Hear its name";
+      pic.addEventListener("click", () => {
+        if (item.audio === "suga") play("assets/audio/nepal-v1/myghar_sugaMitho_np.m4a");
+        else play(`assets/audio/nepal-v1/myghar_${item.audio}_np.m4a`);
+      });
     }
     const ne = document.createElement("div");
     ne.className = "shop-name-ne";
