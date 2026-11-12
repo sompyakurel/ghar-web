@@ -99,8 +99,11 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
       <button id="mode-cpu-med" type="button">🤖 vs Computer · Medium<br><span style="font-size:14px;font-weight:400">A real challenge — it thinks ahead</span></button>
     </div>
 
-    <p class="section-sub" style="text-align:center;margin:12px 0 0;">🎨 Piece style — pick a look (the pieces stay the classic shapes, so you can always tell them apart):</p>
-    <div class="chess-themes" id="theme-picker" role="group" aria-label="Piece theme"></div>
+    <p class="section-sub" style="text-align:center;margin:12px 0 0;">🎨 Board theme — pick the board colours:</p>
+    <div class="chess-themes" id="theme-picker" role="group" aria-label="Board theme"></div>
+    <p class="section-sub" style="text-align:center;margin:10px 0 0;">♟️ Chess pieces — pick a set (every set keeps the classic shapes, so you can always tell the pieces apart):</p>
+    <div class="chess-themes" id="pieceset-picker" role="group" aria-label="Piece set"></div>
+    <p class="section-sub" style="text-align:center;font-size:12px;opacity:.75;">Piece art: Classic = Cburnett; Merida, Alpha &amp; Pirouetti are free-licensed sets via lichess / Wikimedia.</p>
 
     <div id="game" hidden>
       <div class="chess-toggles">
@@ -173,13 +176,14 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
   var thinkingEl = document.getElementById('thinking');
   var toastTimer;
 
-  // ---- Piece + board themes ----
-  // Pieces are the detailed Cburnett SVGs (the clear, 3D look), recoloured
-  // per theme: assets/images/chess/<theme>/ holds a full recoloured set.
-  // The Classic theme uses the original files at the top level. The shape
-  // is the piece (a king is always a king), and the two sides are far
-  // apart in every theme, so they are never confused. The board squares
-  // and frame change with the theme too.
+  // ---- Board themes + piece sets (independent choices) ----
+  // Board themes change the squares and frame only. The PIECES are
+  // chosen separately by the piece set (PIECE_SETS, below): four real
+  // artwork sets, each keeping the classic Staunton shapes — a king is
+  // always a king — so the pieces are never confused, whatever set and
+  // board a player picks. (Before 2026-11-11 the board theme also chose
+  // a recoloured Cburnett folder; Som asked for the pieces to have
+  // their own themes, independent of the board.)
   var CHESS_THEMES = {
     classic:  { name: 'Classic',  pieceW: '#ffffff', pieceB: '#1a1a1a', sqLight: '#f0d9b5', sqDark: '#b58863', frameBg: 'linear-gradient(135deg,#8d6e63,#5d4037 55%,#3e2723)', frameBorder: '#d4a017' },
     crimson:  { name: 'Crimson',  pieceW: '#ffd54f', pieceB: '#3e0a0a', sqLight: '#fff3e0', sqDark: '#d32f2f', frameBg: 'linear-gradient(135deg,#b71c1c,#7f0000 55%,#4a0000)', frameBorder: '#ffd54f' },
@@ -202,14 +206,31 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
     root.style.setProperty('--frame-border', t.frameBorder);
     document.querySelectorAll('.chess-theme').forEach(function (b) { b.classList.toggle('active', b.dataset.theme === name); });
   }
+  // ---- Piece sets ----
+  // Four artwork sets. Classic is the detailed Cburnett set at the top
+  // level of assets/images/chess/; Merida (bold), Alpha (sleek) and
+  // Pirouetti (playful) live in subfolders of the same names, in the
+  // same file naming, so switching is just a folder change.
+  var PIECE_SETS = {
+    classic:   'Classic',
+    merida:    'Merida',
+    alpha:     'Alpha',
+    pirouetti: 'Pirouetti'
+  };
+  var PIECE_SET_KEY = 'ghar.chess.pieceset';
+  var pieceSet = PIECE_SETS[localStorage.getItem(PIECE_SET_KEY)] ? localStorage.getItem(PIECE_SET_KEY) : 'classic';
+  function pieceSetDir() { return pieceSet === 'classic' ? '' : pieceSet + '/'; }
+  function applyPieceSet(name) {
+    if (!PIECE_SETS[name]) return;
+    pieceSet = name;
+    try { localStorage.setItem(PIECE_SET_KEY, name); } catch (e) {}
+    document.querySelectorAll('.chess-pieceset').forEach(function (b) { b.classList.toggle('active', b.dataset.set === name); });
+  }
   function pieceImg(type, color) {
-    // Cburnett set: Chess_<type><l|d>t45.svg  (l = white, d = black).
-    // NOTE: the "t" before 45 is part of the filename — without it every
-    // piece 404s and only the alt text shows.
-    // Themes live in subfolders (crimson/, forest/, midnight/); Classic
-    // uses the original files at the top level.
-    var dir = chessTheme === 'classic' ? '' : chessTheme + '/';
-    return 'assets/images/chess/' + dir + 'Chess_' + type + (color === 'w' ? 'l' : 'd') + 't45.svg';
+    // File naming (all sets): Chess_<type><l|d>t45.svg  (l = white,
+    // d = black). NOTE: the "t" before 45 is part of the filename —
+    // without it every piece 404s and only the alt text shows.
+    return 'assets/images/chess/' + pieceSetDir() + 'Chess_' + type + (color === 'w' ? 'l' : 'd') + 't45.svg';
   }
 
   function toast(msg, ms) {
@@ -758,6 +779,25 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
     });
   })();
   applyChessTheme(chessTheme);
+
+  // ---- Piece-set picker ----
+  (function buildPieceSetPicker() {
+    var picker = document.getElementById('pieceset-picker');
+    if (!picker) return;
+    Object.keys(PIECE_SETS).forEach(function (name) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chess-theme chess-pieceset' + (name === pieceSet ? ' active' : '');
+      b.dataset.set = name;
+      b.title = PIECE_SETS[name] + ' piece set';
+      b.setAttribute('aria-label', PIECE_SETS[name] + ' piece set');
+      var dir = name === 'classic' ? '' : name + '/';
+      b.innerHTML = '<img src="assets/images/chess/' + dir + 'Chess_nlt45.svg" alt="" style="width:30px;height:30px"><span>' + PIECE_SETS[name] + '</span>';
+      b.addEventListener('click', function () { applyPieceSet(name); render(); });
+      picker.appendChild(b);
+    });
+  })();
+  applyPieceSet(pieceSet);
 
   if (window.GharAuth) GharAuth.pull().catch(function () {});
   syncChessGames();
