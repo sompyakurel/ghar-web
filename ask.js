@@ -52,7 +52,8 @@
       "<h3>Ask Bhunte</h3>" +
       '<span class="ask-ai-badge" title="Bhunte is an AI helper">✨ AI</span></div>' +
       '<p class="ask-disclosure">Bhunte is an AI helper who answers from ' +
-      "Ghar's lessons. A grown-up can read these chats in the parent dashboard.</p>"
+      "Ghar's lessons. These chats are saved to the account and can be " +
+      "read any time in the dashboard.</p>"
     );
   }
 
@@ -62,8 +63,8 @@
 
     if (!GharAuth.signedIn() || !GharAuth.childId()) {
       body.innerHTML =
-        '<p class="ask-note">Ask a grown-up to <a href="signin.html">sign in</a> ' +
-        "so you can ask Bhunte a question.</p>";
+        '<p class="ask-note"><a href="signin.html">Sign in</a> — or have a parent ' +
+        "sign in — so you can ask Bhunte a question.</p>";
       return;
     }
 
