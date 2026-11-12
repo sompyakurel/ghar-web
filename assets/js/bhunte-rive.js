@@ -122,7 +122,16 @@
 
     // Tapping the live dog fires Pet (the state machine also has a
     // built-in tap listener) and runs the page's tap behaviour.
-    canvas.addEventListener("click", function () {
+    // pointerdown, NOT click (fixed 2026-11-12): the Rive runtime
+    // consumes the canvas's touch events (preventDefault) to feed its
+    // own listeners, so on phones the browser never synthesizes the
+    // follow-up click — desktop mice were unaffected, which is why taps
+    // talked on PC but stayed silent on mobile. pointerdown IS the
+    // gesture: it fires for mouse and touch alike, is not suppressed,
+    // and audio played from inside it counts as user-activated, which
+    // mobile autoplay rules require.
+    canvas.addEventListener("pointerdown", function (e) {
+      if (e && e.button !== undefined && e.button > 0) return; // primary button / touch only
       api.pet();
       if (opts.onTap) opts.onTap();
     });
