@@ -13,6 +13,7 @@
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Ghar — Parent dashboard</title>
 <link rel="stylesheet" href="style.css?v=29">
+<link rel="stylesheet" href="ask.css?v=1">
 </head>
 <body>
 <div class="prayer-bunting" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span></div></div>
@@ -29,6 +30,7 @@
   </div>
   <p class="error" id="error" hidden>Couldn't load the dashboard. Check your connection and refresh.</p>
   <div id="children-list"></div>
+  <div data-ask="history"></div>
   <div class="auth-card">
     <h2>Add a child</h2>
     <input class="auth-input" id="child-name" type="text" placeholder="Child's first name" maxlength="60">
@@ -38,6 +40,7 @@
   <p class="auth-note">One unlock covers the whole family. A child's progress is saved to their profile — it follows them across devices. Delete a child any time and their data goes with them. <a href="certificate.html?preview">Preview the certificate →</a> · <a href="db-browser.html">Browse the database →</a></p>
 </div>
 <script src="auth.js?v=15"></script>
+<script src="ask.js?v=1"></script>
 <script src="shop-data.js?v=2"></script>
 <script src="data/map-data.js"></script>
 <script>

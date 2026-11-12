@@ -1,0 +1,21 @@
+/* Ask Bhunte (Phase 2, 2026-11-12) — matches the site's card palette:
+   white cards, cream bubbles (#fff8ee), green pill buttons (#2e7d32). */
+.ask-card { background: #fff; border: 1px solid #e5e0d8; border-radius: 18px; padding: 16px 18px; box-shadow: 0 1px 4px rgba(0,0,0,.08); margin: 16px 0; text-align: left; }
+.ask-head { display: flex; align-items: center; gap: 8px; }
+.ask-head h3 { margin: 0; font-size: 19px; }
+.ask-dog { font-size: 24px; }
+.ask-disclosure { font-size: 13px; color: #6b5d4f; margin: 6px 0 12px; }
+.ask-note { font-size: 15px; margin: 4px 0; }
+.ask-form { display: flex; gap: 8px; }
+.ask-input { flex: 1; min-width: 0; font-family: inherit; font-size: 16px; padding: 11px 14px; border: 1px solid #ccc; border-radius: 999px; box-sizing: border-box; }
+.ask-btn { background: #2e7d32; color: #fff; border: none; border-radius: 999px; padding: 11px 20px; font-size: 16px; font-weight: 700; cursor: pointer; }
+.ask-btn:disabled { opacity: .55; cursor: default; }
+.ask-answer { background: #fff8ee; border: 1px solid #f0e8dc; border-radius: 14px; padding: 10px 14px; font-size: 16px; margin: 12px 0 0; }
+.ask-meta { font-size: 13px; color: #6b5d4f; margin: 8px 0 0; }
+.ask-child { margin: 14px 0 4px; }
+.ask-child h4 { margin: 0 0 6px; font-size: 16px; }
+.ask-qa { border-top: 1px solid #f0e8dc; padding: 10px 0; }
+.ask-q { font-weight: 700; margin: 0 0 2px; font-size: 15px; }
+.ask-when { font-size: 12px; color: #999; font-weight: 400; }
+.ask-a { margin: 0; font-size: 15px; color: #333; }
+@media (max-width: 560px) { .ask-form { flex-direction: column; } .ask-btn { width: 100%; } }
