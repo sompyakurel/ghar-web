@@ -197,18 +197,23 @@ function heardCountFor(id) {
     return Array.isArray(arr) ? arr.length : 0;
   } catch (e) { return 0; }
 }
-function showCelebration(title, allDone, isTeen) {
+function showCelebration(title, allDone, isTeen, nextId) {
   const ov = document.getElementById("celebration");
   document.getElementById("celebration-sub").textContent = `${title} · +${COMPLETION_BONUS} XP`;
   ov.hidden = false;
   spawnConfetti();
   playDing();
-  // Deck-page completion voice: Jessica encouragement ("Good job! Keep
-  // going! Your certificate is waiting for you!") — NOT the next-lesson
-  // guidance, which the home page says on return (so it isn't said twice).
+  // Deck-page completion voice: Jessica names the NEXT lesson right
+  // here (Som, 2026-11-12), via the guide_next_<deck> clip ("You've
+  // completed this lesson! Now let's move to ...!"). The home page
+  // keeps its text/scroll celebration but won't auto-repeat the line -
+  // the justCompletedSpoken flag tells it this line was already said.
   if (!isTeen) {
     bhuntePlayer.pause();
-    bhuntePlayer.src = allDone ? "assets/audio/bhunte/guide_next_certificate.m4a" : "assets/audio/bhunte/deck_complete.m4a";
+    bhuntePlayer.src = allDone ? "assets/audio/bhunte/guide_next_certificate.m4a"
+      : nextId ? "assets/audio/bhunte/guide_next_" + nextId + ".m4a"
+      : "assets/audio/bhunte/deck_complete.m4a";
+    if (allDone || nextId) localStorage.setItem("ghar.justCompletedSpoken", "1");
     setTimeout(() => bhuntePlayer.play().catch(() => {}), 600);
   }
   setTimeout(() => { ov.hidden = true; }, 3000);
@@ -411,7 +416,7 @@ GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => 
         if (nextId) { nextBtn.href = "deck.html?deck=" + nextId; nextBtn.textContent = "Next lesson →"; }
         else { nextBtn.href = "certificate.html"; nextBtn.textContent = "See your certificate →"; }
       }
-      showCelebration(deck.title, rewarded.size === pack.decks.length, deck.difficulty === "teen");
+      showCelebration(deck.title, rewarded.size === pack.decks.length, deck.difficulty === "teen", nextId);
     }
     function updateProgress() {
       const n = heard.size;

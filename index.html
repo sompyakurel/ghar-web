@@ -570,9 +570,11 @@ GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => 
         bhunteLine = "assets/audio/bhunte/guide_next_certificate.m4a";
       }
       // Speak the guidance now if the browser allows it; otherwise tap Bhunte to hear it.
+      // Unless the deck page already spoke it at completion (Som, 2026-11-12).
       bhuntePlayer.pause();
       bhuntePlayer.src = bhunteLine;
-      bhuntePlayer.play().catch(() => {});
+      if (localStorage.getItem("ghar.justCompletedSpoken")) localStorage.removeItem("ghar.justCompletedSpoken");
+      else bhuntePlayer.play().catch(() => {});
       // Land on the next lesson in the path (not the top of the page) when
       // returning after a completion — so "back" flows into the next lesson.
       if (nextDeck) {
