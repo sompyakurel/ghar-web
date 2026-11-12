@@ -68640,6 +68640,56 @@
           "example_sentence_np": "Ma biraalo herchhu.",
           "example_sentence_en": "I watch the cat.",
           "image": "/images/nepal-v1/act_herchhu.jpg"
+        },
+        {
+          "id": "khelchhu",
+          "devanagari": "खेल्छु",
+          "romanized": "khelchhu",
+          "english": "I play",
+          "audio_url": "/audio/nepal-v1/act_khelchhu_np.m4a",
+          "has_audio": true,
+          "example_sentence_np": "Ma saathi khelchhu.",
+          "example_sentence_en": "I play with my friend."
+        },
+        {
+          "id": "pakauchhu",
+          "devanagari": "पकाउँछु",
+          "romanized": "pakauchhu",
+          "english": "I cook",
+          "audio_url": "/audio/nepal-v1/act_pakauchhu_np.m4a",
+          "has_audio": true,
+          "example_sentence_np": "Ma khana pakauchhu.",
+          "example_sentence_en": "I cook food."
+        },
+        {
+          "id": "gauchhu",
+          "devanagari": "गाउँछु",
+          "romanized": "gauchhu",
+          "english": "I sing",
+          "audio_url": "/audio/nepal-v1/act_gauchhu_np.m4a",
+          "has_audio": true,
+          "example_sentence_np": "Ma geet gauchhu.",
+          "example_sentence_en": "I sing a song."
+        },
+        {
+          "id": "dhunchhu",
+          "devanagari": "धुन्छु",
+          "romanized": "dhunchhu",
+          "english": "I wash",
+          "audio_url": "/audio/nepal-v1/act_dhunchhu_np.m4a",
+          "has_audio": true,
+          "example_sentence_np": "Ma haat dhunchhu.",
+          "example_sentence_en": "I wash my hands."
+        },
+        {
+          "id": "udauchhu",
+          "devanagari": "उडाउँछु",
+          "romanized": "udauchhu",
+          "english": "I fly",
+          "audio_url": "/audio/nepal-v1/act_udauchhu_np.m4a",
+          "has_audio": true,
+          "example_sentence_np": "Ma changa udauchhu.",
+          "example_sentence_en": "I fly a kite."
         }
       ]
     },
