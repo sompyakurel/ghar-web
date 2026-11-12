@@ -1673,7 +1673,7 @@ GharAuth.pull().catch(() => {}).then(async () => {
   // Cache the pack so the deck count (for the Mukut) can be read locally,
   // and index every word by id for the teach picker + Suga's taught words.
   try {
-    const r = await fetch("data/nepal-v1.json");
+    const r = await fetch("data/nepal-v1.json?v=3");
     if (r.ok) {
       const pack = await r.json();
       localStorage.setItem("ghar.pack.cache", JSON.stringify({ decks: pack.decks.map(d => ({ id: d.id, words: d.words.map(w => w.id) })) }));

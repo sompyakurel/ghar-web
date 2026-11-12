@@ -84,7 +84,7 @@ function renderCert(content, name, dateStr, total, nameEditable) {
 async function main() {
   const content = document.getElementById("content");
   const params = new URLSearchParams(location.search);
-  const pack = await (await fetch("data/nepal-v1.json")).json();
+  const pack = await (await fetch("data/nepal-v1.json?v=3")).json();
   const total = pack.decks.length;
   // Preview: ?preview shows the certificate as it will look when earned,
   // without needing all 22 lessons done. Uses the signed-in child's name

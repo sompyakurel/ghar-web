@@ -309,7 +309,7 @@ function render() {
     pool.appendChild(tile);
   });
 }
-GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => false)).then(() => fetch("data/nepal-v1.json"))
+GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => false)).then(() => fetch("data/nepal-v1.json?v=3"))
   .then(r => { if (!r.ok) throw new Error("load failed"); return r.json(); })
   .then(pack => {
     xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
