@@ -33,6 +33,7 @@
 <div class="celebration" id="celebration" hidden>
   <div class="confetti" id="confetti"></div>
   <div class="celebration-card">
+    <button type="button" class="celebration-x" id="celebration-x" aria-label="Close">✕</button>
     <img class="celebration-dog" src="assets/images/bhunte.svg" alt="Bhunte">
     <div class="celebration-emoji">🎉</div>
     <div class="celebration-title">Deck complete!</div>
@@ -198,22 +199,30 @@ const bhuntePlayer = new Audio();
 // clicking "Next lesson" stores the next deck's id in ghar.speakGuide
 // (see evaluateCompletion); on arrival at that deck we say its guide
 // line ("...now let's move to ...!") once. A stale flag for a
-// different deck is dropped, not saved for later. Fired AFTER the
-// deck renders - the same point the home page fires its guidance
-// from; a play() during page parse proved unreliable in live testing
-// (2026-11-12). If the browser still blocks it, first tap plays it.
-function playArrivalGuide() {
+// different deck is dropped, not saved for later. Attempted twice:
+// immediately (fast when the browser allows it - waiting for the
+// full render made it feel delayed, Som 2026-11-12) and again after
+// the deck renders (the reliable point, same as the home page). If
+// the browser still blocks it, the first tap anywhere plays it.
+let arrivalGuideArmed = false;
+let arrivalGuidePlaying = false;
+function tryArrivalGuide() {
   try {
-    const speakId = localStorage.getItem("ghar.speakGuide");
-    if (!speakId) return;
-    localStorage.removeItem("ghar.speakGuide");
-    if (speakId !== deckId) return;
-    bhuntePlayer.src = "assets/audio/bhunte/guide_next_" + deckId + ".m4a";
-    bhuntePlayer.play().catch(() => {
+    if (!arrivalGuideArmed) {
+      const speakId = localStorage.getItem("ghar.speakGuide");
+      if (!speakId) return;
+      localStorage.removeItem("ghar.speakGuide");
+      if (speakId !== deckId) return;
+      bhuntePlayer.src = "assets/audio/bhunte/guide_next_" + deckId + ".m4a";
+      arrivalGuideArmed = true;
+    }
+    if (arrivalGuidePlaying) return;
+    bhuntePlayer.play().then(() => { arrivalGuidePlaying = true; }).catch(() => {
       document.addEventListener("pointerdown", () => bhuntePlayer.play().catch(() => {}), { once: true });
     });
   } catch (e) {}
 }
+tryArrivalGuide();
 // Heard-count for any deck (safe read), used to find the next lesson.
 function heardCountFor(id) {
   try {
@@ -461,7 +470,7 @@ GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => 
       if (done) evaluateCompletion();
     }
     updateProgress();
-    playArrivalGuide();
+    tryArrivalGuide();
   })
   .catch(() => { document.getElementById("error").hidden = false; });
 </script>
@@ -471,6 +480,9 @@ GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => 
 .deck-main { flex: 1; min-width: 0; }
 .deck-side { flex: 0 0 340px; position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto; scrollbar-width: thin; }
 @media (max-width: 900px) { .deck-layout { flex-direction: column; } .deck-side { flex: none; width: 100%; position: static; max-height: none; overflow: visible; } }
+.celebration-card { position: relative; }
+.celebration-x { position: absolute; top: 10px; right: 10px; width: 36px; height: 36px; border-radius: 50%; border: none; background: #f1e8dc; color: #5d4037; font-size: 17px; font-weight: 700; cursor: pointer; line-height: 36px; padding: 0; }
+.celebration-x:hover { background: #e7dbc8; }
 </style>
 <style>
 .site-footer { text-align: center; padding: 28px 16px 36px; margin-top: 40px; border-top: 1px solid #e5e0d8; color: #666; font-size: 14px; }
