@@ -194,6 +194,26 @@ function spawnConfetti() {
   }
 }
 const bhuntePlayer = new Audio();
+// "Next up" guidance, clicked-through edition: finishing a deck and
+// clicking "Next lesson" stores the next deck's id in ghar.speakGuide
+// (see evaluateCompletion); on arrival at that deck we say its guide
+// line ("...now let's move to ...!") once. A stale flag for a
+// different deck is dropped, not saved for later. If the browser
+// blocks autoplay after navigation, the first tap anywhere plays it.
+try {
+  const speakId = localStorage.getItem("ghar.speakGuide");
+  if (speakId) {
+    localStorage.removeItem("ghar.speakGuide");
+    if (speakId === deckId) {
+      setTimeout(() => {
+        bhuntePlayer.src = "assets/audio/bhunte/guide_next_" + deckId + ".m4a";
+        bhuntePlayer.play().catch(() => {
+          document.addEventListener("pointerdown", () => bhuntePlayer.play().catch(() => {}), { once: true });
+        });
+      }, 500);
+    }
+  }
+} catch (e) {}
 // Heard-count for any deck (safe read), used to find the next lesson.
 function heardCountFor(id) {
   try {
@@ -207,32 +227,16 @@ function showCelebration(title, allDone, isTeen, nextId) {
   ov.hidden = false;
   spawnConfetti();
   playDing();
-  // Deck-page completion voice: BOTH Jessica lines, in order (Som,
-  // 2026-11-12): first the completion line ("You've completed this
-  // lesson! Keep going! Your certificate is waiting for you!"), then
-  // the guide_next_<deck> clip naming the next lesson. The home page
-  // keeps its text/scroll celebration but won't auto-repeat the
-  // guidance - the justCompletedSpoken flag tells it it was said here.
+  // Deck-page completion voice: ONLY the completion line ("You've
+  // completed this lesson! Keep going! Your certificate is waiting
+  // for you!"), or the certificate line when that was the last deck.
+  // The "next up" guidance is NOT said here (Som, 2026-11-12): it
+  // plays on the home page when they go back, or on arrival at the
+  // next deck when they click "Next lesson" (ghar.speakGuide below).
   if (!isTeen) {
     bhuntePlayer.pause();
-    const guideSrc = allDone ? "assets/audio/bhunte/guide_next_certificate.m4a"
-      : nextId ? "assets/audio/bhunte/guide_next_" + nextId + ".m4a" : null;
-    bhuntePlayer.src = "assets/audio/bhunte/deck_complete.m4a";
-    if (guideSrc) localStorage.setItem("ghar.justCompletedSpoken", "1");
-    setTimeout(() => {
-      bhuntePlayer.play().catch(() => {});
-      if (guideSrc) {
-        let advanced = false;
-        const advance = () => {
-          if (advanced) return;
-          advanced = true;
-          bhuntePlayer.src = guideSrc;
-          bhuntePlayer.play().catch(() => {});
-        };
-        bhuntePlayer.addEventListener("ended", advance, { once: true });
-        bhuntePlayer.addEventListener("error", advance, { once: true });
-      }
-    }, 600);
+    bhuntePlayer.src = allDone ? "assets/audio/bhunte/guide_next_certificate.m4a" : "assets/audio/bhunte/deck_complete.m4a";
+    setTimeout(() => bhuntePlayer.play().catch(() => {}), 600);
   }
   setTimeout(() => { ov.hidden = true; }, 3000);
 }
@@ -431,8 +435,16 @@ GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => 
       }
       const nextBtn = document.getElementById("celebration-next");
       if (nextBtn) {
-        if (nextId) { nextBtn.href = "deck.html?deck=" + nextId; nextBtn.textContent = "Next lesson →"; }
-        else { nextBtn.href = "certificate.html"; nextBtn.textContent = "See your certificate →"; }
+        if (nextId) {
+          nextBtn.href = "deck.html?deck=" + nextId;
+          nextBtn.textContent = "Next lesson →";
+          // Clicking through earns the "next up" guidance on arrival.
+          nextBtn.onclick = () => { try { localStorage.setItem("ghar.speakGuide", nextId); } catch (e) {} };
+        } else {
+          nextBtn.href = "certificate.html";
+          nextBtn.textContent = "See your certificate →";
+          nextBtn.onclick = null;
+        }
       }
       showCelebration(deck.title, rewarded.size === pack.decks.length, deck.difficulty === "teen", nextId);
     }

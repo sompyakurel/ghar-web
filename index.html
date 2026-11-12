@@ -546,6 +546,9 @@ GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => 
     if (justTitle || justId) {
       localStorage.removeItem("ghar.justCompleted");
       localStorage.removeItem("ghar.justCompletedId");
+      // Home is saying the guidance now - a later arrival at the next
+      // deck (via the stored click-through flag) must not repeat it.
+      localStorage.removeItem("ghar.speakGuide");
       bhunteDog.classList.add("celebrating");
       setTimeout(() => bhunteDog.classList.remove("celebrating"), 2600);
       if (homeBhunte) homeBhunte.celebrate();
@@ -570,11 +573,9 @@ GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => 
         bhunteLine = "assets/audio/bhunte/guide_next_certificate.m4a";
       }
       // Speak the guidance now if the browser allows it; otherwise tap Bhunte to hear it.
-      // Unless the deck page already spoke it at completion (Som, 2026-11-12).
       bhuntePlayer.pause();
       bhuntePlayer.src = bhunteLine;
-      if (localStorage.getItem("ghar.justCompletedSpoken")) localStorage.removeItem("ghar.justCompletedSpoken");
-      else bhuntePlayer.play().catch(() => {});
+      bhuntePlayer.play().catch(() => {});
       // Land on the next lesson in the path (not the top of the page) when
       // returning after a completion — so "back" flows into the next lesson.
       if (nextDeck) {
