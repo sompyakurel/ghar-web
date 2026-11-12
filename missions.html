@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://backend-patient-wave-3724.fly.dev https://api.open-meteo.com https://unpkg.com https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self';">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Ghar — Missions</title>
 <link rel="stylesheet" href="style.css?v=29">
 <style>
@@ -341,16 +343,11 @@ function renderDaily() {
   if (c.format === "teachBack") {
     const b = document.createElement("button");
     b.className = "quiz-next";
-    b.textContent = "🎤 I taught them! (+15 XP)";
-    b.addEventListener("click", () => {
-      if (!GharStreak.claimDaily()) return;
-      xp += 15;
-      if (window.GharAuth && GharAuth.addBones) GharAuth.addBones(15);
-      saveXP();
-      if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
-      GharAuth.pushTotals().catch(() => {});
-      renderDaily();
-    });
+    b.textContent = "🎤 Prove it — record yourself teaching! (+15 XP)";
+    // Feature #3: the old honor-system tap ("I taught them!") is gone.
+    // The daily Teach-Back now needs a real recording of at least 2
+    // seconds, confirmed by a grown-up — same rule as Prove-it.
+    b.addEventListener("click", () => { openDailyTeachBack(c); });
     actions.appendChild(b);
   } else if (c.format === "quizBlitz") {
     const a = document.createElement("a");
@@ -494,14 +491,42 @@ function markTeenDone(m) {
   maybeCelebrateDog();
 }
 // --- Prove it: record, grown-up listens and confirms ---
+// Feature #3 — real recording, 2-second minimum (matches the app).
+// The verified +25 XP (Prove-it) and the daily Teach-Back +15 XP are
+// only awarded after a recording of at least MIN_RECORD_MS, confirmed
+// by a grown-up. A shorter recording, a denied microphone, or a missing
+// MediaRecorder awards nothing and shows a clear message instead.
+// The recording is never uploaded or analyzed — the requirement is a
+// real recording of >= 2s. "Done it +10 XP" is untouched.
+const MIN_RECORD_MS = 2000;
 let recorder = null, chunks = [], recordMission = null, recordBlob = null;
+let recordStartMs = 0, recordDurationMs = 0, recordMode = "mission"; // "mission" | "daily"
+function recordSecondsText(ms) { return (ms / 1000).toFixed(1) + "s"; }
 function openRecord(m) {
   recordMission = m;
+  recordMode = "mission";
   recordBlob = null;
+  recordDurationMs = 0;
   document.getElementById("record-title").textContent = `🎤 Prove it: ${m.title_en}`;
   document.getElementById("record-prompt").textContent = m.prompt_en;
   document.getElementById("record-status").textContent = "";
   document.getElementById("playback").hidden = true;
+  document.getElementById("confirm-btn").textContent = `✅ Yes, they did it! (+${m.verified_xp || 25} XP)`;
+  document.getElementById("record-btn").textContent = "🎤 Start recording";
+  document.getElementById("record-panel").hidden = false;
+  document.getElementById("record-panel").scrollIntoView({ behavior: "smooth" });
+}
+// Daily Teach-Back challenge: same recording panel, daily +15 XP prize.
+function openDailyTeachBack(challenge) {
+  recordMission = null;
+  recordMode = "daily";
+  recordBlob = null;
+  recordDurationMs = 0;
+  document.getElementById("record-title").textContent = "🎤 Teach-Back: prove it!";
+  document.getElementById("record-prompt").textContent = challenge.prompt;
+  document.getElementById("record-status").textContent = "";
+  document.getElementById("playback").hidden = true;
+  document.getElementById("confirm-btn").textContent = "✅ Yes, they did it! (+15 XP)";
   document.getElementById("record-btn").textContent = "🎤 Start recording";
   document.getElementById("record-panel").hidden = false;
   document.getElementById("record-panel").scrollIntoView({ behavior: "smooth" });
@@ -518,32 +543,71 @@ document.getElementById("record-btn").addEventListener("click", async () => {
     btn.textContent = "🎤 Start recording";
     return;
   }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === "undefined") {
+    status.textContent = "Recording isn't available in this browser. Ask a grown-up to confirm on another device.";
+    return;
+  }
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     chunks = [];
+    recordStartMs = Date.now();
+    recordDurationMs = 0;
     recorder = new MediaRecorder(stream);
     recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
     recorder.onstop = () => {
       stream.getTracks().forEach(t => t.stop());
+      // Wall-clock duration from start to stop — the 2-second rule.
+      recordDurationMs = Date.now() - recordStartMs;
       recordBlob = new Blob(chunks, { type: recorder.mimeType || "audio/webm" });
       const url = URL.createObjectURL(recordBlob);
       document.getElementById("playback-audio").src = url;
       document.getElementById("playback").hidden = false;
-      status.textContent = "Recorded! Play it back, then a grown-up confirms.";
+      if (recordDurationMs < MIN_RECORD_MS) {
+        status.textContent = `That recording was only ${recordSecondsText(recordDurationMs)} — please record for at least 2 seconds, then a grown-up can confirm. No XP yet.`;
+      } else {
+        status.textContent = `Recorded ${recordSecondsText(recordDurationMs)}! Play it back, then a grown-up confirms.`;
+      }
     };
     recorder.start();
     btn.textContent = "⏹ Stop recording";
-    status.textContent = "Recording… say it in Nepali!";
+    status.textContent = "Recording… say it in Nepali! (at least 2 seconds)";
     document.getElementById("playback").hidden = true;
   } catch (e) {
-    status.textContent = "Couldn't start the microphone. Check the browser's microphone permission and try again.";
+    // Microphone denied (or no mic): clear message, no XP, no crash.
+    status.textContent = "Microphone not allowed — no XP awarded. Allow the microphone in the browser and try again, or ask a grown-up for help.";
   }
 });
 document.getElementById("rerecord-btn").addEventListener("click", () => {
   document.getElementById("playback").hidden = true;
+  recordBlob = null;
+  recordDurationMs = 0;
   document.getElementById("record-status").textContent = "";
 });
 document.getElementById("confirm-btn").addEventListener("click", () => {
+  const status = document.getElementById("record-status");
+  // The 2-second gate: no recording, or one shorter than 2s, pays nothing.
+  if (!recordBlob || recordDurationMs < MIN_RECORD_MS) {
+    status.textContent = recordBlob
+      ? `That recording was only ${recordSecondsText(recordDurationMs)} — record for at least 2 seconds first. No XP yet.`
+      : "Record for at least 2 seconds first — no XP yet.";
+    return;
+  }
+  if (recordMode === "daily") {
+    // Daily Teach-Back: +15 XP, once per day (claimDaily guards repeats).
+    if (typeof GharStreak === "undefined" || !GharStreak.claimDaily()) {
+      status.textContent = "Today's Teach-Back is already done — nice work!";
+      return;
+    }
+    xp += 15;
+    if (window.GharAuth && GharAuth.addBones) GharAuth.addBones(15);
+    saveXP();
+    if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
+    GharAuth.pushTotals().catch(() => {});
+    playDing();
+    document.getElementById("record-panel").hidden = true;
+    renderDaily();
+    return;
+  }
   if (!recordMission) return;
   if (verified.has(recordMission.id)) return; // already verified — no double pay
   // App rule: Prove-it pays +25 XP in total. If "Done it" already paid

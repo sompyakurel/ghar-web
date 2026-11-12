@@ -39,7 +39,109 @@ const SHOP = [
     img: "garden.png", x: 0.12, y: 0.92, w: 10, audio: "garden" },
   { id: "mala", ne: "माला", en: "Garland", emoji: "📿", price: 20,
     img: "mala.png", x: 0.85, y: 0.30, w: 8, audio: "mala" },
+  // Added for the app's DecoSets (feature #4). No picture file ships for
+  // these yet, so they render as their emoji (emojiOnly) in the shop and
+  // in the room — never as a broken image. Prices are the app's prices.
+  { id: "door", ne: "ढोका", en: "Door", emoji: "🚪", price: 20,
+    img: null, emojiOnly: true, x: 0.62, y: 0.88, w: 9, audio: null },
+  { id: "windows", ne: "झ्याल", en: "Windows", emoji: "🪟", price: 10,
+    img: null, emojiOnly: true, x: 0.78, y: 0.42, w: 9, audio: null },
+  { id: "flags", ne: "झण्डा", en: "Prayer flags", emoji: "🚩", price: 35,
+    img: null, emojiOnly: true, x: 0.30, y: 0.15, w: 10, audio: null },
+  { id: "himal", ne: "हिमाल", en: "Himalaya mountains", emoji: "🏔️", price: 105,
+    img: null, emojiOnly: true, x: 0.50, y: 0.22, w: 12, audio: null },
 ];
+// ---- DecoSets (feature #4, exact app sets + bonuses; total 250 XP) ----
+// "buddy" in the app's Home Set is Suga on the site (same item, site id
+// "suga"). Chautari and Garden are buyable but in no app set — set-less.
+const DECO_SETS = [
+  { id: "tihar", name: "Tihar Set", emoji: "🪔", items: ["diyo", "sayapatri", "rangoli", "mala"], bonus: 40 },
+  { id: "garden", name: "Garden Set", emoji: "🌿", items: ["tulsi", "jamara"], bonus: 50 },
+  { id: "home", name: "Home Set", emoji: "🏠", items: ["door", "windows", "flags", "suga"], bonus: 60 },
+  { id: "sky-temple", name: "Sky & Temple Set", emoji: "🏔️", items: ["changa", "himal", "ghanta", "mandir"], bonus: 100 },
+];
+const DECO_SET_TOTAL_BONUS = 250;
+// Awarded set bonuses, persisted locally AND pushed through the existing
+// /myghar sync (set_bonuses_json) so a second device never re-awards.
+// Append-only: a set is awarded once, ever — union-merge is safe.
+const SET_BONUS_KEY = "ghar.shop.setBonuses";
+function decoSetsAwarded() {
+  try { return JSON.parse(localStorage.getItem(SET_BONUS_KEY) || "[]"); }
+  catch (e) { return []; }
+}
+function decoSetIsAwarded(setId) { return decoSetsAwarded().includes(setId); }
+function decoSetSaveAwarded(list) { localStorage.setItem(SET_BONUS_KEY, JSON.stringify([...new Set(list)])); }
+function decoSetMarkAwarded(setId) {
+  const list = decoSetsAwarded();
+  if (!list.includes(setId)) { list.push(setId); decoSetSaveAwarded(list); }
+  return list;
+}
+// Merge server-awarded sets in (union — never removes an award).
+function decoSetMergeAwarded(serverValue) {
+  let incoming = [];
+  if (Array.isArray(serverValue)) incoming = serverValue;
+  else if (typeof serverValue === "string") { try { incoming = JSON.parse(serverValue) || []; } catch (e) { incoming = []; } }
+  if (!incoming.length) return decoSetsAwarded();
+  decoSetSaveAwarded([...decoSetsAwarded(), ...incoming]);
+  return decoSetsAwarded();
+}
+function decoSetPayload() { return { set_bonuses_json: JSON.stringify(decoSetsAwarded()) }; }
+// Sets newly completed by the current owned list (owned every item, not
+// yet awarded). Call on each purchase; award once per set, never twice.
+function decoSetsNewlyCompleted(owned) {
+  const awarded = decoSetsAwarded();
+  return DECO_SETS.filter(s => !awarded.includes(s.id) && s.items.every(id => owned.includes(id)));
+}
+function decoSetProgress(set, owned) {
+  const have = set.items.filter(id => owned.includes(id));
+  return { have, missing: set.items.filter(id => !owned.includes(id)), done: have.length === set.items.length };
+}
+// ---- Put-away / storage (feature #11) ----
+// Stored = bought/earned but put away off the room. Stored items stay
+// owned (never re-charged, never duplicated) and put back for free.
+// Sync: { ids, updated } through the existing /myghar sync as
+// stored_json. Latest-writer-wins on `updated`, so a put-back on one
+// device is not resurrected by a stale device's older stored list.
+const SHOP_STORED_KEY = "ghar.shop.stored";
+const SHOP_STORED_UPDATED_KEY = "ghar.shop.storedUpdated";
+function shopStoredState() {
+  let ids = [];
+  try { ids = JSON.parse(localStorage.getItem(SHOP_STORED_KEY) || "[]"); } catch (e) { ids = []; }
+  return { ids: [...new Set(ids)], updated: parseInt(localStorage.getItem(SHOP_STORED_UPDATED_KEY) || "0", 10) || 0 };
+}
+function shopStored() { return shopStoredState().ids; }
+function shopIsStored(id) { return shopStored().includes(id); }
+function shopSaveStored(list) {
+  localStorage.setItem(SHOP_STORED_KEY, JSON.stringify([...new Set(list)]));
+  localStorage.setItem(SHOP_STORED_UPDATED_KEY, String(Date.now()));
+}
+function shopStore(id) {
+  const s = shopStoredState();
+  if (!s.ids.includes(id)) { s.ids.push(id); shopSaveStored(s.ids); }
+  return shopStored();
+}
+function shopRestore(id) {
+  shopSaveStored(shopStored().filter(x => x !== id));
+  return shopStored();
+}
+function shopStoredPayload() {
+  const s = shopStoredState();
+  return { stored_json: JSON.stringify({ ids: s.ids, updated: s.updated }) };
+}
+// Merge a server stored_json in: the newer side wins wholesale.
+function shopStoredMerge(serverValue) {
+  let incoming = null;
+  if (typeof serverValue === "string") { try { incoming = JSON.parse(serverValue); } catch (e) { incoming = null; } }
+  else if (serverValue && typeof serverValue === "object") incoming = serverValue;
+  if (!incoming || !Array.isArray(incoming.ids)) return shopStoredState();
+  const local = shopStoredState();
+  const incomingUpdated = parseInt(incoming.updated || "0", 10) || 0;
+  if (incomingUpdated > local.updated) {
+    localStorage.setItem(SHOP_STORED_KEY, JSON.stringify([...new Set(incoming.ids)]));
+    localStorage.setItem(SHOP_STORED_UPDATED_KEY, String(incomingUpdated));
+  }
+  return shopStoredState();
+}
 const MYSTERY = [
   { id: "guleyli", ne: "गुलेली", en: "Slingshot", emoji: "🏏",
     img: "guleyli.png", x: 0.62, y: 0.88, w: 6, audio: "guleyli" },

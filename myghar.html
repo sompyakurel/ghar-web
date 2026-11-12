@@ -6,6 +6,22 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://backend-patient-wave-3724.fly.dev https://api.open-meteo.com https://unpkg.com https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self';">
 <title>Ghar — My Ghar</title>
 <link rel="stylesheet" href="style.css?v=29">
+<style>
+  /* Put-away buttons (feature #11): shown on room decorations while
+     arranging, sitting just above the item. Emoji-only room items
+     (the new door/windows/flags/himal, which have no picture file). */
+  .putaway-btn { position: absolute; transform: translate(-50%, -140%); z-index: 6;
+    background: #fff; border: 1px solid #c8bfae; border-radius: 999px;
+    padding: 3px 8px; font-size: 12px; cursor: pointer; white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(0,0,0,.2); }
+  .myghar-emoji-item { position: absolute; transform: translate(-50%, -50%); z-index: 3;
+    cursor: pointer; text-align: center; line-height: 1; }
+  .myghar-emoji-item.pop { animation: deco-pop .35s ease; }
+  .myghar-emoji-item.arranging { cursor: grab; touch-action: none; outline: 2px dashed #2e7d32; outline-offset: 2px; border-radius: 8px; }
+  /* .quiz-next sets display:block, which beats the UA [hidden] rule —
+     without this the Level Up button would show even when hidden. */
+  #levelup-btn[hidden] { display: none; }
+</style>
 <script src="https://unpkg.com/@rive-app/webgl2@2.49.4/rive.js" integrity="sha384-RV9aehPhuWkr3poRCN7kYUCRgVmGp02K4UDD9mCdz+3WJC7iu76qMwbys1ctuK7T" crossorigin="anonymous"></script>
 <script src="assets/js/bhunte-rive.js"></script>
 </head>
@@ -37,6 +53,10 @@
     <div class="myghar-dog-locked" id="dog-locked" hidden></div>
   </div>
   <p class="myghar-hint" id="hint">Tap Bhunte and he'll bark! 🐶</p>
+  <div id="levelup-row" style="text-align:center;margin:8px 0;">
+    <p class="myghar-sub" id="levelup-progress" style="margin:4px 0;"></p>
+    <button class="quiz-next" id="levelup-btn" hidden>🎉 Level Up!</button>
+  </div>
   <div class="myghar-pose-row" id="pose-row" style="display:flex;gap:10px;justify-content:center;margin:10px 0 4px;">
     <button class="quiz-next" id="pose-sleep-btn">💤 Sleep</button>
     <button class="quiz-next" id="pose-feed-btn">🍽️ Feed</button>
@@ -56,6 +76,11 @@
     <h3>🔮 Mystery Treasures</h3>
     <p class="myghar-shelf-sub">Found in Mystery Boxes — one box for every 3 decks, plus one when you finish all 22 lessons.</p>
     <div class="shelf-row" id="mystery-row"></div>
+  </div>
+  <div class="myghar-shelf" id="storage-shelf">
+    <h3>📦 Storage</h3>
+    <p class="myghar-shelf-sub">Decorations you put away — put them back in your room for free, any time. Putting things away never costs XP.</p>
+    <div class="shelf-row" id="storage-row"></div>
   </div>
   <div class="myghar-names">
     <label>House name <input class="auth-input" id="house-name" type="text" placeholder="My Ghar" maxlength="30"></label>
@@ -417,12 +442,89 @@ document.getElementById("celebration").addEventListener("click", () => {
   document.getElementById("celebration").hidden = true;
 });
 function dogStageFor(xp) { return xp >= 150 ? 2 : xp >= 50 ? 1 : 0; }
+// ---- Manual Level Up (feature #5) ----
+// The dog's DISPLAYED stage is the highest CLAIMED stage (Puppy if
+// none claimed), NOT the raw bones threshold — the dog must not grow
+// past a threshold until the child taps "Level Up!". Bones keep
+// accumulating normally; only the stage display waits on the claim.
+// Claimed stages persist in localStorage AND sync through the existing
+// /myghar sync (level_claimed_json, union-merged — append-only, so a
+// second device can never un-claim or double-claim a stage).
+const LEVEL_CLAIMED_KEY = "ghar.dog.levelClaimed";
+const LEVEL_MIGRATED_KEY = "ghar.dog.levelMigrated";
+function levelClaimed() {
+  try { return JSON.parse(localStorage.getItem(LEVEL_CLAIMED_KEY) || "[]"); }
+  catch (e) { return []; }
+}
+function levelClaimedStage() {
+  const c = levelClaimed();
+  return c.length ? Math.max(...c) : 0;
+}
+function levelSyncPayload() { return { level_claimed_json: JSON.stringify(levelClaimed()) }; }
+function levelMergeAwarded(serverValue) {
+  let incoming = [];
+  if (Array.isArray(serverValue)) incoming = serverValue;
+  else if (typeof serverValue === "string") { try { incoming = JSON.parse(serverValue) || []; } catch (e) { incoming = []; } }
+  if (!incoming.length) return levelClaimed();
+  localStorage.setItem(LEVEL_CLAIMED_KEY, JSON.stringify([...new Set([...levelClaimed(), ...incoming])]));
+  return levelClaimed();
+}
+// One-time migration: dogs that already grew under the old silent
+// auto-staging keep their stage (their DOG_STAGE_KEY is the record of
+// it) instead of shrinking back to Puppy on this deploy.
+function levelMigrate() {
+  if (localStorage.getItem(LEVEL_MIGRATED_KEY) === "1") return;
+  localStorage.setItem(LEVEL_MIGRATED_KEY, "1");
+  const prev = parseInt(localStorage.getItem(DOG_STAGE_KEY) || "0", 10) || 0;
+  if (prev > 0) {
+    const claimed = [];
+    for (let s = 1; s <= prev; s++) claimed.push(s);
+    localStorage.setItem(LEVEL_CLAIMED_KEY, JSON.stringify(claimed));
+  }
+}
 // The dog grows on BONES (lifetime XP earned), not spendable XP —
 // spending XP in the shop must never shrink him (matches the app).
 // syncBones() migrates bones to the current XP total on first call.
 function dogStage() {
-  const bones = (window.GharAuth && GharAuth.syncBones) ? GharAuth.syncBones() : (parseInt(localStorage.getItem("ghar.dog.bones") || "0", 10) || 0);
+  levelMigrate();
+  // Bones are read (and migrated) here as before — but the RETURNED
+  // stage is the highest claimed stage, not the bones threshold.
+  if (window.GharAuth && GharAuth.syncBones) GharAuth.syncBones();
+  return levelClaimedStage();
+}
+// Raw bones threshold stage (what the dog COULD grow to). Used only by
+// the Level Up button/progress — never for rendering the dog.
+function dogRawStage() {
+  const bones = (window.GharAuth && GharAuth.bones) ? GharAuth.bones() : (parseInt(localStorage.getItem("ghar.dog.bones") || "0", 10) || 0);
   return dogStageFor(bones);
+}
+function dogBonesCount() {
+  return (window.GharAuth && GharAuth.bones) ? GharAuth.bones() : (parseInt(localStorage.getItem("ghar.dog.bones") || "0", 10) || 0);
+}
+// Level Up button + progress line. Shows the button only when bones
+// have crossed the next unclaimed threshold; below it, the progress
+// text ("X 🦴 to Young Dog" / "X 🦴 to Big Dog") as in the app.
+function renderLevelUp(state) {
+  const btn = document.getElementById("levelup-btn");
+  const prog = document.getElementById("levelup-progress");
+  if (!btn || !prog) return;
+  const locked = (state ? state.missionsDone : 0) < 10;
+  if (locked) { btn.hidden = true; prog.textContent = ""; return; }
+  const bones = dogBonesCount();
+  const claimed = levelClaimedStage();
+  const raw = dogStageFor(bones);
+  if (raw > claimed) {
+    const next = claimed + 1; // 1 = Young Dog, 2 = Big Dog
+    btn.hidden = false;
+    btn.dataset.stage = String(next);
+    btn.textContent = next === 1 ? "🎉 Level Up! Grow to Young Dog" : "🎉 Level Up! Grow to Big Dog";
+    prog.textContent = `🦴 ${bones} bones — ready to grow!`;
+  } else {
+    btn.hidden = true;
+    if (claimed === 0) prog.textContent = `${Math.max(0, 50 - bones)} 🦴 to Young Dog`;
+    else if (claimed === 1) prog.textContent = `${Math.max(0, 150 - bones)} 🦴 to Big Dog`;
+    else prog.textContent = `🦴 ${bones} bones — Bhunte is all grown up! 🎉`;
+  }
 }
 // The wallet balance (spendable XP) — the header and the Suga buttons
 // show what the child can actually spend, not the lifetime total.
@@ -497,7 +599,7 @@ function renderTrophies(state) {
     wrap.appendChild(el);
   });
   const shown = EARNED.filter(d => d.earned(state)).length;
-  const ownedCount = shopOwned().length;
+  const ownedCount = shopOwned().filter(id => !shopIsStored(id)).length;
   document.getElementById("hint").textContent = (shown === 0 && ownedCount === 0)
     ? "Your room is empty — earn XP by learning, then buy things for it in the 🛍️ Shop! Tap Bhunte and he'll bark! 🐶"
     : "Tap a trophy or decoration to hear it. Tap Bhunte and he'll bark! 🐶";
@@ -560,15 +662,79 @@ function renderShelves(state) {
     mRow.appendChild(cell);
   });
 }
+// ---- Put-away (feature #11) ----
+// Each placed decoration gets a "📦 Put away" button while arranging.
+// Put away moves it to storage (localStorage + /myghar sync); stored
+// items are off the room and do not show. Putting back is free, never
+// charges XP and never duplicates the item (it stays in the owned list
+// the whole time — only its stored flag changes).
+function putAwayButton(item, homeX, homeY) {
+  const b = document.createElement("button");
+  b.className = "putaway-btn";
+  b.textContent = "📦 Put away";
+  b.dataset.id = item.id;
+  b.style.left = (homeX * 100) + "%";
+  b.style.top = (homeY * 100) + "%";
+  b.addEventListener("click", (e) => {
+    e.stopPropagation();
+    shopStore(item.id);
+    syncPost("/myghar", shopStoredPayload());
+    const state = readState();
+    renderShopItems();
+    renderMysteryItems();
+    renderStorage(state);
+    renderTrophies(state);
+  });
+  return b;
+}
+function renderStorage(state) {
+  const row = document.getElementById("storage-row");
+  if (!row) return;
+  row.innerHTML = "";
+  const stored = shopStored();
+  const all = [...SHOP, ...MYSTERY];
+  const items = all.filter(it => stored.includes(it.id) && (shopOwned().includes(it.id) || mysteryOwned().includes(it.id)));
+  if (!items.length) {
+    row.innerHTML = `<p class="myghar-shelf-sub">Nothing put away yet — tap 🧱 Arrange, then 📦 Put away on any decoration in the room.</p>`;
+    return;
+  }
+  items.forEach(it => {
+    const cell = document.createElement("div");
+    cell.className = "shelf-item earned";
+    const visual = it.img
+      ? `<img src="assets/images/myghar/${it.img}" alt="${it.en}" onerror="this.style.display='none'">`
+      : `<span class="shelf-emoji">${it.emoji}</span>`;
+    cell.innerHTML = `${visual}
+      <span class="shelf-name-ne">${it.ne}</span>
+      <span class="shelf-name-en">${it.en}</span>
+      <span class="shelf-status">📦 In storage</span>`;
+    const backBtn = document.createElement("button");
+    backBtn.className = "quiz-next";
+    backBtn.textContent = "↩️ Put back (free)";
+    backBtn.addEventListener("click", () => {
+      // Free, no XP, no duplicate: the item never left the owned list.
+      shopRestore(it.id);
+      syncPost("/myghar", shopStoredPayload());
+      const s = readState();
+      renderShopItems();
+      renderMysteryItems();
+      renderStorage(s);
+      renderTrophies(s);
+    });
+    cell.appendChild(backBtn);
+    row.appendChild(cell);
+  });
+}
 // Shop items the kid owns, rendered in the room at their home position
 // (SHOP catalog x/y) plus any Arrange drag delta. Suga is a shop pet: he
 // only appears here after he is bought. Tapping an item plays its name
 // clip when one exists (myghar_<id>_np.m4a); Suga says a Nepali word.
+// Stored items (feature #11) are NOT rendered — they are off the room.
 function renderShopItems() {
   const wrap = document.getElementById("shop-items");
   wrap.innerHTML = "";
   const owned = shopOwned();
-  SHOP.filter(item => owned.includes(item.id)).forEach(item => {
+  SHOP.filter(item => owned.includes(item.id) && !shopIsStored(item.id)).forEach(item => {
     const delta = layout[item.id] || [0, 0];
     // Suga's perch stand: rendered first (behind Suga), at its own spot,
     // following Suga's Arrange drag delta so they move as one unit.
@@ -583,15 +749,7 @@ function renderShopItems() {
       st.style.width = item.stand.w + "%";
       wrap.appendChild(st);
     }
-    const el = document.createElement("img");
-    el.src = `assets/images/myghar/${item.img}`;
-    el.alt = item.id === "suga" ? sugaName() + " the parrot" : item.en;
-    el.className = "myghar-shop-item" + (item.id === "suga" ? " myghar-suga" : "") + (arranging ? " arranging" : "");
-    el.dataset.id = item.id;
-    el.style.left = ((item.x + delta[0]) * 100) + "%";
-    el.style.top = ((item.y + delta[1]) * 100) + "%";
-    el.style.width = item.w + "%";
-    el.addEventListener("click", () => {
+    const onTap = (el) => {
       if (arranging) return;
       el.classList.remove("pop");
       void el.offsetWidth;
@@ -603,18 +761,45 @@ function renderShopItems() {
       } else if (item.audio) {
         play(`assets/audio/nepal-v1/myghar_${item.audio}_np.m4a`);
       }
-    });
+    };
+    if (item.emojiOnly || !item.img) {
+      // Emoji-only item (door/windows/flags/himal): a big emoji span at
+      // the same center-based position, same drag + tap behaviour.
+      const el = document.createElement("span");
+      el.textContent = item.emoji;
+      el.className = "myghar-emoji-item" + (arranging ? " arranging" : "");
+      el.dataset.id = item.id;
+      el.style.left = ((item.x + delta[0]) * 100) + "%";
+      el.style.top = ((item.y + delta[1]) * 100) + "%";
+      el.style.fontSize = (item.w * 5) + "px";
+      el.addEventListener("click", () => onTap(el));
+      makeDraggable(el, item, document.getElementById("stage"), item.x, item.y);
+      wrap.appendChild(el);
+      if (arranging) wrap.appendChild(putAwayButton(item, item.x + delta[0], item.y + delta[1]));
+      return;
+    }
+    const el = document.createElement("img");
+    el.src = `assets/images/myghar/${item.img}`;
+    el.alt = item.id === "suga" ? sugaName() + " the parrot" : item.en;
+    el.className = "myghar-shop-item" + (item.id === "suga" ? " myghar-suga" : "") + (arranging ? " arranging" : "");
+    el.dataset.id = item.id;
+    el.style.left = ((item.x + delta[0]) * 100) + "%";
+    el.style.top = ((item.y + delta[1]) * 100) + "%";
+    el.style.width = item.w + "%";
+    el.addEventListener("click", () => onTap(el));
     makeDraggable(el, item, document.getElementById("stage"), item.x, item.y);
     wrap.appendChild(el);
+    if (arranging) wrap.appendChild(putAwayButton(item, item.x + delta[0], item.y + delta[1]));
   });
 }
 // Mystery treasures the kid has earned from a Mystery Box, rendered in
 // the room at their home spot (MYSTERY catalog x/y) plus any Arrange drag
-// delta. Same placement system as shop items and trophies.
+// delta. Same placement system as shop items and trophies. Stored items
+// (feature #11) are NOT rendered — they are off the room.
 function renderMysteryItems() {
   const wrap = document.getElementById("shop-items");
   const owned = mysteryOwned();
-  MYSTERY.filter(item => owned.includes(item.id)).forEach(item => {
+  MYSTERY.filter(item => owned.includes(item.id) && !shopIsStored(item.id)).forEach(item => {
     const delta = layout[item.id] || [0, 0];
     const el = document.createElement("img");
     el.src = `assets/images/myghar/${item.img}`;
@@ -633,6 +818,7 @@ function renderMysteryItems() {
     });
     makeDraggable(el, item, document.getElementById("stage"), item.x, item.y);
     wrap.appendChild(el);
+    if (arranging) wrap.appendChild(putAwayButton(item, item.x + delta[0], item.y + delta[1]));
   });
 }
 // Mystery Boxes: one earned for every 3 decks completed, PLUS one bonus
@@ -788,19 +974,12 @@ function renderDog(xp, state) {
   refreshXPLabel();
   document.getElementById("bones-label").textContent = (window.GharAuth && GharAuth.bones) ? GharAuth.bones() : (parseInt(localStorage.getItem("ghar.dog.bones") || "0", 10) || 0);
   document.getElementById("streak-label").textContent = (state && state.streak) || 0;
-  const prev = parseInt(localStorage.getItem(DOG_STAGE_KEY) || "0", 10);
-  if (stage > prev) {
-    localStorage.setItem(DOG_STAGE_KEY, String(stage));
-    const name = localStorage.getItem(DOG_NAME_KEY) || "Bhunte";
-    showCelebration(`🎉 ${name} grew!`, `${name} is now a ${STAGE_NAMES[stage]}!`);
-    play(stage === 0 ? "assets/audio/nepal-v1/dog_bark.m4a" : "assets/audio/nepal-v1/dog_bark_big.m4a");
-    // Celebrate on the Rive dog for the NEW stage.
-    if (stage === 0 && window.mygharPuppy) window.mygharPuppy.celebrate();
-    else if (stage === 1 && window.mygharBhunte) window.mygharBhunte.celebrate();
-    else if (stage === 2 && window.mygharGrownup) window.mygharGrownup.celebrate();
-  } else {
-    localStorage.setItem(DOG_STAGE_KEY, String(stage));
-  }
+  // Feature #5: NO silent auto-staging here any more. The old code
+  // celebrated (and grew the dog) the moment bones crossed a threshold.
+  // Now renderLevelUp() shows the Level Up button / progress instead,
+  // and the dog only grows when the child taps it (see the button
+  // handler below, which owns the celebration).
+  renderLevelUp(state);
 }
 function renderNames() {
   const dogName = localStorage.getItem(DOG_NAME_KEY) || "Bhunte";
@@ -884,6 +1063,28 @@ document.getElementById("dog").addEventListener("click", () => {
   void dog.offsetWidth;
   dog.classList.add("bounce");
   play(stage === 0 ? "assets/audio/nepal-v1/dog_bark.m4a" : "assets/audio/nepal-v1/dog_bark_big.m4a");
+});
+// ---- Level Up! (feature #5) ----
+// Tapping grows the dog to the next stage with the usual celebration
+// (confetti + fanfare + Rive celebrate) and records the claim, so the
+// dog stays grown on every device. Below the threshold the tap does
+// nothing — the button is only shown when bones have crossed it.
+document.getElementById("levelup-btn").addEventListener("click", () => {
+  const btn = document.getElementById("levelup-btn");
+  const next = parseInt(btn.dataset.stage || "1", 10);
+  if (dogStageFor(dogBonesCount()) < next) return; // below threshold
+  const claimed = levelClaimed();
+  if (claimed.includes(next)) return; // already claimed — never twice
+  claimed.push(next);
+  localStorage.setItem(LEVEL_CLAIMED_KEY, JSON.stringify(claimed));
+  syncPost("/myghar", levelSyncPayload());
+  const name = localStorage.getItem(DOG_NAME_KEY) || "Bhunte";
+  showCelebration(`🎉 ${name} grew!`, `${name} is now a ${STAGE_NAMES[next]}!`);
+  play(next === 2 ? "assets/audio/nepal-v1/dog_bark_big.m4a" : "assets/audio/nepal-v1/dog_bark.m4a");
+  if (next === 1 && window.mygharBhunte) window.mygharBhunte.celebrate();
+  else if (next === 2 && window.mygharGrownup) window.mygharGrownup.celebrate();
+  const state = readState();
+  renderDog(state.xp, state);
 });
 // ---- Bhunte poses: Sleep / Feed / Fetch. ----
 // A pose temporarily replaces the dog (Rive canvas or static img) with a
@@ -1016,6 +1217,7 @@ document.getElementById("arrange-btn").addEventListener("click", () => {
   renderTrophies(state);
   renderShopItems();
   renderMysteryItems();
+  renderStorage(state);
   renderMysteryButton(state);
 });
 document.getElementById("dog-name").addEventListener("input", e => {
@@ -1370,6 +1572,14 @@ GharAuth.pull().catch(() => {}).then(async () => {
     if (serverLayoutEmpty && Object.keys(layout).length > 0) {
       syncPost("/myghar", { layout_json: JSON.stringify(layout) });
     }
+    // Level Up claims + stored items (features #5/#11): merge the
+    // server's claimed stages (union — append-only) and stored list
+    // (newer side wins), then push back anything the server lacks.
+    if (mg.level_claimed_json) levelMergeAwarded(mg.level_claimed_json);
+    if (mg.stored_json) shopStoredMerge(mg.stored_json);
+    const serverLevels = (() => { try { return JSON.parse(mg.level_claimed_json || "[]"); } catch (e) { return []; } })();
+    if (levelClaimed().some(s => !serverLevels.includes(s))) syncPost("/myghar", levelSyncPayload());
+    if (shopStored().length) syncPost("/myghar", shopStoredPayload());
   }
   const sg = await syncGet("/suga");
   if (sg && typeof sg === "object") {
@@ -1457,6 +1667,7 @@ GharAuth.pull().catch(() => {}).then(async () => {
   renderShelves(state);
   renderShopItems();
   renderMysteryItems();
+  renderStorage(state);
   renderMysteryButton(state);
   renderDog(state.xp, state);
   // The dog lives here now: it wanders the rug on its own (see roamStep).
