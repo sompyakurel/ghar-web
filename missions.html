@@ -69,11 +69,15 @@
     <p class="auth-note" id="record-status"></p>
     <div id="playback" hidden>
       <audio id="playback-audio" controls></audio>
-      <p class="auth-note">Grown-up: listen, then confirm below.</p>
+      <p class="auth-note">Grown-up: listen, then confirm below. On confirm, the recording is saved on this device only — never uploaded — so you can hear it back here later.</p>
       <button class="quiz-next" id="confirm-btn">✅ Yes, they did it! (+25 XP)</button>
       <button class="quiz-next" id="rerecord-btn" style="background:#e0e0e0;color:#333;">↻ Record again</button>
     </div>
     <button class="back" id="record-close" style="margin-top:12px;">Close</button>
+  </div>
+  <div id="rec-playback" hidden>
+    <p class="auth-note">🎧 The recording saved on this device:</p>
+    <audio id="rec-playback-audio" controls></audio>
   </div>
 </div>
 <!-- All 10 pack missions done: Bhunte earned. Shows once. -->
@@ -287,6 +291,7 @@ function render() {
         <button class="quiz-next mission-play">▶️ Hear it</button>
         ${isVerified ? "" : `<button class="quiz-next mission-done">Done it! +${m.xp || 10} XP</button>
         <button class="quiz-next mission-prove">🎤 Prove it (+${m.verified_xp || 25} XP)</button>`}
+        ${isVerified ? `<button class="quiz-next mission-rec" hidden>🎧 Hear the recording</button>` : ""}
       </div>`;
     card.querySelector(".mission-play").addEventListener("click", () => {
       if (m.has_audio && m.audio_url) play(asset(m.audio_url));
@@ -307,6 +312,11 @@ function render() {
     });
     const proveBtn = card.querySelector(".mission-prove");
     if (proveBtn) proveBtn.addEventListener("click", () => openRecord(m));
+    const recBtn = card.querySelector(".mission-rec");
+    if (recBtn) {
+      recLoad(recKey("prove", m.id)).then(b => { if (b) recBtn.hidden = false; });
+      recBtn.addEventListener("click", () => recPlay(recKey("prove", m.id)));
+    }
     wrap.appendChild(card);
   });
   renderDaily();
@@ -345,7 +355,19 @@ function renderDaily() {
   document.getElementById("daily-prompt").textContent = done ? "✅ Completed! Come back tomorrow for a new challenge." : c.prompt;
   const actions = document.getElementById("daily-actions");
   actions.innerHTML = "";
-  if (done) return;
+  if (done) {
+    if (c.format === "teachBack") {
+      recLoad(recKey("teach", recToday())).then(b => {
+        if (!b) return;
+        const hb = document.createElement("button");
+        hb.className = "quiz-next";
+        hb.textContent = "🎧 Hear today's recording";
+        hb.addEventListener("click", () => recPlay(recKey("teach", recToday())));
+        actions.appendChild(hb);
+      });
+    }
+    return;
+  }
   if (c.format === "teachBack") {
     const b = document.createElement("button");
     b.className = "quiz-next";
@@ -503,7 +525,64 @@ function markTeenDone(m) {
 // by a grown-up. A shorter recording, a denied microphone, or a missing
 // MediaRecorder awards nothing and shows a clear message instead.
 // The recording is never uploaded or analyzed — the requirement is a
-// real recording of >= 2s. "Done it +10 XP" is untouched.
+// real recording of >= 2s. On a grown-up's confirm it is ALSO kept in
+// this browser's own storage (IndexedDB), so the family can hear it
+// back later on THIS device — proof that lives where it was made.
+// "Done it +10 XP" is untouched.
+
+// --- Device-kept recordings (IndexedDB; nothing leaves the device) ---
+function recChild() {
+  return (window.GharAuth && GharAuth.childId && GharAuth.childId()) || "guest";
+}
+function recKey(kind, id) { return kind + ":" + recChild() + ":" + id; }
+function recToday() {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+function recOpen() {
+  return new Promise((resolve, reject) => {
+    const rq = indexedDB.open("ghar-recordings", 1);
+    rq.onupgradeneeded = () => { rq.result.createObjectStore("clips"); };
+    rq.onsuccess = () => resolve(rq.result);
+    rq.onerror = () => reject(rq.error);
+  });
+}
+async function recSave(key, blob) {
+  try {
+    const db = await recOpen();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction("clips", "readwrite");
+      tx.objectStore("clips").put(blob, key);
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+    db.close();
+  } catch (e) { /* storage blocked/full — the award never depends on it */ }
+}
+async function recLoad(key) {
+  try {
+    const db = await recOpen();
+    const blob = await new Promise((resolve, reject) => {
+      const rq = db.transaction("clips", "readonly").objectStore("clips").get(key);
+      rq.onsuccess = () => resolve(rq.result || null);
+      rq.onerror = () => reject(rq.error);
+    });
+    db.close();
+    return blob;
+  } catch (e) { return null; }
+}
+let recPlayUrl = null;
+async function recPlay(key) {
+  const blob = await recLoad(key);
+  if (!blob) return;
+  if (recPlayUrl) URL.revokeObjectURL(recPlayUrl);
+  recPlayUrl = URL.createObjectURL(blob);
+  const a = document.getElementById("rec-playback-audio");
+  a.src = recPlayUrl;
+  document.getElementById("rec-playback").hidden = false;
+  document.getElementById("rec-playback").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  a.play().catch(() => {});
+}
 const MIN_RECORD_MS = 2000;
 let recorder = null, chunks = [], recordMission = null, recordBlob = null;
 let recordStartMs = 0, recordDurationMs = 0, recordMode = "mission"; // "mission" | "daily"
@@ -604,6 +683,7 @@ document.getElementById("confirm-btn").addEventListener("click", () => {
       status.textContent = "Today's Teach-Back is already done — nice work!";
       return;
     }
+    recSave(recKey("teach", recToday()), recordBlob);
     xp += 15;
     if (window.GharAuth && GharAuth.addBones) GharAuth.addBones(15);
     saveXP();
@@ -626,6 +706,7 @@ document.getElementById("confirm-btn").addEventListener("click", () => {
   if (window.GharAuth && GharAuth.addBones) GharAuth.addBones(earnedProve);
   saveSets(); saveXP();
   if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
+  recSave(recKey("prove", recordMission.id), recordBlob);
   pushMission(recordMission.id, "verified");
   playDing();
   document.getElementById("record-panel").hidden = true;
