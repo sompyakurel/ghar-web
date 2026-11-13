@@ -264,7 +264,11 @@
       const list = (data && data.games) || [];
       const myMoves = list.filter((g) => g.status === "active" && g.kind === "board" && g.my_turn).length;
       const myDuels = list.filter((g) => g.status === "active" && g.kind === "duel" && !g.i_played).length;
-      if (!myMoves && !myDuels) { el.hidden = true; return; }
+      if (!myMoves && !myDuels) {
+        el.textContent = "🤝 No friend challenges right now — tap to challenge a friend";
+        el.hidden = false;
+        return;
+      }
       const parts = [];
       if (myMoves) parts.push("♟️ your move in " + myMoves + (myMoves === 1 ? " game" : " games"));
       if (myDuels) parts.push("⚔️ " + myDuels + (myDuels === 1 ? " duel" : " duels") + " waiting");
