@@ -21,6 +21,35 @@ function esc(s) {
   });
 }
 
+// ---- Write coalescing (audit M2, 2026-11-13) ----
+// Progress writes used to fire one POST per tiny event - a heard
+// word, a traced word, every single XP award - multiplying backend
+// requests roughly 3-4x per session. The sync payloads are snapshots
+// of localStorage, so bursts now collapse: the first call schedules
+// a flush ~2.5s out; calls inside the window just update what the
+// flush will send (payloads are read fresh at send time); pagehide
+// and tab-hide flush immediately, so navigating away loses nothing.
+// Every caller was already fire-and-forget; the leaderboard page's
+// manual "Share my score" button keeps its own direct post.
+const _writeFns = {};
+const _writeTimers = {};
+function _scheduleWrite(key, fn) {
+  _writeFns[key] = fn;
+  if (_writeTimers[key]) return;
+  _writeTimers[key] = setTimeout(() => _flushWrite(key), 2500);
+}
+function _flushWrite(key) {
+  if (_writeTimers[key]) { clearTimeout(_writeTimers[key]); delete _writeTimers[key]; }
+  const fn = _writeFns[key];
+  delete _writeFns[key];
+  if (fn) { try { fn(); } catch (e) {} }
+}
+function _flushAllWrites() { Object.keys(_writeFns).forEach(_flushWrite); }
+window.addEventListener("pagehide", _flushAllWrites);
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) _flushAllWrites();
+});
+
 const GharAuth = {
   session() { return localStorage.getItem(SESSION_KEY) || ""; },
   childId() { return localStorage.getItem(CHILD_KEY) || ""; },
@@ -74,6 +103,7 @@ const GharAuth = {
   },
   async api(path, method, body) {
     const res = await fetch(GHAR_API + path, {
+      keepalive: true,
       method: method || "GET",
       headers: {
         "Content-Type": "application/json",
@@ -258,7 +288,11 @@ const GharAuth = {
     const b = this.bones() + n;
     localStorage.setItem("ghar.dog.bones", String(b));
     if (this.signedIn() && this.childId()) {
-      this.api("/accounts/children/" + this.childId() + "/myghar", "POST", { bones: b }).catch(() => {});
+      const self = this;
+      _scheduleWrite("myghar", () => {
+        self.api("/accounts/children/" + self.childId() + "/myghar", "POST",
+                 { bones: self.bones() }).catch(() => {});
+      });
     }
     return b;
   },
@@ -322,6 +356,12 @@ const GharAuth = {
   // the server. Called after any progress change. Silent when signed out.
   async push(deckId) {
     if (!this.signedIn() || !this.childId()) return false;
+    const self = this;
+    _scheduleWrite("push:" + deckId, () => { self._pushNow(deckId).catch(() => {}); });
+    return true;
+  },
+  async _pushNow(deckId) {
+    if (!this.signedIn() || !this.childId()) return false;
     await this.api("/accounts/children/" + this.childId() + "/progress", "POST", {
       deck_id: deckId,
       heard: this.heard(deckId),
@@ -334,6 +374,12 @@ const GharAuth = {
   // sentences, and builder pages, which award XP but don't belong to a deck.
   async pushTotals() {
     if (!this.signedIn() || !this.childId()) return false;
+    const self = this;
+    _scheduleWrite("totals", () => { self._pushTotalsNow().catch(() => {}); });
+    return true;
+  },
+  async _pushTotalsNow() {
+    if (!this.signedIn() || !this.childId()) return false;
     await this.api("/accounts/children/" + this.childId() + "/progress", "POST", {
       xp: this.xp(),
       quiz_free_used: this.quizFreeUsed(),
@@ -345,6 +391,11 @@ const GharAuth = {
   // never throws — pages call it fire-and-forget after any XP/stat change
   // so the board stays current without a manual "Share my score" tap.
   async shareLeaderboard() {
+    const self = this;
+    _scheduleWrite("board", () => { self._shareNow().catch(() => {}); });
+    return true;
+  },
+  async _shareNow() {
     const code = (localStorage.getItem("ghar.lb.code") || "").trim().toUpperCase();
     const nickname = (localStorage.getItem("ghar.lb.nickname") || "").trim();
     if (!code || !nickname) return false;
@@ -363,6 +414,7 @@ const GharAuth = {
       missions = new Set([...c, ...v]).size;
     } catch (e) { missions = 0; }
     await fetch(GHAR_API + "/leaderboard/score", {
+      keepalive: true,
       method: "POST",
       headers: {
         "Content-Type": "application/json",

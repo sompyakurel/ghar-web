@@ -14,6 +14,10 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: us-east-2
       - name: Deploy site to S3
-        run: aws s3 sync . s3://ghar-web-sompyakurel/ --exclude ".git/*" --exclude "infra/*" --exclude ".github/*" --delete
+        # The exclude list is a seatbelt (audit fix, 2026-11-13):
+        # even if a secret or database file is ever committed by
+        # mistake, it must not be published to the website. The root
+        # .gitignore is the first line of defence; this is the second.
+        run: aws s3 sync . s3://ghar-web-sompyakurel/ --exclude ".git/*" --exclude "infra/*" --exclude ".github/*" --exclude ".gitignore" --exclude ".env*" --exclude "*.db" --exclude "*.sqlite*" --exclude "*.tfstate*" --exclude "*.pem" --exclude "*.key" --exclude ".DS_Store" --delete
       - name: Invalidate CloudFront cache
         run: aws cloudfront create-invalidation --distribution-id E1FI40CT2ZFAV9 --paths "/*"

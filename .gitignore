@@ -1,0 +1,14 @@
+# Never commit secrets or local state (audit fix, 2026-11-13): the
+# deploy workflow publishes nearly everything in this repo to the
+# public website, so anything committed here becomes public twice
+# over - once on GitHub, once at gharlearn.com/<file>.
+.env
+.env.*
+*.db
+*.sqlite
+*.sqlite3
+*.tfstate
+*.tfstate.*
+*.pem
+*.key
+.DS_Store
