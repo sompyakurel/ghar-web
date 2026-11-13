@@ -224,9 +224,9 @@ async function load() {
           ${chips(doneWords.map(id => "✍️ " + esc(wordName[id] || id)), "No words passed Try-It yet.")}
           ${statRow("Suga the parrot", "taught " + taughtWords.length + " word" + (taughtWords.length === 1 ? "" : "s") + " · fed " + (suga.fed_count || 0) + " time" + ((suga.fed_count || 0) === 1 ? "" : "s") + (suga.fed_date ? " · last fed " + suga.fed_date : ""))}
           ${chips(taughtWords.map(w => "🦜 " + esc(w)), "Suga hasn't been taught any words yet.")}
-          ${statRow("My Ghar", "dog: " + (myghar.dog_name || "—") + " · house: " + (myghar.house_name || "—") + (myghar.layout ? " · " + Object.keys(myghar.layout).length + " room item" + (Object.keys(myghar.layout).length === 1 ? "" : "s") + " placed" : ""))}
-          ${statRow("Leaderboard", (lbIdentity.nickname || "—") + (lbIdentity.group_name ? " · " + lbIdentity.group_name : "") + (lbIdentity.group_code ? " (" + lbIdentity.group_code + ")" : ""))}
-          ${statRow("My Name", (myname.english || "—") + (myname.devanagari ? " · " + myname.devanagari : ""))}
+          ${statRow("My Ghar", "dog: " + esc(myghar.dog_name || "—") + " · house: " + esc(myghar.house_name || "—") + (myghar.layout ? " · " + Object.keys(myghar.layout).length + " room item" + (Object.keys(myghar.layout).length === 1 ? "" : "s") + " placed" : ""))}
+          ${statRow("Leaderboard", esc(lbIdentity.nickname || "—") + (lbIdentity.group_name ? " · " + esc(lbIdentity.group_name) : "") + (lbIdentity.group_code ? " (" + esc(lbIdentity.group_code) + ")" : ""))}
+          ${statRow("My Name", esc(myname.english || "—") + (myname.devanagari ? " · " + esc(myname.devanagari) : ""))}
           ${gameRows ? `<h4>Games</h4>${gameRows}` : ""}`;
       if (p.cert_earned_at) {
         const d = new Date(p.cert_earned_at * 1000).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
