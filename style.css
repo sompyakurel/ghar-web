@@ -753,7 +753,7 @@ EOF'
 .spirit-row { display: flex; align-items: center; justify-content: center; gap: 36px; margin: 14px 0 0; }
 .spirit-row .spirit-img { height: 130px; width: auto; object-fit: contain; }
 .spirit-row .spirit-danfe { height: 110px; }
-.spirit-row .spirit-flag { height: 150px; }
+.spirit-row .spirit-flag { height: 130px; }
 .spirit-row .spirit-map { display: inline-block; position: relative; border-radius: 14px; overflow: visible; box-shadow: 0 3px 12px rgba(0,0,0,.18); transition: transform .15s ease; animation: map-glow 2.4s ease-in-out infinite; }
 .spirit-row .spirit-map:hover { transform: scale(1.04); }
 @keyframes map-glow { 0%, 100% { box-shadow: 0 3px 12px rgba(0,0,0,.18), 0 0 0 0 rgba(255,179,0,.55); } 50% { box-shadow: 0 3px 12px rgba(0,0,0,.18), 0 0 0 7px rgba(255,179,0,.25); } }
@@ -764,7 +764,7 @@ EOF'
   .spirit-row { gap: 20px; }
   .spirit-row .spirit-img { height: 90px; }
   .spirit-row .spirit-danfe { height: 76px; }
-  .spirit-row .spirit-flag { height: 104px; }
+  .spirit-row .spirit-flag { height: 90px; }
   .spirit-row .spirit-map-img { height: 76px; }
 }
 
