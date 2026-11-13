@@ -556,8 +556,32 @@ async function recSave(key, blob) {
       tx.oncomplete = resolve;
       tx.onerror = () => reject(tx.error);
     });
+    await recPruneTeach(db, key);
     db.close();
   } catch (e) { /* storage blocked/full — the award never depends on it */ }
+}
+// Teach-Back saves one clip per DAY forever (audit L4) — keep only
+// the newest 30 per child. Prove-it clips are per-mission and bounded
+// by the mission count, so they are left alone.
+async function recPruneTeach(db, savedKey) {
+  const parts = String(savedKey).split(":");
+  if (parts.length !== 3 || parts[0] !== "teach") return;
+  const prefix = parts[0] + ":" + parts[1] + ":";
+  const keys = await new Promise((resolve, reject) => {
+    const rq = db.transaction("clips", "readonly").objectStore("clips").getAllKeys();
+    rq.onsuccess = () => resolve(rq.result || []);
+    rq.onerror = () => reject(rq.error);
+  });
+  const mine = keys.map(String).filter((k) => k.startsWith(prefix)).sort();
+  const stale = mine.slice(0, Math.max(0, mine.length - 30));
+  if (!stale.length) return;
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction("clips", "readwrite");
+    const store = tx.objectStore("clips");
+    stale.forEach((k) => store.delete(k));
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
 }
 async function recLoad(key) {
   try {

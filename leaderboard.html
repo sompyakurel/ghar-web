@@ -74,7 +74,7 @@
       <p class="lb-note" id="board-note"></p>
       <p style="text-align:center;margin:16px 0 0"><button type="button" class="lb-danger" id="delete-score">Delete my score from this group</button></p>
     </div>
-    <p class="lb-note">Groups disappear after 30 days with no activity. Only people with your code can see this board.</p>
+    <p class="lb-note">Groups disappear after a year with no activity. Only people with your code can see this board.</p>
   </div>
 
   <div id="friends-hub" hidden></div>
@@ -289,7 +289,7 @@ async function loadBoard() {
   try {
     const r = await fetch(LB_API + "/" + encodeURIComponent(c));
     if (r.status === 404) {
-      showError("This group no longer exists (groups disappear after 30 days with no activity).");
+      showError("This group no longer exists (groups disappear after a year with no activity).");
       localStorage.removeItem(CODE_KEY);
       localStorage.removeItem(NAME_KEY);
       document.getElementById("board").hidden = true;

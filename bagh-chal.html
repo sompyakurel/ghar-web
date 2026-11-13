@@ -944,10 +944,6 @@ function bcPoll(reset) {
 document.addEventListener("visibilitychange", function () {
   if (!document.hidden && fgBcPoll) bcTick();
 });
-window.__pollCtl = window.__pollCtl || {};
-window.__pollCtl.baghchal = { due: bcPollDue, tick: bcTick,
-  setWaitStart: function (t) { bcWaitStart = t; }, setTicks: function (n) { bcPollTicks = n; },
-  state: function () { return { timer: !!fgBcPoll, paused: bcPollPaused, ticks: bcPollTicks }; } };
 function bcSubmit(payload) {
   GharFriends.move(fgBc.cid, fgBc.id, payload).then(function (g) {
     bcBanner(g);

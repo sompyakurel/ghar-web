@@ -336,6 +336,21 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
     stopDrone();
   }
 
+  // Audit L7 (2026-11-13): a game left open in a background tab kept
+  // its 90 ms music scheduler running for the life of the page. Park
+  // the music while the tab is hidden; resume on return if it was on.
+  var musicWasOn = false;
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) {
+      musicWasOn = !!musicTimer;
+      stopMusic();
+      if (audioCtx && audioCtx.suspend) audioCtx.suspend();
+    } else if (musicWasOn) {
+      if (audioCtx && audioCtx.resume) audioCtx.resume();
+      startMusic();
+    }
+  });
+
   function sfxMove() {
     if (!sfxOn || !ensureAudio()) return;
     var t = audioCtx.currentTime;
@@ -901,10 +916,6 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
   document.addEventListener('visibilitychange', function () {
     if (!document.hidden && fgPollTimer) fgTick();
   });
-  window.__pollCtl = window.__pollCtl || {};
-  window.__pollCtl.chess = { due: fgPollDue, tick: fgTick,
-    setWaitStart: function (t) { fgWaitStart = t; }, setTicks: function (n) { fgPollTicks = n; },
-    state: function () { return { timer: !!fgPollTimer, paused: fgPollPaused, ticks: fgPollTicks }; } };
   function fgSubmit(uci) {
     GharFriends.move(fg.cid, fg.id, uci).then(function (g) {
       fgBanner(g);
