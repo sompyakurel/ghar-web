@@ -897,24 +897,62 @@ function bcMaybeAutoPass(g) {
     setTimeout(function () { if (notice) notice.style.display = "none"; bcSubmit({ pass: true }); }, 900);
   }
 }
-function bcPoll() {
-  bcStopPoll();
-  fgBcPoll = setInterval(function () {
+function bcStopPoll() { if (fgBcPoll) { clearInterval(fgBcPoll); fgBcPoll = null; } }
+// Poll governor (Som, 2026-11-13): same rule as chess - first 10
+// minutes check every 8s, minutes 10-60 every ~32s, after an hour
+// stop and offer a tap to resume; a hidden tab never fetches. The
+// GAME is untouched - it lives on under the 14-day rule.
+let bcWaitStart = 0;
+let bcPollTicks = 0;
+let bcPollPaused = false;
+function bcPollDue() {
+  if (document.hidden) return false;
+  const mins = (Date.now() - bcWaitStart) / 60000;
+  if (mins >= 60) return "stop";
+  if (mins >= 10) return (bcPollTicks % 4) === 0;
+  return true;
+}
+function bcPausedBanner() {
+  const slot = document.getElementById("fg-slot");
+  if (!slot || !fgBc) return;
+  slot.innerHTML = '<div class="fg-banner"><h2>\uD83D\uDC05 Bagh-Chal vs ' + GharFriends.esc(fgBc.oppName) + '</h2>' +
+    '<p>\uD83D\uDCA4 Checking paused after an hour - this game is still open and waiting.</p>' +
+    '<button type="button" class="fg-btn" id="fg-resume">Check for a move</button>' +
+    '<a class="fg-btn fg-btn-ghost" href="leaderboard.html">All friend games</a></div>';
+  const b = document.getElementById("fg-resume");
+  if (b) b.addEventListener("click", function () { bcPoll(true); bcTick(); });
+}
+function bcTick() {
     if (!fgBc) { bcStopPoll(); return; }
+    bcPollTicks++;
+    const due = bcPollDue();
+    if (due === "stop") { bcStopPoll(); bcPollPaused = true; bcPausedBanner(); return; }
+    if (!due) return;
     GharFriends.get(fgBc.cid, fgBc.id).then(function (g) {
       const changed = g.state.plies !== engine.plies || (g.status !== "active") !== fgBc.over;
       if (changed) bcApplyServer(g);
       bcBanner(g);
-      if (g.status !== "active") { bcStopPoll(); checkDone(); GharFriends.claimRewards(fgBc.cid); }
-      else if (g.my_turn) { bcStopPoll(); bcMaybeAutoPass(g); }
+      if (g.status !== "active") { bcStopPoll(); bcWaitStart = 0; checkDone(); GharFriends.claimRewards(fgBc.cid); }
+      else if (g.my_turn) { bcStopPoll(); bcWaitStart = 0; bcMaybeAutoPass(g); }
     }).catch(function () {});
-  }, 8000);
 }
+function bcPoll(reset) {
+  bcStopPoll();
+  if (reset || !bcWaitStart) { bcWaitStart = Date.now(); bcPollTicks = 0; bcPollPaused = false; }
+  fgBcPoll = setInterval(bcTick, 8000);
+}
+document.addEventListener("visibilitychange", function () {
+  if (!document.hidden && fgBcPoll) bcTick();
+});
+window.__pollCtl = window.__pollCtl || {};
+window.__pollCtl.baghchal = { due: bcPollDue, tick: bcTick,
+  setWaitStart: function (t) { bcWaitStart = t; }, setTicks: function (n) { bcPollTicks = n; },
+  state: function () { return { timer: !!fgBcPoll, paused: bcPollPaused, ticks: bcPollTicks }; } };
 function bcSubmit(payload) {
   GharFriends.move(fgBc.cid, fgBc.id, payload).then(function (g) {
     bcBanner(g);
     if (g.status !== "active") { bcApplyServer(g); checkDone(); GharFriends.claimRewards(fgBc.cid); }
-    else bcPoll();
+    else bcPoll(true);
   }).catch(function () {
     GharFriends.get(fgBc.cid, fgBc.id).then(function (g) { bcApplyServer(g); bcBanner(g); }).catch(function () {});
   });
@@ -941,7 +979,7 @@ function bcSubmit(payload) {
     bcBanner(g);
     try { Music.start(0); } catch (e) {}
     if (g.status !== "active") { checkDone(); GharFriends.claimRewards(cid); }
-    else if (!g.my_turn) bcPoll();
+    else if (!g.my_turn) bcPoll(true);
     else bcMaybeAutoPass(g);
   }).catch(function () {
     if (slot) slot.innerHTML = '<div class="fg-banner"><h2>\uD83D\uDC05 Friend game</h2><p>Could not load this game. <a href="leaderboard.html">Back to friend games</a></p></div>';

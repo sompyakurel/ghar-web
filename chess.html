@@ -844,10 +844,38 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
     });
   }
   function fgStopPoll() { if (fgPollTimer) { clearInterval(fgPollTimer); fgPollTimer = null; } }
-  function fgPoll() {
-    fgStopPoll();
-    fgPollTimer = setInterval(function () {
+  // Poll governor (Som, 2026-11-13): waiting for a friend must not
+  // keep the backend (or a forgotten tab) working forever. First 10
+  // minutes: check every 8s. Minutes 10-60: every ~32s. After an
+  // hour with the page still open: stop and offer a tap to resume.
+  // A hidden tab never fetches. The GAME is untouched - it lives on
+  // under the 14-day rule; only this page's checking pauses.
+  var fgWaitStart = 0;
+  var fgPollTicks = 0;
+  var fgPollPaused = false;
+  function fgPollDue() {
+    if (document.hidden) return false;
+    var mins = (Date.now() - fgWaitStart) / 60000;
+    if (mins >= 60) return 'stop';
+    if (mins >= 10) return (fgPollTicks % 4) === 0;
+    return true;
+  }
+  function fgPausedBanner() {
+    var slot = document.getElementById('fg-slot');
+    if (!slot || !fg) return;
+    slot.innerHTML = '<div class="fg-banner"><h2>\u265F\uFE0F Friend game vs ' + GharFriends.esc(fg.oppName) + '</h2>' +
+      '<p>\uD83D\uDCA4 Checking paused after an hour - this game is still open and waiting.</p>' +
+      '<button type="button" class="fg-btn" id="fg-resume">Check for a move</button>' +
+      '<a class="fg-btn fg-btn-ghost" href="leaderboard.html">All friend games</a></div>';
+    var b = document.getElementById('fg-resume');
+    if (b) b.addEventListener('click', function () { fgPoll(true); fgTick(); });
+  }
+  function fgTick() {
       if (!fg) { fgStopPoll(); return; }
+      fgPollTicks++;
+      var due = fgPollDue();
+      if (due === 'stop') { fgStopPoll(); fgPollPaused = true; fgPausedBanner(); return; }
+      if (!due) return;
       GharFriends.get(fg.cid, fg.id).then(function (g) {
         if (g.state.fen !== game.fen()) {
           var moves = g.state.moves || [];
@@ -860,17 +888,28 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
         }
         fgBanner(g);
         if (g.status !== 'active' || g.my_turn) {
-          fgStopPoll();
+          fgStopPoll(); fgWaitStart = 0;
           if (g.status !== 'active') { over = true; GharFriends.claimRewards(fg.cid); }
         }
       }).catch(function () {});
-    }, 8000);
   }
+  function fgPoll(reset) {
+    fgStopPoll();
+    if (reset || !fgWaitStart) { fgWaitStart = Date.now(); fgPollTicks = 0; fgPollPaused = false; }
+    fgPollTimer = setInterval(fgTick, 8000);
+  }
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden && fgPollTimer) fgTick();
+  });
+  window.__pollCtl = window.__pollCtl || {};
+  window.__pollCtl.chess = { due: fgPollDue, tick: fgTick,
+    setWaitStart: function (t) { fgWaitStart = t; }, setTicks: function (n) { fgPollTicks = n; },
+    state: function () { return { timer: !!fgPollTimer, paused: fgPollPaused, ticks: fgPollTicks }; } };
   function fgSubmit(uci) {
     GharFriends.move(fg.cid, fg.id, uci).then(function (g) {
       fgBanner(g);
       if (g.status !== 'active') { GharFriends.claimRewards(fg.cid); }
-      else fgPoll();
+      else fgPoll(true);
     }).catch(function () {
       GharFriends.get(fg.cid, fg.id).then(function (g) {
         game.load(g.state.fen); render(); fgBanner(g);
@@ -902,7 +941,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
       over = g.status !== 'active';
       fgBanner(g);
       render();
-      if (g.status === 'active' && !g.my_turn) fgPoll();
+      if (g.status === 'active' && !g.my_turn) fgPoll(true);
       if (g.status !== 'active') { checkEnd(); GharFriends.claimRewards(cid); }
     }).catch(function () {
       if (slot) slot.innerHTML = '<div class="fg-banner"><h2>\u265F\uFE0F Friend game</h2><p>Could not load this game. <a href="leaderboard.html">Back to friend games</a></p></div>';
