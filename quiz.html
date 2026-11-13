@@ -33,7 +33,7 @@
   </div>
 </div>
 <script src="auth.js?v=15"></script>
-<script src="friends.js?v=1"></script>
+<script src="friends.js?v=2"></script>
 <script>
 const TIERS = { beginner: "🌱 Beginner", intermediate: "🌿 Intermediate", hard: "🌳 Hard", teen: "🔥 Teen" };
 function isTestUnlock() {
@@ -463,8 +463,8 @@ GharAuth.pull().catch(() => {}).then(() => pullQuizStats().catch(() => {})).then
       if (g2.status === "finished") {
         GF.claimRewards(cid);
         html += '<p>' + (g2.winner === "me" ? "\uD83C\uDFC6 You won!" : g2.winner === "draw" ? "\uD83E\uDD1D It's a draw" : "\uD83C\uDFC6 " + GF.esc(opp) + " won") + '</p>';
-        if (g2.my_result) html += '<p>You: ' + g2.my_result.score + '/5</p>';
-        if (g2.opponent_result) html += '<p>' + GF.esc(opp) + ': ' + g2.opponent_result.score + '/5</p>';
+        if (g2.my_result) html += '<p>You: ' + g2.my_result.score + '/5 · ' + GF.fmtTime(g2.my_result.time_ms) + '</p>';
+        if (g2.opponent_result) html += '<p>' + GF.esc(opp) + ': ' + g2.opponent_result.score + '/5 · ' + GF.fmtTime(g2.opponent_result.time_ms) + '</p>';
         html += '<button type="button" class="fg-btn" id="duel-rematch">Rematch</button>';
       } else if (g2.status === "abandoned") {
         html += '<p>\uD83D\uDCA4 This duel closed \u2014 no play for 14 days.</p>';

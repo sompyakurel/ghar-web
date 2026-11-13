@@ -15,7 +15,7 @@
 <link rel="stylesheet" href="style.css?v=33">
 <link rel="stylesheet" href="friends.css?v=1">
 <script src="auth.js?v=15"></script>
-<script src="friends.js?v=1"></script>
+<script src="friends.js?v=2"></script>
 <script src="data/map-data.js"></script>
 <style>
   .pq-hud { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin: 10px 0 4px; font-weight: 700; }
@@ -596,8 +596,8 @@ if (window.GharAuth && GharAuth.pull) GharAuth.pull().catch(() => {});
     if (g.status === "finished") {
       GF.claimRewards(cid);
       html += '<p>' + (g.winner === "me" ? "🏆 You won!" : g.winner === "draw" ? "🤝 It's a draw" : "🏆 " + GF.esc(opp) + " won") + '</p>';
-      if (g.my_result) html += '<p>You: ' + g.my_result.score + '/8</p>';
-      if (g.opponent_result) html += '<p>' + GF.esc(opp) + ': ' + g.opponent_result.score + '/8</p>';
+      if (g.my_result) html += '<p>You: ' + g.my_result.score + '/8 · ' + GF.fmtTime(g.my_result.time_ms) + '</p>';
+      if (g.opponent_result) html += '<p>' + GF.esc(opp) + ': ' + g.opponent_result.score + '/8 · ' + GF.fmtTime(g.opponent_result.time_ms) + '</p>';
       html += '<button type="button" class="fg-btn" id="duel-rematch">Rematch</button>';
     } else if (g.status === "abandoned") {
       html += '<p>💤 This duel closed — no play for 14 days.</p>';

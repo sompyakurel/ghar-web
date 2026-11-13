@@ -123,7 +123,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
 <div id="toast"></div>
 
 <script src="auth.js?v=15"></script>
-<script src="friends.js?v=1"></script>
+<script src="friends.js?v=2"></script>
 <script>
 (function () {
   // ---- Sound & music (Web Audio, synthesized — no files, no copyright) ----
@@ -647,8 +647,8 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
     if (g.status === "finished") {
       GF.claimRewards(cid);
       html += '<p>' + (g.winner === "me" ? "🏆 You won!" : g.winner === "draw" ? "🤝 It's a draw" : "🏆 " + GF.esc(opp) + " won") + '</p>';
-      if (g.my_result) html += '<p>Your score: ' + g.my_result.score + '</p>';
-      if (g.opponent_result) html += '<p>' + GF.esc(opp) + ': ' + g.opponent_result.score + '</p>';
+      if (g.my_result) html += '<p>Your score: ' + g.my_result.score + ' · ' + GF.fmtTime(g.my_result.time_ms) + '</p>';
+      if (g.opponent_result) html += '<p>' + GF.esc(opp) + ': ' + g.opponent_result.score + ' · ' + GF.fmtTime(g.opponent_result.time_ms) + '</p>';
       html += '<button type="button" class="fg-btn" id="duel-rematch">Rematch</button>';
     } else if (g.status === "abandoned") {
       html += '<p>💤 This duel closed — no play for 14 days.</p>';

@@ -91,10 +91,14 @@
     if (!g.i_played) return "⚔️ Your turn to play";
     return "⏳ Waiting for " + nick + " to play";
   }
+  function fmtTime(ms) {
+    if (ms == null) return "";
+    return (Math.round(ms / 100) / 10).toFixed(1) + "s";
+  }
   function scoreText(g) {
     if (g.kind !== "duel" || !g.my_result) return "";
-    let s = "You: " + g.my_result.score;
-    if (g.opponent_result) s += " · " + (g.opponent.nickname || "Friend") + ": " + g.opponent_result.score;
+    let s = "You: " + g.my_result.score + " · " + fmtTime(g.my_result.time_ms);
+    if (g.opponent_result) s += " · " + (g.opponent.nickname || "Friend") + ": " + g.opponent_result.score + " · " + fmtTime(g.opponent_result.time_ms);
     return s;
   }
 
@@ -282,7 +286,7 @@
 
   window.GharFriends = {
     GAMES, esc, childId, api, friends, games, create, get, move, result,
-    resign, rematch, claimRewards, playUrl, statusText, renderHub,
+    resign, rematch, claimRewards, playUrl, statusText, fmtTime, renderHub,
     renderChip, renderChildGames,
   };
 })();

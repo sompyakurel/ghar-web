@@ -63,7 +63,7 @@
 </div>
 
 <script src="auth.js?v=15"></script>
-<script src="friends.js?v=1"></script>
+<script src="friends.js?v=2"></script>
 <script>
 function asset(u) {
   if (!u) return "";
@@ -455,8 +455,8 @@ GharAuth.pull().catch(() => {}).then(() => (GharAuth.refreshUnlock ? GharAuth.re
     if (g.status === "finished") {
       GF.claimRewards(cid);
       html += '<p>' + (g.winner === "me" ? "🏆 You won!" : g.winner === "draw" ? "🤝 It's a draw" : "🏆 " + GF.esc(opp) + " won") + '</p>';
-      if (g.my_result) html += '<p>You: ' + g.my_result.score + '/8 rounds</p>';
-      if (g.opponent_result) html += '<p>' + GF.esc(opp) + ': ' + g.opponent_result.score + '/8 rounds</p>';
+      if (g.my_result) html += '<p>You: ' + g.my_result.score + '/8 rounds · ' + GF.fmtTime(g.my_result.time_ms) + '</p>';
+      if (g.opponent_result) html += '<p>' + GF.esc(opp) + ': ' + g.opponent_result.score + '/8 rounds · ' + GF.fmtTime(g.opponent_result.time_ms) + '</p>';
       html += '<button type="button" class="fg-btn" id="duel-rematch">Rematch</button>';
     } else if (g.status === "abandoned") {
       html += '<p>💤 This duel closed — no play for 14 days.</p>';
