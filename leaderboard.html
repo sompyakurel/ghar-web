@@ -145,6 +145,7 @@ function pushIdentity() {
   });
 }
 function identityTaken(e) { return String((e && e.message) || "").includes("409"); }
+function identityBlocked(e) { return String((e && e.message) || "").includes("422"); }
 function myStats() {
   let missions = 0;
   try {
@@ -215,6 +216,7 @@ async function createGroup() {
       body: JSON.stringify({ name }),
     });
     if (r.status === 401) { showError("Your sign-in expired — please sign in again."); return; }
+    if (r.status === 422) { const d = await r.json().catch(() => ({})); showError(d.detail || "That name isn't allowed — please pick a friendlier one."); return; }
     if (!r.ok) throw new Error("Could not create the group. Check your connection and try again.");
     const d = await r.json();
     localStorage.setItem(CODE_KEY, d.code);
@@ -251,6 +253,7 @@ async function joinGroup() {
       // between the board check above and now) — surface it like the
       // board check does instead of pretending the join completed.
       if (identityTaken(e)) { showError("That nickname is already taken in this group — pick another one."); return; }
+      if (identityBlocked(e)) { showError("That name isn't allowed — please pick a friendlier one."); return; }
     }
     enterBoard();
   } catch (e) {
@@ -337,6 +340,7 @@ async function shareScore() {
     });
     if (r.status === 401) { showError("Your sign-in expired — please sign in again."); return; }
     if (r.status === 409) { showError("That nickname is already taken in this group — pick another one."); return; }
+    if (r.status === 422) { showError("That nickname isn't allowed — please pick a friendlier one."); return; }
     if (r.status === 404) { showError("That group no longer exists."); return; }
     if (!r.ok) throw new Error("Could not share your score.");
     await loadBoard();
@@ -396,6 +400,12 @@ document.getElementById("save-nickname").addEventListener("click", async () => {
       if (prev) localStorage.setItem(NICK_KEY, prev); else localStorage.removeItem(NICK_KEY);
       document.getElementById("nickname").value = prev;
       showError("That nickname is already taken in this group — pick another one.");
+      return;
+    }
+    if (identityBlocked(e)) {
+      if (prev) localStorage.setItem(NICK_KEY, prev); else localStorage.removeItem(NICK_KEY);
+      document.getElementById("nickname").value = prev;
+      showError("That name isn't allowed — please pick a friendlier one.");
       return;
     }
     // Offline and other failures keep the local name; it syncs later.
