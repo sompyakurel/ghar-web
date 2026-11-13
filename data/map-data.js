@@ -285,7 +285,7 @@ window.GHAR_MAP_DATA = {
       name: "Annapurna",
       nepali: "अन्नपूर्ण",
       province: "gandaki",
-      fact: "A giant snowy mountain range; Annapurna I is 8,091 m, one of the world's 8,000-metre peaks.",
+      fact: "A giant snowy mountain range; its highest peak reaches 8,091 m, one of the world's great 8,000-metre peaks.",
       audioName: "assets/audio/map/annapurna_name_np.m4a",
       audioFact: "assets/audio/map/annapurna_fact_np.m4a"
     },

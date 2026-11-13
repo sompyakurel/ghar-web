@@ -82,13 +82,13 @@ const PLACES = (MD.pins || []).concat(MD.landmarks || []);
 const PEAKS = [
   { name: "Mount Everest", nepali: "सगरमाथा", h: 8848 },
   { name: "Kanchenjunga", nepali: "कञ्चनजङ्घा", h: 8586 },
-  { name: "Lhotse", nepali: "", h: 8516 },
-  { name: "Makalu", nepali: "", h: 8485 },
-  { name: "Cho Oyu", nepali: "", h: 8188 },
-  { name: "Dhaulagiri", nepali: "", h: 8167 },
-  { name: "Manaslu", nepali: "", h: 8163 },
+  { name: "Lhotse", nepali: "ल्होत्से", h: 8516 },
+  { name: "Makalu", nepali: "मकालु", h: 8485 },
+  { name: "Cho Oyu", nepali: "चो ओयु", h: 8188 },
+  { name: "Dhaulagiri", nepali: "धौलागिरी", h: 8167 },
+  { name: "Manaslu", nepali: "मनास्लु", h: 8163 },
   { name: "Annapurna", nepali: "अन्नपूर्ण", h: 8091 },
-  { name: "Api", nepali: "", h: 7132 }
+  { name: "Api", nepali: "अपी", h: 7132 }
 ];
 // Province borders copied verbatim from map.html, so the quiz map IS the
 // map the kids explored (same shapes, same colours).
@@ -100,6 +100,15 @@ const PROVINCE_PATHS = {
   bagmati: "M785.3,336.5 L772.7,342.8 L751.3,334.2 L745.7,308.8 L733.1,319.4 L738.1,340.2 L721.8,341.4 L688.4,281.8 L676.0,298.2 L663.7,288.4 L648.2,295.5 L612.4,286.9 L597.5,314.8 L583.8,316.1 L572.1,336.0 L576.4,354.7 L557.0,346.1 L535.8,353.5 L534.0,368.5 L496.0,387.8 L473.1,388.9 L473.9,401.0 L499.7,392.2 L517.3,409.2 L538.9,413.0 L549.9,399.3 L577.5,402.5 L663.0,440.0 L702.8,436.9 L754.5,468.5 L767.2,460.8 L760.1,444.4 L770.1,435.3 L747.7,426.4 L749.9,409.6 L788.0,372.9 L785.3,336.5 Z",
   madhesh: "M624.5,425.8 L613.2,412.3 L577.5,402.5 L549.9,399.3 L540.5,411.6 L557.2,415.4 L565.3,429.8 L559.6,452.3 L598.1,463.2 L605.3,476.7 L625.6,474.8 L628.2,489.0 L643.0,491.1 L679.1,474.5 L705.0,513.1 L726.4,500.6 L749.4,510.6 L763.3,506.7 L811.2,531.7 L842.7,512.7 L844.9,495.0 L834.2,487.9 L825.4,497.5 L796.7,497.8 L781.0,472.4 L752.6,475.4 L742.0,468.5 L750.0,472.4 L751.4,464.6 L722.2,455.1 L709.5,439.7 L689.9,433.4 L663.0,440.0 L624.5,425.8 Z",
   koshi: "M832.1,523.4 L852.3,510.9 L854.7,528.2 L884.8,541.2 L899.8,529.5 L916.5,537.0 L950.7,523.5 L965.0,539.5 L972.8,533.6 L986.8,487.3 L980.5,460.1 L962.7,443.0 L987.8,349.5 L943.9,336.9 L931.1,355.7 L911.4,347.9 L864.4,353.7 L812.1,317.7 L791.0,317.2 L788.0,372.9 L749.9,409.6 L747.7,426.4 L770.1,435.3 L760.1,444.4 L767.2,460.6 L749.9,472.4 L742.0,468.5 L781.0,472.4 L796.7,497.8 L825.4,497.5 L834.3,488.0 L845.3,500.0 L832.1,523.4 Z"
+};
+const PROVINCE_HINTS = {
+  koshi: "Look to the far east of the map — the sunrise side, under the tallest giants.",
+  madhesh: "Look along the flat southern plains, in the east.",
+  bagmati: "Look to the middle of the map, around the capital city.",
+  gandaki: "Look west of the middle — lakes and big mountains live there.",
+  lumbini: "Look to the southern plains in the west — a very famous birthplace is there.",
+  karnali: "Look to the big, wild mountains of the north-west.",
+  sudurpashchim: "Look as far west as the map goes."
 };
 const PROVINCE_LABELS = {
   sudurpashchim: [118, 155], karnali: [305, 175], lumbini: [330, 335],
@@ -328,16 +337,18 @@ function onCorrect(q, factText) {
   run.xpEarned += earned;
   playDing();
   setFeedback("✅ Correct! +" + earned + " XP", true);
-  if (!qState.hintShown) showFact(factText || (q.place ? q.place.fact : ""));
+  showFact(factText || (q.place ? q.place.fact : ""));
   showNext();
 }
 function onWrongTap() {
   qState.wrongs++;
   recordWrong();
   playBuzz();
-  // First miss: surface the fact up by the question as a hint, where it
-  // can actually help with the retry (Som, 2026-11-12).
-  if (qState.wrongs === 1) showHint(qState.fact);
+  // First miss: a HINT up by the question — a nudge that helps with
+  // the retry but never states the answer (Som, 2026-11-13: several
+  // facts named the answer outright). The fact itself is shown after
+  // the solve, as the learning moment.
+  if (qState.wrongs === 1) showHint(qState.hintText);
 }
 
 function renderTap(q) {
@@ -352,6 +363,7 @@ function renderTap(q) {
     '<button class="pq-listen" id="pq-listen-btn" type="button">🔊 Hear the name</button>' +
     hintHTML() + mapSVG() + feedbackHTML() + "</div>";
   qState.fact = pl.fact;
+  qState.hintText = PROVINCE_HINTS[pl.province];
   const hear = () => playClip(pl.audioName);
   document.getElementById("pq-listen-btn").addEventListener("click", hear);
   hear(); // the name plays by itself as the question arrives (Som, 2026-11-11)
@@ -398,6 +410,7 @@ function renderMcqProvince(q) {
     '<button class="pq-listen" id="pq-listen-btn" type="button">🔊 Hear the name</button>' +
     hintHTML() + '<div id="pq-options"></div>' + feedbackHTML() + "</div>";
   qState.fact = pl.fact;
+  qState.hintText = PROVINCE_HINTS[pl.province];
   document.getElementById("pq-listen-btn").addEventListener("click", () => playClip(pl.audioName));
   playClip(pl.audioName); // auto-play the name as the question arrives
   const wrap = optionButtons(options,
@@ -427,6 +440,9 @@ function renderMcqPlace(q) {
     '<span class="pq-nep">' + esc(pv.nepali) + "</span></div>" +
     hintHTML() + '<div id="pq-options"></div>' + feedbackHTML() + "</div>";
   qState.fact = pl.fact;
+  const outOne = options.find(x => x.id !== pl.id);
+  qState.hintText = outOne ? "Psst — " + outOne.name + " is over in " +
+    (PROV[outOne.province] ? PROV[outOne.province].name : "") + " Province, so cross that one out." : "";
   const wrap = optionButtons(options,
     x => '<span class="opt-eng">' + esc(x.visual || "📍") + " " + esc(x.name) + '</span><span class="opt-deva">' + esc(x.nepali) + "</span>",
     (x, btn) => {
@@ -466,6 +482,9 @@ function renderCapital(q) {
     '<div class="pq-card"><div class="pq-q">' + prompt + "</div>" +
     hintHTML() + '<div id="pq-options"></div>' + feedbackHTML() + "</div>";
   qState.fact = factText;
+  qState.hintText = q.form === "capital-of"
+    ? "It starts with the letter “" + pv.capital.charAt(0) + "”."
+    : "The province's name starts with the letter “" + pv.name.charAt(0) + "”.";
   const wrap = optionButtons(options, label, (p, btn) => {
     if (qState.solved) return;
     if (isRight(p)) {
@@ -490,21 +509,24 @@ function renderPeaks(q) {
     '<div class="pq-card"><div class="pq-q"><span class="pq-visual">🏔️</span>Which mountain is <b>taller</b>?</div>' +
     hintHTML() + '<div id="pq-options"></div>' + feedbackHTML() + "</div>";
   qState.fact = factText;
+  qState.hintText = "One of these two stands under " +
+    (Math.ceil((shorter.h + 1) / 100) * 100).toLocaleString("en-US") + " m — the taller one is the answer.";
   const wrap = optionButtons([q.a, q.b],
     p => '<span class="opt-eng">🏔️ ' + esc(p.name) + "</span>" + (p.nepali ? '<span class="opt-deva">' + esc(p.nepali) + "</span>" : ""),
     (p, btn) => {
       if (qState.solved) return;
-      // Reveal both heights either way — that's the learning moment.
-      wrap.querySelectorAll(".quiz-option").forEach((b, i) => {
-        const pk = [q.a, q.b][i];
-        if (!b.querySelector(".pq-h")) {
-          const s = document.createElement("span");
-          s.className = "pq-h";
-          s.textContent = pk.h.toLocaleString("en-US") + " m";
-          b.appendChild(s);
-        }
-      });
       if (p === taller) {
+        // Reveal both heights only once it is solved — that is the
+        // learning moment. Revealing them on a miss gave the retry away.
+        wrap.querySelectorAll(".quiz-option").forEach((b, i) => {
+          const pk = [q.a, q.b][i];
+          if (!b.querySelector(".pq-h")) {
+            const s = document.createElement("span");
+            s.className = "pq-h";
+            s.textContent = pk.h.toLocaleString("en-US") + " m";
+            b.appendChild(s);
+          }
+        });
         btn.classList.add("correct");
         onCorrect(q, factText);
       } else {
