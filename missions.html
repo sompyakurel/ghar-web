@@ -9,7 +9,7 @@
 <link rel="manifest" href="/site.webmanifest">
 <meta name="theme-color" content="#a31721">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://backend-patient-wave-3724.fly.dev https://api.open-meteo.com https://unpkg.com https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; media-src 'self' blob:; connect-src 'self' https://backend-patient-wave-3724.fly.dev https://api.open-meteo.com https://unpkg.com https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self';">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Ghar — Missions</title>
 <link rel="stylesheet" href="style.css?v=34">
@@ -668,7 +668,7 @@ document.getElementById("rerecord-btn").addEventListener("click", () => {
   recordDurationMs = 0;
   document.getElementById("record-status").textContent = "";
 });
-document.getElementById("confirm-btn").addEventListener("click", () => {
+document.getElementById("confirm-btn").addEventListener("click", async () => {
   const status = document.getElementById("record-status");
   // The 2-second gate: no recording, or one shorter than 2s, pays nothing.
   if (!recordBlob || recordDurationMs < MIN_RECORD_MS) {
@@ -683,7 +683,7 @@ document.getElementById("confirm-btn").addEventListener("click", () => {
       status.textContent = "Today's Teach-Back is already done — nice work!";
       return;
     }
-    recSave(recKey("teach", recToday()), recordBlob);
+    await recSave(recKey("teach", recToday()), recordBlob);
     xp += 15;
     if (window.GharAuth && GharAuth.addBones) GharAuth.addBones(15);
     saveXP();
@@ -706,7 +706,7 @@ document.getElementById("confirm-btn").addEventListener("click", () => {
   if (window.GharAuth && GharAuth.addBones) GharAuth.addBones(earnedProve);
   saveSets(); saveXP();
   if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});
-  recSave(recKey("prove", recordMission.id), recordBlob);
+  await recSave(recKey("prove", recordMission.id), recordBlob);
   pushMission(recordMission.id, "verified");
   playDing();
   document.getElementById("record-panel").hidden = true;
@@ -747,6 +747,7 @@ GharAuth.pull().catch(() => {}).then(() => (GharAuth.refreshUnlock ? GharAuth.re
 .site-footer a { color: #2e7d32; font-weight: 600; text-decoration: none; }
 .site-footer a:hover { text-decoration: underline; }
 .site-footer .sf-copy { color: #999; font-size: 13px; }
+.mission-rec[hidden] { display: none !important; }
 </style>
 <footer class="site-footer">
   <p>🐶 <strong>Ghar</strong> — Nepali for every family.</p>
