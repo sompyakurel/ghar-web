@@ -222,7 +222,15 @@ async function createGroup() {
     localStorage.setItem(CODE_KEY, d.code);
     localStorage.setItem(NAME_KEY, d.name || "");
     localStorage.removeItem("ghar.lb.deletedScore");
-    pushIdentity().catch(() => {});
+    // Surface identity refusals (taken / not allowed) instead of the
+    // old silent catch — a profane or taken nickname in the create
+    // form used to fail without a word. The group exists by now, so
+    // the created panel still shows; the message explains the fix.
+    try { await pushIdentity(); }
+    catch (e) {
+      if (identityTaken(e)) showError("That nickname is already taken in this group — after creating, pick another one from the board.");
+      else if (identityBlocked(e)) showError("That nickname isn't allowed — after creating, pick a friendlier one from the board.");
+    }
     document.getElementById("created").hidden = false;
     document.getElementById("created-code").textContent = d.code;
   } catch (e) {
