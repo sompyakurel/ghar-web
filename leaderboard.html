@@ -132,18 +132,19 @@ async function pullIdentity() {
     // showing no leaderboard identity.
     if ((code() && !id.group_code) || (nickname() && !id.nickname) ||
         ((localStorage.getItem(NAME_KEY) || "").trim() && !id.group_name)) {
-      pushIdentity();
+      pushIdentity().catch(() => {});
     }
   } catch (e) { /* guest or offline — local identity stands */ }
 }
 function pushIdentity() {
-  if (!window.GharAuth || !GharAuth.signedIn() || !GharAuth.childId()) return;
-  GharAuth.api("/accounts/children/" + GharAuth.childId() + "/leaderboard-identity", "POST", {
+  if (!window.GharAuth || !GharAuth.signedIn() || !GharAuth.childId()) return Promise.resolve();
+  return GharAuth.api("/accounts/children/" + GharAuth.childId() + "/leaderboard-identity", "POST", {
     group_code: code() || undefined,
     nickname: nickname() || undefined,
     group_name: (localStorage.getItem(NAME_KEY) || "").trim() || undefined,
-  }).catch(() => {});
+  });
 }
+function identityTaken(e) { return String((e && e.message) || "").includes("409"); }
 function myStats() {
   let missions = 0;
   try {
@@ -218,7 +219,7 @@ async function createGroup() {
     const d = await r.json();
     localStorage.setItem(CODE_KEY, d.code);
     localStorage.setItem(NAME_KEY, d.name || "");
-    pushIdentity();
+    pushIdentity().catch(() => {});
     document.getElementById("created").hidden = false;
     document.getElementById("created-code").textContent = d.code;
   } catch (e) {
@@ -244,7 +245,13 @@ async function joinGroup() {
     localStorage.setItem(NICK_KEY, nick);
     localStorage.setItem(CODE_KEY, d.code);
     localStorage.setItem(NAME_KEY, d.name || "");
-    pushIdentity();
+    try { await pushIdentity(); }
+    catch (e) {
+      // The server guards nicknames too (someone may have taken this one
+      // between the board check above and now) — surface it like the
+      // board check does instead of pretending the join completed.
+      if (identityTaken(e)) { showError("That nickname is already taken in this group — pick another one."); return; }
+    }
     enterBoard();
   } catch (e) {
     showError(e.message || "Could not join the group.");
@@ -378,11 +385,21 @@ document.getElementById("leave-group").addEventListener("click", () => {
   document.getElementById("board").hidden = true;
   renderSetup();
 });
-document.getElementById("save-nickname").addEventListener("click", () => {
+document.getElementById("save-nickname").addEventListener("click", async () => {
   const nick = (document.getElementById("nickname").value || "").trim();
   if (!nick) { showError("Pick a nickname first — something fun, not your real name."); return; }
+  const prev = nickname();
   localStorage.setItem(NICK_KEY, nick);
-  pushIdentity();
+  try { await pushIdentity(); }
+  catch (e) {
+    if (identityTaken(e)) {
+      if (prev) localStorage.setItem(NICK_KEY, prev); else localStorage.removeItem(NICK_KEY);
+      document.getElementById("nickname").value = prev;
+      showError("That nickname is already taken in this group — pick another one.");
+      return;
+    }
+    // Offline and other failures keep the local name; it syncs later.
+  }
   renderPlayers();
 });
 
