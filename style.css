@@ -594,7 +594,7 @@ EOF'
    lifted here, the row always fits the screen exactly. */
 @media (max-width: 640px) { .prayer-row .prayer-flag { min-width: 0; } }
 /* Nepali flag next to the title + the spirit row under the tagline. */
-.nepal-flag { vertical-align: -6px; margin-right: 8px; }
+.nepal-flag { height: 46px; width: auto; vertical-align: -8px; margin-right: 2px; }
 .spirit-row { display: flex; align-items: center; justify-content: center; gap: 18px; margin: 10px 0 0; color: #6b5d4f; font-size: 15px; }
 .spirit-row .spirit-item { display: inline-flex; align-items: center; gap: 6px; }
 .spirit-row img.danfe { width: 54px; height: 36px; object-fit: contain; }
