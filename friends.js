@@ -26,6 +26,12 @@
   function childId() {
     return (window.GharAuth && GharAuth.signedIn() && GharAuth.childId()) || "";
   }
+  // Same test the game pages use: the deliberate ?test unlock, or the
+  // server-issued unlock flag cached by auth.js.
+  function premiumOpen() {
+    return localStorage.getItem("ghar.testUnlock") === "1"
+        || (window.GharAuth && GharAuth.isUnlocked && GharAuth.isUnlocked());
+  }
   async function api(path, method, body) {
     const res = await fetch(API_BASE + path, {
       method: method || "GET",
@@ -48,8 +54,21 @@
 
   const friends = (cid) => api(base(cid) + "/friends");
   const games = (cid) => api(base(cid) + "/friend-games");
-  const create = (cid, opponentId, game, side, questionCount) =>
-    api(base(cid) + "/friend-games", "POST", { opponent_child_id: opponentId, game: game, side: side || undefined, question_count: questionCount || undefined });
+  const create = (cid, opponentId, game, side, questionCount) => {
+    // Board-game challenges are a premium perk (Som's decision,
+    // 2026-11-13, on Jarvis's recommendation): a free account can be
+    // INVITED into a board game by a premium friend - joining always
+    // works - it just can't START one. The five duels stay free for
+    // everyone on purpose: they are the hook that brings free
+    // families in. Enforced here and in the picker below; like every
+    // lock on this static site it is client-side until the server
+    // carries the unlock flag (Stripe phase).
+    if (GAMES[game] && GAMES[game].board && !premiumOpen()) {
+      return Promise.reject(new Error(
+        "Chess and Bagh-Chal challenges are part of the full version of Ghar \u2014 duels are free for everyone!"));
+    }
+    return api(base(cid) + "/friend-games", "POST", { opponent_child_id: opponentId, game: game, side: side || undefined, question_count: questionCount || undefined });
+  };
   const get = (cid, gid) => api(base(cid) + "/friend-games/" + gid);
   const move = (cid, gid, mv) => api(base(cid) + "/friend-games/" + gid + "/move", "POST", { move: mv });
   const result = (cid, gid, score, timeMs) =>
@@ -201,8 +220,13 @@
       Object.keys(GAMES).forEach((k) => {
         const o = document.createElement("option");
         o.value = k; o.textContent = GAMES[k].icon + " " + GAMES[k].name;
+        if (GAMES[k].board && !premiumOpen()) {
+          o.disabled = true;
+          o.textContent += " \uD83D\uDD12";
+        }
         sel.appendChild(o);
       });
+      if (!premiumOpen()) sel.value = "quiz";
       const side = document.createElement("select");
       side.className = "fg-select";
       const syncSide = () => {

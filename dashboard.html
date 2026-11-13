@@ -48,7 +48,7 @@
 </div>
 <script src="auth.js?v=17"></script>
 <script src="ask.js?v=3"></script>
-<script src="friends.js?v=4"></script>
+<script src="friends.js?v=5"></script>
 <script src="shop-data.js?v=5"></script>
 <script src="data/map-data.js"></script>
 <script>
@@ -91,6 +91,18 @@ async function load() {
     await GharAuth.pull().catch(() => {});
     const me = await GharAuth.api("/accounts/me");
     document.getElementById("parent-email").textContent = "Signed in as " + me.email;
+    // One aggregate call for everything the cards below need
+    // (2026-11-13) instead of 14 requests per child. If a backend
+    // too old to know the endpoint answers, ovById stays null and
+    // the original per-child fan-out runs, unchanged.
+    let ovById = null;
+    try {
+      const ov = await GharAuth.api("/accounts/me/overview");
+      if (ov && Array.isArray(ov.children)) {
+        ovById = {};
+        ov.children.forEach(c => { ovById[c.id] = c; });
+      }
+    } catch (e) { ovById = null; }
     pack = await (await fetch("data/nepal-v1.json?v=4")).json();
     const list = document.getElementById("children-list");
     if (me.children.length === 0) {
@@ -106,7 +118,10 @@ async function load() {
 
     list.innerHTML = "";
     for (const child of me.children) {
-      const [p, missions, shop, mystery, streak, quizStats, mapState, deckRewards, writing, suga, myghar, games, lbIdentity, myname] = await Promise.all([
+      const ov = ovById ? ovById[child.id] : null;
+      const [p, missions, shop, mystery, streak, quizStats, mapState, deckRewards, writing, suga, myghar, games, lbIdentity, myname] = ov
+        ? [ov.progress, ov.missions, ov.shop, ov.mystery, ov.streak, ov.quiz_stats, ov.map, ov.deck_rewards, ov.writing, ov.suga, ov.myghar, ov.games, ov.identity, ov.myname]
+        : await Promise.all([
         GharAuth.api("/accounts/children/" + child.id + "/progress"),
         GharAuth.api("/accounts/children/" + child.id + "/missions"),
         GharAuth.api("/accounts/children/" + child.id + "/shop"),

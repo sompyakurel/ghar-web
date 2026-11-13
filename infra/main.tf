@@ -90,6 +90,98 @@ resource "aws_cloudfront_distribution" "ghar_web" {
   price_class         = "PriceClass_100"
   aliases             = ["gharlearn.com", "www.gharlearn.com"]
 
+  # Static assets (added 2026-11-13): a day at the edge under their
+  # own response-headers policy (security headers + a long
+  # Cache-Control). Deploys invalidate /*, so a new version is never
+  # stuck behind these TTLs.
+  ordered_cache_behavior {
+    path_pattern     = "*.js"
+    allowed_methods  = ["GET", "HEAD"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "s3-website"
+
+    forwarded_values {
+      query_string = false
+
+      cookies {
+        forward = "none"
+      }
+    }
+
+    viewer_protocol_policy     = "redirect-to-https"
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.ghar_asset_headers.id
+    min_ttl                    = 0
+    default_ttl                = 86400
+    max_ttl                    = 31536000
+    compress                   = true
+  }
+
+  ordered_cache_behavior {
+    path_pattern     = "*.css"
+    allowed_methods  = ["GET", "HEAD"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "s3-website"
+
+    forwarded_values {
+      query_string = false
+
+      cookies {
+        forward = "none"
+      }
+    }
+
+    viewer_protocol_policy     = "redirect-to-https"
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.ghar_asset_headers.id
+    min_ttl                    = 0
+    default_ttl                = 86400
+    max_ttl                    = 31536000
+    compress                   = true
+  }
+
+  ordered_cache_behavior {
+    path_pattern     = "assets/*"
+    allowed_methods  = ["GET", "HEAD"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "s3-website"
+
+    forwarded_values {
+      query_string = false
+
+      cookies {
+        forward = "none"
+      }
+    }
+
+    viewer_protocol_policy     = "redirect-to-https"
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.ghar_asset_headers.id
+    min_ttl                    = 0
+    default_ttl                = 86400
+    max_ttl                    = 31536000
+    compress                   = true
+  }
+
+  ordered_cache_behavior {
+    path_pattern     = "data/*"
+    allowed_methods  = ["GET", "HEAD"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "s3-website"
+
+    forwarded_values {
+      query_string = false
+
+      cookies {
+        forward = "none"
+      }
+    }
+
+    viewer_protocol_policy     = "redirect-to-https"
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.ghar_asset_headers.id
+    min_ttl                    = 0
+    default_ttl                = 86400
+    max_ttl                    = 31536000
+    compress                   = true
+  }
+
   default_cache_behavior {
     allowed_methods  = ["GET", "HEAD"]
     cached_methods   = ["GET", "HEAD"]
@@ -167,7 +259,7 @@ resource "aws_route53_record" "dmarc" {
   name    = "_dmarc.gharlearn.com"
   type    = "TXT"
   ttl     = 3600
-  records = ["v=DMARC1; p=quarantine; adkim=r; aspf=r; rua=mailto:dmarc_rua@onsecureserver.net;"]
+  records = ["v=DMARC1; p=quarantine; adkim=r; aspf=r; rua=mailto:sompyakurel@gmail.com;"]
 }
 
 # --- gharlearn.com TLS (ACM, us-east-1 — required for CloudFront) ---
@@ -228,6 +320,50 @@ resource "aws_route53_record" "gharlearn_www" {
     zone_id                = aws_cloudfront_distribution.ghar_web.hosted_zone_id
     evaluate_target_health = false
   }
+}
+
+# IPv6 twins of the A records above (added 2026-11-13): the
+# distribution has had IPv6 enabled since launch, but without AAAA
+# records no IPv6-only resolver could ever reach it.
+resource "aws_route53_record" "gharlearn_apex_aaaa" {
+  zone_id = aws_route53_zone.gharlearn.zone_id
+  name    = "gharlearn.com"
+  type    = "AAAA"
+
+  alias {
+    name                   = aws_cloudfront_distribution.ghar_web.domain_name
+    zone_id                = aws_cloudfront_distribution.ghar_web.hosted_zone_id
+    evaluate_target_health = false
+  }
+}
+
+resource "aws_route53_record" "gharlearn_www_aaaa" {
+  zone_id = aws_route53_zone.gharlearn.zone_id
+  name    = "www.gharlearn.com"
+  type    = "AAAA"
+
+  alias {
+    name                   = aws_cloudfront_distribution.ghar_web.domain_name
+    zone_id                = aws_cloudfront_distribution.ghar_web.hosted_zone_id
+    evaluate_target_health = false
+  }
+}
+
+# CAA (added 2026-11-13): only Amazon (the ACM certificate the site
+# actually uses) and Let's Encrypt may issue certificates for this
+# domain; violations are reported to Som.
+resource "aws_route53_record" "caa" {
+  zone_id = aws_route53_zone.gharlearn.zone_id
+  name    = "gharlearn.com"
+  type    = "CAA"
+  ttl     = 3600
+  records = [
+    "0 issue \"amazon.com\"",
+    "0 issue \"letsencrypt.org\"",
+    "0 issuewild \"amazon.com\"",
+    "0 issuewild \"letsencrypt.org\"",
+    "0 iodef \"mailto:sompyakurel@gmail.com\"",
+  ]
 }
 
 output "website_endpoint" {
@@ -336,6 +472,56 @@ resource "aws_cloudwatch_metric_alarm" "gharlearn_cloudfront_5xx" {
 resource "aws_cloudfront_response_headers_policy" "ghar_security_headers" {
   name    = "ghar-security-headers"
   comment = "HSTS + X-Frame-Options + X-Content-Type-Options + Referrer-Policy for gharlearn.com (CSP stays as a per-page meta tag)"
+
+  # HTML freshness (added 2026-11-13): browsers revalidate pages with
+  # the edge on every load instead of trusting a timer, so a deploy
+  # is visible as soon as the invalidation lands.
+  custom_headers_config {
+    items {
+      header   = "Cache-Control"
+      value    = "public, max-age=0, must-revalidate"
+      override = true
+    }
+  }
+
+  security_headers_config {
+    strict_transport_security {
+      access_control_max_age_sec = 63072000
+      include_subdomains         = true
+      preload                    = true
+      override                   = true
+    }
+
+    content_type_options {
+      override = true
+    }
+
+    frame_options {
+      frame_option = "DENY"
+      override     = true
+    }
+
+    referrer_policy {
+      referrer_policy = "strict-origin-when-cross-origin"
+      override        = true
+    }
+  }
+}
+
+# Asset twin of the security-headers policy (added 2026-11-13): the
+# same four security headers, plus a day-long Cache-Control for the
+# static-asset behaviours above.
+resource "aws_cloudfront_response_headers_policy" "ghar_asset_headers" {
+  name    = "ghar-asset-headers"
+  comment = "Security headers + 1-day Cache-Control for gharlearn.com static assets"
+
+  custom_headers_config {
+    items {
+      header   = "Cache-Control"
+      value    = "public, max-age=86400"
+      override = true
+    }
+  }
 
   security_headers_config {
     strict_transport_security {
