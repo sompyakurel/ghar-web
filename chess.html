@@ -143,7 +143,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
 <div id="toast"></div>
 
 <script src="auth.js?v=17"></script>
-<script src="friends.js?v=5"></script>
+<script src="friends.js?v=6"></script>
 <script src="assets/js/chess.js"></script>
 <script>
 (function () {
@@ -864,7 +864,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
   // minutes: check every 8s. Minutes 10-60: every ~32s. After an
   // hour with the page still open: stop and offer a tap to resume.
   // A hidden tab never fetches. The GAME is untouched - it lives on
-  // under the 14-day rule; only this page's checking pauses.
+  // under the 7-day rule; only this page's checking pauses.
   var fgWaitStart = 0;
   var fgPollTicks = 0;
   var fgPollPaused = false;

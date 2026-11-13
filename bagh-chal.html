@@ -84,7 +84,7 @@
 </div>
 
 <script src="auth.js?v=17"></script>
-<script src="friends.js?v=5"></script>
+<script src="friends.js?v=6"></script>
 <script>
 // Bagh-Chal — the classic Nepali tiger-and-goats game, ported from the
 // app's BaghChalView.swift (which mirrors ~/workspace/baghchal/baghchal.py).
@@ -901,7 +901,7 @@ function bcStopPoll() { if (fgBcPoll) { clearInterval(fgBcPoll); fgBcPoll = null
 // Poll governor (Som, 2026-11-13): same rule as chess - first 10
 // minutes check every 8s, minutes 10-60 every ~32s, after an hour
 // stop and offer a tap to resume; a hidden tab never fetches. The
-// GAME is untouched - it lives on under the 14-day rule.
+// GAME is untouched - it lives on under the 7-day rule.
 let bcWaitStart = 0;
 let bcPollTicks = 0;
 let bcPollPaused = false;

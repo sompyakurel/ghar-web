@@ -101,7 +101,7 @@
   }
   function statusText(g) {
     const nick = g.opponent.nickname || "your friend";
-    if (g.status === "abandoned") return "💤 Closed — no play for 14 days";
+    if (g.status === "abandoned") return "💤 Closed — no play for 7 days";
     if (g.status === "finished") {
       if (g.winner === "me") return "🏆 You won!";
       if (g.winner === "draw") return "🤝 It's a draw";
