@@ -34,27 +34,40 @@ resource "aws_s3_bucket_website_configuration" "ghar_web" {
   }
 }
 
+# Since the OAC migration (2026-11-13) the bucket is private: the
+# only reader is the CloudFront distribution, through the signed
+# origin below. All four public-access guards are on. (The Fly
+# backend's backup writer and the GitHub deploy user reach the
+# bucket with their own IAM permissions, which this never governed.)
 resource "aws_s3_bucket_public_access_block" "ghar_web" {
   bucket = aws_s3_bucket.ghar_web.id
 
-  block_public_acls       = false
-  block_public_policy     = false
-  ignore_public_acls      = false
-  restrict_public_buckets = false
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 }
 
 resource "aws_s3_bucket_policy" "ghar_web" {
   bucket = aws_s3_bucket.ghar_web.id
 
+  # OAC (2026-11-13): only THIS CloudFront distribution may read,
+  # and only via its signed requests. Direct hits on either S3
+  # address (website or REST) now get 403 for everyone.
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Sid       = "PublicReadGetObject"
+        Sid       = "AllowCloudFrontServicePrincipalReadOnly"
         Effect    = "Allow"
-        Principal = "*"
+        Principal = { Service = "cloudfront.amazonaws.com" }
         Action    = "s3:GetObject"
         Resource  = "arn:aws:s3:::${aws_s3_bucket.ghar_web.id}/*"
+        Condition = {
+          StringEquals = {
+            "AWS:SourceArn" = aws_cloudfront_distribution.ghar_web.arn
+          }
+        }
       }
     ]
   })
@@ -70,17 +83,40 @@ resource "aws_s3_object" "index" {
   etag         = filemd5("../index.html")
 }
 
+# Origin Access Control (added 2026-11-13): CloudFront signs every
+# request to the bucket with SigV4, and the bucket policy above
+# accepts only signatures from this distribution.
+resource "aws_cloudfront_origin_access_control" "ghar_web" {
+  name                              = "ghar-web-oac"
+  description                       = "OAC for the gharlearn.com distribution"
+  origin_access_control_origin_type = "s3"
+  signing_behavior                  = "always"
+  signing_protocol                  = "sigv4"
+}
+
 resource "aws_cloudfront_distribution" "ghar_web" {
   origin {
-    domain_name = aws_s3_bucket_website_configuration.ghar_web.website_endpoint
-    origin_id   = "s3-website"
+    domain_name              = aws_s3_bucket.ghar_web.bucket_regional_domain_name
+    origin_id                = "s3-website"
+    origin_access_control_id = aws_cloudfront_origin_access_control.ghar_web.id
+  }
 
-    custom_origin_config {
-      http_port              = 80
-      https_port             = 443
-      origin_protocol_policy = "http-only"
-      origin_ssl_protocols   = ["TLSv1.2"]
-    }
+  # The private origin answers 403 for keys that don't exist (it is
+  # not allowed to list the bucket to say 404), where the old public
+  # website endpoint served index.html with a 404. Recreate exactly
+  # that behaviour at the edge.
+  custom_error_response {
+    error_code            = 403
+    response_code         = 404
+    response_page_path    = "/index.html"
+    error_caching_min_ttl = 10
+  }
+
+  custom_error_response {
+    error_code            = 404
+    response_code         = 404
+    response_page_path    = "/index.html"
+    error_caching_min_ttl = 10
   }
 
   enabled             = true
@@ -485,6 +521,18 @@ resource "aws_cloudfront_response_headers_policy" "ghar_security_headers" {
   }
 
   security_headers_config {
+
+    # Content Security Policy as a real HTTP header (added
+    # 2026-11-13, replacing the per-page <meta> tags). This string is
+    # the UNION of the three meta variants the pages carried, so no
+    # page loses a permission it had: script/connect/frame include
+    # accounts.google.com (sign-in page), media-src includes blob:
+    # (missions + My Ghar recordings). frame-ancestors is NOT set
+    # here on purpose: X-Frame-Options DENY below already covers it.
+    content_security_policy {
+      content_security_policy = "default-src 'self'; script-src 'self' https://unpkg.com https://accounts.google.com 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; media-src 'self' blob:; frame-src https://accounts.google.com; connect-src 'self' https://backend-patient-wave-3724.fly.dev https://api.open-meteo.com https://unpkg.com https://cdn.jsdelivr.net https://accounts.google.com; object-src 'none'; base-uri 'self'"
+      override                = true
+    }
     strict_transport_security {
       access_control_max_age_sec = 63072000
       include_subdomains         = true
@@ -524,6 +572,18 @@ resource "aws_cloudfront_response_headers_policy" "ghar_asset_headers" {
   }
 
   security_headers_config {
+
+    # Content Security Policy as a real HTTP header (added
+    # 2026-11-13, replacing the per-page <meta> tags). This string is
+    # the UNION of the three meta variants the pages carried, so no
+    # page loses a permission it had: script/connect/frame include
+    # accounts.google.com (sign-in page), media-src includes blob:
+    # (missions + My Ghar recordings). frame-ancestors is NOT set
+    # here on purpose: X-Frame-Options DENY below already covers it.
+    content_security_policy {
+      content_security_policy = "default-src 'self'; script-src 'self' https://unpkg.com https://accounts.google.com 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; media-src 'self' blob:; frame-src https://accounts.google.com; connect-src 'self' https://backend-patient-wave-3724.fly.dev https://api.open-meteo.com https://unpkg.com https://cdn.jsdelivr.net https://accounts.google.com; object-src 'none'; base-uri 'self'"
+      override                = true
+    }
     strict_transport_security {
       access_control_max_age_sec = 63072000
       include_subdomains         = true
