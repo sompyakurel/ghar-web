@@ -43,6 +43,8 @@
   <h1>🏆 Leaderboard</h1>
   <p class="section-sub">Family and friends only — share a code, see who's ahead.</p>
 
+  <p class="error" id="error" hidden></p>
+
   <div id="setup"></div>
 
   <div id="board" hidden>
@@ -76,8 +78,6 @@
   </div>
 
   <div id="friends-hub" hidden></div>
-
-  <p class="error" id="error" hidden></p>
 </div>
 <script src="auth.js?v=16"></script>
 <script src="friends.js?v=3"></script>
@@ -111,7 +111,8 @@ function showError(msg) {
   const el = document.getElementById("error");
   el.textContent = msg;
   el.hidden = false;
-  setTimeout(() => { el.hidden = true; }, 5000);
+  el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  setTimeout(() => { el.hidden = true; }, 9000);
 }
 function code() { return (localStorage.getItem(CODE_KEY) || "").trim().toUpperCase(); }
 function nickname() { return (localStorage.getItem(NICK_KEY) || "").trim(); }
