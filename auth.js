@@ -348,6 +348,14 @@ const GharAuth = {
     const code = (localStorage.getItem("ghar.lb.code") || "").trim().toUpperCase();
     const nickname = (localStorage.getItem("ghar.lb.nickname") || "").trim();
     if (!code || !nickname) return false;
+    // A score the family explicitly deleted stays deleted: auto-share
+    // must not resurrect it on the next page load or XP change. Only an
+    // explicit Share (or a rejoin / rename) on the leaderboard page
+    // clears the marker this check reads.
+    try {
+      const del = JSON.parse(localStorage.getItem("ghar.lb.deletedScore") || "null");
+      if (del && del.code === code && (del.nickname || "").toLowerCase() === nickname.toLowerCase()) return false;
+    } catch (e) { /* a corrupt marker never blocks sharing */ }
     let missions = 0;
     try {
       const c = JSON.parse(localStorage.getItem("ghar.missions.completed") || "[]");

@@ -79,7 +79,7 @@
 
   <p class="error" id="error" hidden></p>
 </div>
-<script src="auth.js?v=15"></script>
+<script src="auth.js?v=16"></script>
 <script src="friends.js?v=3"></script>
 <script>
 const LB_API = "https://backend-patient-wave-3724.fly.dev/leaderboard";
@@ -221,6 +221,7 @@ async function createGroup() {
     const d = await r.json();
     localStorage.setItem(CODE_KEY, d.code);
     localStorage.setItem(NAME_KEY, d.name || "");
+    localStorage.removeItem("ghar.lb.deletedScore");
     pushIdentity().catch(() => {});
     document.getElementById("created").hidden = false;
     document.getElementById("created-code").textContent = d.code;
@@ -247,6 +248,7 @@ async function joinGroup() {
     localStorage.setItem(NICK_KEY, nick);
     localStorage.setItem(CODE_KEY, d.code);
     localStorage.setItem(NAME_KEY, d.name || "");
+    localStorage.removeItem("ghar.lb.deletedScore");
     try { await pushIdentity(); }
     catch (e) {
       // The server guards nicknames too (someone may have taken this one
@@ -343,6 +345,7 @@ async function shareScore() {
     if (r.status === 422) { showError("That nickname isn't allowed — please pick a friendlier one."); return; }
     if (r.status === 404) { showError("That group no longer exists."); return; }
     if (!r.ok) throw new Error("Could not share your score.");
+    localStorage.removeItem("ghar.lb.deletedScore");
     await loadBoard();
   } catch (e) {
     showError(e.message || "Could not share your score.");
@@ -364,6 +367,9 @@ async function deleteScore() {
     if (r.status === 401) { showError("Your sign-in expired — please sign in again."); return; }
     if (r.status === 403) { showError("Only the parent who posted this score can delete it."); return; }
     if (!r.ok && r.status !== 404) throw new Error("Could not delete your score.");
+    // Keep it deleted: without this marker the auto-share would quietly
+    // re-post the score on the next page load or XP change.
+    localStorage.setItem("ghar.lb.deletedScore", JSON.stringify({ code: c, nickname: nick }));
     await loadBoard();
   } catch (e) {
     showError(e.message || "Could not delete your score.");
@@ -394,7 +400,7 @@ document.getElementById("save-nickname").addEventListener("click", async () => {
   if (!nick) { showError("Pick a nickname first — something fun, not your real name."); return; }
   const prev = nickname();
   localStorage.setItem(NICK_KEY, nick);
-  try { await pushIdentity(); }
+  try { await pushIdentity(); localStorage.removeItem("ghar.lb.deletedScore"); }
   catch (e) {
     if (identityTaken(e)) {
       if (prev) localStorage.setItem(NICK_KEY, prev); else localStorage.removeItem(NICK_KEY);
