@@ -10,7 +10,8 @@
                 sides: [["random", "🎲 Random side"], ["white", "♔ I'll be White"], ["black", "♚ I'll be Black"]] },
     baghchal: { name: "Bagh-Chal", icon: "🐅", page: "bagh-chal.html", param: "game", board: true,
                 sides: [["random", "🎲 Random side"], ["goats", "🐐 I'll be Goats"], ["tigers", "🐅 I'll be Tigers"]] },
-    quiz:     { name: "Quiz Blitz duel", icon: "⚡", page: "quiz.html", param: "duel" },
+    quiz:     { name: "Quiz Blitz duel", icon: "⚡", page: "quiz.html", param: "duel",
+                counts: [[5, "5 questions"], [10, "10 questions"]] },
     balloon:  { name: "Balloon Pop duel", icon: "🎈", page: "balloon-pop.html", param: "duel" },
     memory:   { name: "Memory Match duel", icon: "🧠", page: "memory-match.html", param: "duel" },
     scramble: { name: "Word Scramble duel", icon: "🔤", page: "word-scramble.html", param: "duel" },
@@ -47,8 +48,8 @@
 
   const friends = (cid) => api(base(cid) + "/friends");
   const games = (cid) => api(base(cid) + "/friend-games");
-  const create = (cid, opponentId, game, side) =>
-    api(base(cid) + "/friend-games", "POST", { opponent_child_id: opponentId, game: game, side: side || undefined });
+  const create = (cid, opponentId, game, side, questionCount) =>
+    api(base(cid) + "/friend-games", "POST", { opponent_child_id: opponentId, game: game, side: side || undefined, question_count: questionCount || undefined });
   const get = (cid, gid) => api(base(cid) + "/friend-games/" + gid);
   const move = (cid, gid, mv) => api(base(cid) + "/friend-games/" + gid + "/move", "POST", { move: mv });
   const result = (cid, gid, score, timeMs) =>
@@ -214,8 +215,20 @@
         });
         side.hidden = !meta.board;
       };
-      sel.addEventListener("change", syncSide);
-      syncSide();
+      const count = document.createElement("select");
+      count.className = "fg-select";
+      const syncCount = () => {
+        const meta = GAMES[sel.value];
+        count.innerHTML = "";
+        (meta.counts || []).forEach(([v, label]) => {
+          const o = document.createElement("option");
+          o.value = v; o.textContent = label;
+          count.appendChild(o);
+        });
+        count.hidden = !meta.counts;
+      };
+      sel.addEventListener("change", () => { syncSide(); syncCount(); });
+      syncSide(); syncCount();
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "fg-btn";
@@ -223,14 +236,15 @@
       btn.addEventListener("click", async () => {
         btn.disabled = true; btn.textContent = "Starting…";
         try {
-          const g = await create(cid, m.child_id, sel.value, side.hidden ? undefined : side.value);
+          const g = await create(cid, m.child_id, sel.value, side.hidden ? undefined : side.value,
+                                 count.hidden ? undefined : Number(count.value));
           window.location.href = playUrl(g);
         } catch (e) {
           btn.disabled = false; btn.textContent = "Challenge";
           alert(e.message || "Could not start the game.");
         }
       });
-      row.appendChild(name); row.appendChild(sel); row.appendChild(side); row.appendChild(btn);
+      row.appendChild(name); row.appendChild(sel); row.appendChild(side); row.appendChild(count); row.appendChild(btn);
       card.appendChild(row);
     });
     const listWrap = document.createElement("div");
