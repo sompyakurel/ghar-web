@@ -594,7 +594,7 @@ EOF'
    lifted here, the row always fits the screen exactly. */
 @media (max-width: 640px) { .prayer-row .prayer-flag { min-width: 0; } }
 /* Nepali flag next to the title + the spirit row under the tagline. */
-.nepal-flag { height: 46px; width: auto; vertical-align: -8px; margin-right: 2px; }
+.nepal-flag { height: 54px; width: auto; vertical-align: -8px; margin-right: 2px; }
 .spirit-row { display: flex; align-items: center; justify-content: center; gap: 18px; margin: 10px 0 0; color: #6b5d4f; font-size: 15px; }
 .spirit-row .spirit-item { display: inline-flex; align-items: center; gap: 6px; }
 .spirit-row img.danfe { width: 54px; height: 36px; object-fit: contain; }
@@ -751,21 +751,21 @@ EOF'
 
 /* Spirit row: just the three images, bigger, no labels at all. */
 .spirit-row { display: flex; align-items: center; justify-content: center; gap: 36px; margin: 14px 0 0; }
-.spirit-row .spirit-img { height: 130px; width: auto; object-fit: contain; }
-.spirit-row .spirit-danfe { height: 110px; }
-.spirit-row .spirit-flag { height: 130px; }
+.spirit-row .spirit-img { height: 148px; width: auto; object-fit: contain; }
+.spirit-row .spirit-danfe { height: 126px; }
+.spirit-row .spirit-flag { height: 148px; }
 .spirit-row .spirit-map { display: inline-block; position: relative; border-radius: 14px; overflow: visible; box-shadow: 0 3px 12px rgba(0,0,0,.18); transition: transform .15s ease; animation: map-glow 2.4s ease-in-out infinite; }
 .spirit-row .spirit-map:hover { transform: scale(1.04); }
 @keyframes map-glow { 0%, 100% { box-shadow: 0 3px 12px rgba(0,0,0,.18), 0 0 0 0 rgba(255,179,0,.55); } 50% { box-shadow: 0 3px 12px rgba(0,0,0,.18), 0 0 0 7px rgba(255,179,0,.25); } }
-.spirit-row .spirit-map-img { height: 110px; width: auto; display: block; border-radius: 14px; }
-.spirit-row .spirit-map-danfe { position: absolute; top: -26px; right: -14px; height: 52px; width: auto; pointer-events: none; animation: map-danfe-bob 2.2s ease-in-out infinite; filter: drop-shadow(0 3px 4px rgba(0,0,0,.25)); }
+.spirit-row .spirit-map-img { height: 126px; width: auto; display: block; border-radius: 14px; }
+.spirit-row .spirit-map-danfe { position: absolute; top: -30px; right: -16px; height: 60px; width: auto; pointer-events: none; animation: map-danfe-bob 2.2s ease-in-out infinite; filter: drop-shadow(0 3px 4px rgba(0,0,0,.25)); }
 @keyframes map-danfe-bob { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-7px) rotate(3deg); } }
 @media (max-width: 640px) {
   .spirit-row { gap: 20px; }
-  .spirit-row .spirit-img { height: 90px; }
-  .spirit-row .spirit-danfe { height: 76px; }
-  .spirit-row .spirit-flag { height: 90px; }
-  .spirit-row .spirit-map-img { height: 76px; }
+  .spirit-row .spirit-img { height: 98px; }
+  .spirit-row .spirit-danfe { height: 84px; }
+  .spirit-row .spirit-flag { height: 98px; }
+  .spirit-row .spirit-map-img { height: 84px; }
 }
 
 /* Lessons: Bhunte's guide panel on one side, the learning path on the
