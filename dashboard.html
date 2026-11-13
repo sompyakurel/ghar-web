@@ -14,6 +14,7 @@
 <title>Ghar — Parent dashboard</title>
 <link rel="stylesheet" href="style.css?v=33">
 <link rel="stylesheet" href="ask.css?v=2">
+<link rel="stylesheet" href="friends.css?v=1">
 </head>
 <body>
 <div class="prayer-bunting" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span></div></div>
@@ -47,6 +48,7 @@
 </div>
 <script src="auth.js?v=15"></script>
 <script src="ask.js?v=3"></script>
+<script src="friends.js?v=1"></script>
 <script src="shop-data.js?v=2"></script>
 <script src="data/map-data.js"></script>
 <script>
@@ -177,6 +179,9 @@ async function load() {
             const s = MYSTERY_BY_ID[id];
             return s ? s.emoji + " " + esc(s.ne) + " — " + esc(s.en) : esc(id);
           }), "No Mystery Box treasures yet — one box is earned per 3 lessons.")}`;
+      html += `
+          <h4>Friend games</h4>
+          <div class="dash-friend-games"><p class="device-note">Loading friend games\u2026</p></div>`;
       // Everything else that syncs across devices, straight from the
       // server — this is the backend's record for this child, not just
       // what this browser remembers.
@@ -246,6 +251,10 @@ async function load() {
         }
       });
       list.appendChild(card);
+      if (window.GharFriends) {
+        const fgEl = card.querySelector(".dash-friend-games");
+        if (fgEl) GharFriends.renderChildGames(fgEl, child.id);
+      }
     }
   } catch (e) {
     document.getElementById("error").hidden = false;

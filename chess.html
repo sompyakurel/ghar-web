@@ -13,6 +13,7 @@
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Chess ♟️ — Ghar</title>
 <link rel="stylesheet" href="style.css?v=33">
+<link rel="stylesheet" href="friends.css?v=1">
 <style>
 body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
 .chess-wrap { max-width: 800px; margin: 0 auto; text-align: center; }
@@ -111,6 +112,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
     <div class="chess-themes" id="pieceset-picker" role="group" aria-label="Piece set"></div>
     <p class="section-sub" style="text-align:center;font-size:12px;opacity:.75;">Piece art: Classic = Cburnett; Merida, Alpha &amp; Pirouetti are free-licensed sets via lichess / Wikimedia.</p>
 
+    <div id="fg-slot"></div>
     <div id="game" hidden>
       <div class="chess-toggles">
         <button id="btn-music" type="button">🎵 Music: On</button>
@@ -141,6 +143,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
 <div id="toast"></div>
 
 <script src="auth.js?v=15"></script>
+<script src="friends.js?v=1"></script>
 <script src="assets/js/chess.js"></script>
 <script>
 (function () {
@@ -445,7 +448,8 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
     var dot = '<span class="turn-dot ' + (game.turn() === 'w' ? 'w' : 'b') + '"></span>';
     var s = turn + ' to move';
     if (game.in_check()) s += ' — <span class="chk">Check!</span>';
-    if (mode && mode !== '2p') s += (game.turn() === 'w' ? ' (you)' : ' (computer)');
+    if (mode === 'friend' && fg) s += (game.turn() === fg.myColor ? ' (you)' : ' (' + fg.oppName + ')');
+    else if (mode && mode !== '2p') s += (game.turn() === 'w' ? ' (you)' : ' (computer)');
     statusEl.innerHTML = dot + ' ' + s;
   }
 
@@ -486,7 +490,8 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
 
   function onSquare(sq) {
     if (over || thinking || pendingPromo) return;
-    if (mode && mode !== '2p' && game.turn() === 'b') return; // computer's turn
+    if (mode === 'friend' && (!fg || game.turn() !== fg.myColor)) return; // friend: only on my turn
+    if (mode && mode !== '2p' && mode !== 'friend' && game.turn() === 'b') return; // computer's turn
     // If a square is selected and this is a legal destination, move there.
     if (selected) {
       var mv = null;
@@ -533,12 +538,13 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
     animateLand = true;
     render();
     afterMove();
+    if (mode === 'friend' && fg) fgSubmit(mv.from + mv.to + (mv.promotion || ''));
   }
 
   function afterMove() {
     if (checkEnd()) return;
     if (game.in_check()) setTimeout(sfxCheck, 220);
-    if (mode && mode !== '2p' && game.turn() === 'b') {
+    if (mode && mode !== '2p' && mode !== 'friend' && game.turn() === 'b') {
       thinking = true;
       thinkingEl.classList.add('on');
       updateStatus();
@@ -553,7 +559,8 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
       var winner = game.turn() === 'w' ? 'Black' : 'White';
       resultEl.textContent = '♔ Checkmate! ' + winner + ' wins!';
       statusEl.textContent = '';
-      sfxEnd(mode === '2p' ? true : winner === 'White');
+      var humanWon = (mode === 'friend' && fg) ? ((winner === 'White') === (fg.myColor === 'w')) : winner === 'White';
+      sfxEnd(mode === '2p' ? true : humanWon);
       awardXp(winner === 'White');
       render();
       return true;
@@ -611,7 +618,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
   }
 
   function awardXp(humanWon) {
-    if (!mode || mode === '2p' || xpPaid) return;
+    if (!mode || mode === '2p' || mode === 'friend' || xpPaid) return;
     xpPaid = true;
     var today = new Date().toISOString().slice(0, 10);
     var day = localStorage.getItem('ghar.chess.day');
@@ -804,6 +811,103 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
     });
   })();
   applyPieceSet(pieceSet);
+
+
+  // ---- Friend mode: async chess against a group member (2026-11-12).
+  // The server holds the game; this page mirrors it, submits my moves
+  // as UCI, and polls while waiting. XP comes from server rewards.
+  var fg = null;
+  var fgPollTimer = null;
+  function fgBanner(g) {
+    var slot = document.getElementById('fg-slot');
+    if (!slot || !fg) return;
+    var GF = window.GharFriends;
+    var html = '<div class="fg-banner"><h2>\u265F\uFE0F Friend game vs ' + GF.esc(fg.oppName) + '</h2>' +
+      '<p>' + GF.esc(GF.statusText(g)) + '</p>';
+    if (g.status === 'active') html += '<button type="button" class="fg-btn fg-btn-ghost" id="fg-resign">Resign</button>';
+    if (g.status !== 'active') html += '<button type="button" class="fg-btn" id="fg-rematch">Rematch</button>';
+    html += '<a class="fg-btn fg-btn-ghost" href="leaderboard.html">All friend games</a></div>';
+    slot.innerHTML = html;
+    var r = document.getElementById('fg-resign');
+    if (r) r.addEventListener('click', function () {
+      if (!confirm('Resign this game? ' + fg.oppName + ' wins.')) return;
+      GharFriends.resign(fg.cid, fg.id).then(function (g2) {
+        fgStopPoll(); over = true; fgBanner(g2); render();
+        GharFriends.claimRewards(fg.cid);
+      }).catch(function () {});
+    });
+    var rm = document.getElementById('fg-rematch');
+    if (rm) rm.addEventListener('click', function () {
+      GharFriends.rematch(fg.cid, fg.id).then(function (ng) {
+        location.href = 'chess.html?game=' + ng.id;
+      }).catch(function () {});
+    });
+  }
+  function fgStopPoll() { if (fgPollTimer) { clearInterval(fgPollTimer); fgPollTimer = null; } }
+  function fgPoll() {
+    fgStopPoll();
+    fgPollTimer = setInterval(function () {
+      if (!fg) { fgStopPoll(); return; }
+      GharFriends.get(fg.cid, fg.id).then(function (g) {
+        if (g.state.fen !== game.fen()) {
+          var moves = g.state.moves || [];
+          var last = moves[moves.length - 1];
+          game.load(g.state.fen);
+          if (last) lastMove = { from: last.slice(0, 2), to: last.slice(2, 4) };
+          sfxMove();
+          render();
+          checkEnd();
+        }
+        fgBanner(g);
+        if (g.status !== 'active' || g.my_turn) {
+          fgStopPoll();
+          if (g.status !== 'active') { over = true; GharFriends.claimRewards(fg.cid); }
+        }
+      }).catch(function () {});
+    }, 8000);
+  }
+  function fgSubmit(uci) {
+    GharFriends.move(fg.cid, fg.id, uci).then(function (g) {
+      fgBanner(g);
+      if (g.status !== 'active') { GharFriends.claimRewards(fg.cid); }
+      else fgPoll();
+    }).catch(function () {
+      GharFriends.get(fg.cid, fg.id).then(function (g) {
+        game.load(g.state.fen); render(); fgBanner(g);
+      }).catch(function () {});
+    });
+  }
+  (function fgInit() {
+    var id = new URLSearchParams(location.search).get('game');
+    if (!id || !window.GharFriends) return;
+    var slot = document.getElementById('fg-slot');
+    var cid = GharFriends.childId();
+    if (!cid) {
+      if (slot) slot.innerHTML = '<div class="fg-banner"><h2>\u265F\uFE0F Friend game</h2><p>Sign in \u2014 or have a parent sign in \u2014 to play this game.</p></div>';
+      return;
+    }
+    GharFriends.get(cid, id).then(function (g) {
+      fg = { id: g.id, cid: cid, myColor: g.my_side === 'white' ? 'w' : 'b',
+             oppName: (g.opponent && g.opponent.nickname) || 'Friend' };
+      mode = 'friend';
+      document.getElementById('mode-pick').hidden = true;
+      document.getElementById('game').hidden = false;
+      document.getElementById('btn-new').hidden = true;
+      document.getElementById('btn-mode').hidden = true;
+      orientation = fg.myColor;
+      game.load(g.state.fen);
+      var moves = g.state.moves || [];
+      var last = moves[moves.length - 1];
+      if (last) lastMove = { from: last.slice(0, 2), to: last.slice(2, 4) };
+      over = g.status !== 'active';
+      fgBanner(g);
+      render();
+      if (g.status === 'active' && !g.my_turn) fgPoll();
+      if (g.status !== 'active') { checkEnd(); GharFriends.claimRewards(cid); }
+    }).catch(function () {
+      if (slot) slot.innerHTML = '<div class="fg-banner"><h2>\u265F\uFE0F Friend game</h2><p>Could not load this game. <a href="leaderboard.html">Back to friend games</a></p></div>';
+    });
+  })();
 
   if (window.GharAuth) GharAuth.pull().catch(function () {});
   syncChessGames();

@@ -12,6 +12,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://backend-patient-wave-3724.fly.dev https://api.open-meteo.com https://unpkg.com https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self';">
 <title>Leaderboard — Ghar</title>
 <link rel="stylesheet" href="style.css?v=33">
+<link rel="stylesheet" href="friends.css?v=1">
 <style>
 .lb-card { background: #fff; border: 1px solid #e5e0d8; border-radius: 16px; padding: 20px; margin: 16px 0; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
 .lb-card h2 { margin: 0 0 8px; font-size: 20px; }
@@ -74,9 +75,12 @@
     <p class="lb-note">Groups disappear after 30 days with no activity. Only people with your code can see this board.</p>
   </div>
 
+  <div id="friends-hub" hidden></div>
+
   <p class="error" id="error" hidden></p>
 </div>
 <script src="auth.js?v=15"></script>
+<script src="friends.js?v=1"></script>
 <script>
 const LB_API = "https://backend-patient-wave-3724.fly.dev/leaderboard";
 const CODE_KEY = "ghar.lb.code";
@@ -385,6 +389,7 @@ document.getElementById("save-nickname").addEventListener("click", () => {
 // Pull the server identity first (a new device rejoins the same group),
 // then follow the normal flow: board when a code is set, setup otherwise.
 pullIdentity().then(() => { if (code()) enterBoard(); else renderSetup(); });
+if (window.GharFriends) GharFriends.renderHub(document.getElementById("friends-hub"));
 </script>
 <div class="prayer-bunting prayer-bottom" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span></div></div>
 <style>

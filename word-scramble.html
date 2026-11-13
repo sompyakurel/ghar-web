@@ -13,6 +13,7 @@
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Word Scramble 🔤 — Ghar</title>
 <link rel="stylesheet" href="style.css?v=33">
+<link rel="stylesheet" href="friends.css?v=1">
 <style>
 body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
 .ws-wrap { max-width: 680px; margin: 0 auto; text-align: center; }
@@ -74,6 +75,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
 <div class="prayer-side left" aria-hidden="true"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span></div>
 <div class="prayer-side right" aria-hidden="true"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span></div>
 <div class="wrap">
+<div id="fg-duel"></div>
 <div class="wrap">
   <p><a href="index.html#games">← Back to Games</a></p>
   <div class="ws-wrap">
@@ -137,6 +139,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
 <div id="toast"></div>
 
 <script src="auth.js?v=15"></script>
+<script src="friends.js?v=1"></script>
 <script>
 (function () {
   // ---- Sound & music (Web Audio, synthesized — no files, no copyright) ----
@@ -724,5 +727,137 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
   <p>Contact: <a href="mailto:sompyakurel@gmail.com">sompyakurel@gmail.com</a> · <a href="privacy.html">Privacy Policy</a></p>
   <p class="sf-copy">© 2026 Ghar. All rights reserved.</p>
 </footer>
+<script>
+// ---- Friend duel: Word Scramble (2026-11-12). Both players unscramble
+// the same six words (same scrambled letters, issued by the server).
+// A wrong check adds a 5-second penalty; the server compares words
+// solved, then total time.
+(function () {
+  var duelId = new URLSearchParams(location.search).get("duel");
+  if (!duelId || !window.GharFriends) return;
+  var GF = window.GharFriends;
+  var mount = document.getElementById("fg-duel");
+  if (!mount) return;
+  var pick = document.getElementById("mode-pick");
+  if (pick) pick.hidden = true;
+  var cid = GF.childId();
+  if (!cid) {
+    mount.innerHTML = '<div class="fg-banner"><h2>🔤 Word Scramble duel</h2><p>Sign in — or have a parent sign in — to play this duel.</p></div>';
+    return;
+  }
+  function fgAsset(u) {
+    if (!u) return "";
+    return u.replace(/^\/images\/nepal-v1\//, "assets/images/").replace(/^\/audio\/nepal-v1\//, "assets/audio/nepal-v1/");
+  }
+  var duelPlayer = new Audio();
+  function end(g, myScore, opp) {
+    var html = '<div class="fg-banner"><h2>🔤 Word Scramble duel vs ' + GF.esc(opp) + '</h2>';
+    if (g.status === "finished") {
+      GF.claimRewards(cid);
+      html += '<p>' + (g.winner === "me" ? "🏆 You won!" : g.winner === "draw" ? "🤝 It's a draw" : "🏆 " + GF.esc(opp) + " won") + '</p>';
+      if (g.my_result) html += '<p>You: ' + g.my_result.score + '/6 words</p>';
+      if (g.opponent_result) html += '<p>' + GF.esc(opp) + ': ' + g.opponent_result.score + '/6 words</p>';
+      html += '<button type="button" class="fg-btn" id="duel-rematch">Rematch</button>';
+    } else if (g.status === "abandoned") {
+      html += '<p>💤 This duel closed — no play for 14 days.</p>';
+    } else {
+      html += '<p>You solved ' + (myScore != null ? myScore : (g.my_result ? g.my_result.score : "?")) + '/6 — waiting for ' + GF.esc(opp) + ' to play.</p>';
+      setTimeout(function () {
+        GF.get(cid, duelId).then(function (g3) { if (g3.status !== "active") end(g3, myScore, opp); }).catch(function () {});
+      }, 10000);
+    }
+    html += '<a class="fg-btn fg-btn-ghost" href="leaderboard.html">All friend games</a></div>';
+    mount.innerHTML = html;
+    var rm = document.getElementById("duel-rematch");
+    if (rm) rm.addEventListener("click", function () {
+      GF.rematch(cid, duelId).then(function (ng) { location.href = "word-scramble.html?duel=" + ng.id; }).catch(function () {});
+    });
+  }
+  Promise.all([
+    GF.get(cid, duelId),
+    fetch("data/nepal-v1.json?v=4").then(function (r) { return r.json(); }),
+  ]).then(function (res) {
+    var g = res[0], packD = res[1];
+    var byId = {};
+    packD.decks.forEach(function (d) { d.words.forEach(function (w) { byId[w.id] = w; }); });
+    var opp = (g.opponent && g.opponent.nickname) || "Friend";
+    if (g.i_played || g.status !== "active") { end(g, null, opp); return; }
+    var words = g.state.payload.words;
+    var idx = 0, solvedCount = 0, penaltyMs = 0, startT = performance.now();
+    function renderWord() {
+      var item = words[idx];
+      var w = byId[item.word] || {};
+      var answer = (w.romanized || "").toLowerCase();
+      var built = []; // tile indexes in tap order
+      var used = {};
+      mount.innerHTML =
+        '<div class="fg-banner" style="text-align:center">' +
+        '<h2>🔤 Word ' + (idx + 1) + ' of ' + words.length + ' · vs ' + GF.esc(opp) + '</h2>' +
+        '<div style="font-size:34px;font-weight:800">' + GF.esc(w.devanagari || "") + '</div>' +
+        '<p>Hint: ' + GF.esc(w.english || "") + ' <button type="button" class="fg-btn fg-btn-ghost" id="sc-play">🔊 Hear it</button></p>' +
+        '<div id="sc-built" style="font-size:26px;letter-spacing:3px;min-height:36px;font-weight:800"></div>' +
+        '<div id="sc-tiles" style="margin:12px 0"></div>' +
+        '<p class="quiz-feedback" id="sc-fb"></p>' +
+        '<button type="button" class="fg-btn" id="sc-check">Check</button> ' +
+        '<button type="button" class="fg-btn fg-btn-ghost" id="sc-clear">Clear</button> ' +
+        '<button type="button" class="fg-btn fg-btn-ghost" id="sc-skip">Skip word</button>' +
+        '</div>';
+      var tilesEl = document.getElementById("sc-tiles");
+      var builtEl = document.getElementById("sc-built");
+      function draw() {
+        builtEl.textContent = built.map(function (ti) { return item.scrambled[ti]; }).join("") || "· · ·";
+        tilesEl.innerHTML = "";
+        item.scrambled.split("").forEach(function (ch, ti) {
+          var b = document.createElement("button");
+          b.type = "button";
+          b.className = "fg-btn" + (used[ti] ? " fg-btn-ghost" : "");
+          b.style.margin = "3px";
+          b.textContent = ch;
+          b.disabled = !!used[ti];
+          b.addEventListener("click", function () {
+            used[ti] = true; built.push(ti); draw();
+          });
+          tilesEl.appendChild(b);
+        });
+      }
+      draw();
+      document.getElementById("sc-play").addEventListener("click", function () {
+        if (!w.audio_url) return;
+        duelPlayer.pause();
+        duelPlayer.src = fgAsset(w.audio_url);
+        duelPlayer.play().catch(function () {});
+      });
+      document.getElementById("sc-clear").addEventListener("click", function () {
+        built = []; used = {}; draw();
+      });
+      document.getElementById("sc-skip").addEventListener("click", next);
+      document.getElementById("sc-check").addEventListener("click", function () {
+        var guess = built.map(function (ti) { return item.scrambled[ti]; }).join("").toLowerCase();
+        var fb = document.getElementById("sc-fb");
+        if (guess === answer) {
+          solvedCount++;
+          fb.textContent = "✅ Solved!";
+          fb.className = "quiz-feedback good";
+          setTimeout(next, 900);
+        } else {
+          penaltyMs += 5000;
+          fb.textContent = "✗ Not quite — that's +5 seconds. Try again!";
+          fb.className = "quiz-feedback bad";
+        }
+      });
+      function next() {
+        idx++;
+        if (idx < words.length) renderWord();
+        else GF.result(cid, duelId, solvedCount, Math.round(performance.now() - startT) + penaltyMs)
+          .then(function (g2) { end(g2, solvedCount, opp); })
+          .catch(function () { end(g, solvedCount, opp); });
+      }
+    }
+    renderWord();
+  }).catch(function () {
+    mount.innerHTML = '<div class="fg-banner"><h2>🔤 Word Scramble duel</h2><p>Could not load this duel. <a href="leaderboard.html">Back to friend games</a></p></div>';
+  });
+})();
+</script>
 </body>
 </html>

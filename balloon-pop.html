@@ -13,12 +13,14 @@
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Balloon Pop 🎈 — Ghar</title>
 <link rel="stylesheet" href="style.css?v=33">
+<link rel="stylesheet" href="friends.css?v=1">
 </head>
 <body>
 <div class="prayer-bunting" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span></div></div>
 <div class="prayer-side left" aria-hidden="true"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span></div>
 <div class="prayer-side right" aria-hidden="true"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span></div>
 <div class="wrap">
+<div id="fg-duel"></div>
   <p><a href="index.html#games">← Back to Games</a></p>
   <h1>Balloon Pop 🎈</h1>
   <p class="section-sub">Hear the Nepali word. Pop its balloon! 60-second rounds, +2 XP a pop · max 3 paid games/day.</p>
@@ -61,6 +63,7 @@
 </div>
 
 <script src="auth.js?v=15"></script>
+<script src="friends.js?v=1"></script>
 <script>
 function asset(u) {
   if (!u) return "";
@@ -424,5 +427,126 @@ GharAuth.pull().catch(() => {}).then(() => (GharAuth.refreshUnlock ? GharAuth.re
   <p>Contact: <a href="mailto:sompyakurel@gmail.com">sompyakurel@gmail.com</a> · <a href="privacy.html">Privacy Policy</a></p>
   <p class="sf-copy">© 2026 Ghar. All rights reserved.</p>
 </footer>
+<script>
+// ---- Friend duel: Balloon Pop (2026-11-12). Both players get the
+// same eight rounds from the server: hear the word, pop its balloon.
+// First tap decides the round; a balloon that floats away loses it.
+(function () {
+  var duelId = new URLSearchParams(location.search).get("duel");
+  if (!duelId || !window.GharFriends) return;
+  var GF = window.GharFriends;
+  var mount = document.getElementById("fg-duel");
+  if (!mount) return;
+  var ready = document.getElementById("ready");
+  if (ready) ready.style.display = "none";
+  var cid = GF.childId();
+  if (!cid) {
+    mount.innerHTML = '<div class="fg-banner"><h2>🎈 Balloon Pop duel</h2><p>Sign in — or have a parent sign in — to play this duel.</p></div>';
+    return;
+  }
+  function fgAsset(u) {
+    if (!u) return "";
+    return u.replace(/^\/images\/nepal-v1\//, "assets/images/").replace(/^\/audio\/nepal-v1\//, "assets/audio/nepal-v1/");
+  }
+  var duelPlayer = new Audio();
+  var COLORS = ["#ef5350", "#ab47bc", "#5c6bc0", "#26a69a", "#ffa726", "#ec407a"];
+  function end(g, myScore, opp) {
+    var html = '<div class="fg-banner"><h2>🎈 Balloon Pop duel vs ' + GF.esc(opp) + '</h2>';
+    if (g.status === "finished") {
+      GF.claimRewards(cid);
+      html += '<p>' + (g.winner === "me" ? "🏆 You won!" : g.winner === "draw" ? "🤝 It's a draw" : "🏆 " + GF.esc(opp) + " won") + '</p>';
+      if (g.my_result) html += '<p>You: ' + g.my_result.score + '/8 rounds</p>';
+      if (g.opponent_result) html += '<p>' + GF.esc(opp) + ': ' + g.opponent_result.score + '/8 rounds</p>';
+      html += '<button type="button" class="fg-btn" id="duel-rematch">Rematch</button>';
+    } else if (g.status === "abandoned") {
+      html += '<p>💤 This duel closed — no play for 14 days.</p>';
+    } else {
+      html += '<p>You won ' + (myScore != null ? myScore : (g.my_result ? g.my_result.score : "?")) + '/8 rounds — waiting for ' + GF.esc(opp) + ' to play.</p>';
+      setTimeout(function () {
+        GF.get(cid, duelId).then(function (g3) { if (g3.status !== "active") end(g3, myScore, opp); }).catch(function () {});
+      }, 10000);
+    }
+    html += '<a class="fg-btn fg-btn-ghost" href="leaderboard.html">All friend games</a></div>';
+    mount.innerHTML = html;
+    var rm = document.getElementById("duel-rematch");
+    if (rm) rm.addEventListener("click", function () {
+      GF.rematch(cid, duelId).then(function (ng) { location.href = "balloon-pop.html?duel=" + ng.id; }).catch(function () {});
+    });
+  }
+  Promise.all([
+    GF.get(cid, duelId),
+    fetch("data/nepal-v1.json?v=4").then(function (r) { return r.json(); }),
+  ]).then(function (res) {
+    var g = res[0], packD = res[1];
+    var byId = {};
+    packD.decks.forEach(function (d) { d.words.forEach(function (w) { byId[w.id] = w; }); });
+    var opp = (g.opponent && g.opponent.nickname) || "Friend";
+    if (g.i_played || g.status !== "active") { end(g, null, opp); return; }
+    var rounds = g.state.payload.rounds;
+    var idx = 0, won = 0, startT = performance.now(), roundTimer = null;
+    mount.innerHTML =
+      '<div class="fg-banner"><h2>🎈 Balloon duel vs ' + GF.esc(opp) + '</h2>' +
+      '<p>Round <span id="bp-round">1</span> of ' + rounds.length + ' · Pop the balloon for: ' +
+      '<b id="bp-target"></b> <button type="button" class="fg-btn fg-btn-ghost" id="bp-hear">🔊 Hear it</button></p>' +
+      '<p class="quiz-feedback" id="bp-fb"></p></div>' +
+      '<div id="bp-field" style="position:relative;height:430px;overflow:hidden;border-radius:16px;background:linear-gradient(#bde6fb,#e8f7ff)"></div>';
+    var field = document.getElementById("bp-field");
+    function playTarget() {
+      var t = byId[rounds[idx].word];
+      if (!t || !t.audio_url) return;
+      duelPlayer.pause();
+      duelPlayer.src = fgAsset(t.audio_url);
+      duelPlayer.play().catch(function () {});
+    }
+    document.getElementById("bp-hear").addEventListener("click", playTarget);
+    function renderRound() {
+      var round = rounds[idx];
+      var target = byId[round.word] || {};
+      document.getElementById("bp-round").textContent = idx + 1;
+      document.getElementById("bp-target").textContent = target.english || "";
+      document.getElementById("bp-fb").textContent = "";
+      field.innerHTML = "";
+      playTarget();
+      var decided = false;
+      function decide(win) {
+        if (decided) return;
+        decided = true;
+        clearTimeout(roundTimer);
+        if (win) won++;
+        document.getElementById("bp-fb").textContent = win ? "🎉 Popped it!" : "🎈 That one floated away…";
+        document.getElementById("bp-fb").className = "quiz-feedback " + (win ? "good" : "bad");
+        setTimeout(function () {
+          idx++;
+          if (idx < rounds.length) renderRound();
+          else GF.result(cid, duelId, won, Math.round(performance.now() - startT))
+            .then(function (g2) { end(g2, won, opp); })
+            .catch(function () { end(g, won, opp); });
+        }, 800);
+      }
+      round.choices.forEach(function (wid, i) {
+        var w = byId[wid] || {};
+        var el = document.createElement("div");
+        el.className = "balloon";
+        el.style.background = COLORS[i % COLORS.length];
+        el.style.left = (6 + i * 18) + "%";
+        el.style.top = "100%";
+        el.style.transition = "top " + (6.5 + (i % 3)) + "s linear";
+        var img = w.image ? '<img class="balloon-pic" src="' + GF.esc(fgAsset(w.image)) + '" alt="">' : "";
+        el.innerHTML = img + '<span class="balloon-word">' + GF.esc(w.devanagari || "") + '</span>' +
+          '<span class="balloon-knot" style="border-top-color:' + COLORS[i % COLORS.length] + '"></span><span class="balloon-string"></span>';
+        el.addEventListener("click", function () { decide(wid === round.word); });
+        field.appendChild(el);
+        requestAnimationFrame(function () {
+          requestAnimationFrame(function () { el.style.top = "-25%"; });
+        });
+      });
+      roundTimer = setTimeout(function () { decide(false); }, 9600);
+    }
+    renderRound();
+  }).catch(function () {
+    mount.innerHTML = '<div class="fg-banner"><h2>🎈 Balloon Pop duel</h2><p>Could not load this duel. <a href="leaderboard.html">Back to friend games</a></p></div>';
+  });
+})();
+</script>
 </body>
 </html>

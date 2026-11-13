@@ -13,6 +13,7 @@
 <title>Ghar — Learn Nepali</title>
 <link rel="stylesheet" href="style.css?v=33">
 <link rel="stylesheet" href="ask.css?v=2">
+<link rel="stylesheet" href="friends.css?v=1">
 <script src="https://unpkg.com/@rive-app/webgl2@2.49.4/rive.js" integrity="sha384-RV9aehPhuWkr3poRCN7kYUCRgVmGp02K4UDD9mCdz+3WJC7iu76qMwbys1ctuK7T" crossorigin="anonymous"></script>
 <script src="assets/js/bhunte-rive.js?v=2"></script>
 <style>
@@ -99,6 +100,7 @@
         <div class="motivation-body">
           <p class="motivation-bubble" id="bhunte-says"><span class="bubble-ne" id="bhunte-ne">नमस्ते! म भुन्ते हुँ। सँगै नेपाली सिकौं। एउटा पाठ पूरा गरेर XP कमाऔं!</span><span class="bubble-en" id="bhunte-en">Namaste! I'm Bhunte. Let's learn Nepali together. Finish a lesson to earn XP!</span></p>
           <p class="motivation-hint">👆 Tap Bhunte to hear him talk</p>
+          <a class="fg-chip" id="friends-chip" href="leaderboard.html" hidden></a>
           <button type="button" class="guide-pill" id="guide-pill" hidden>▶ Hear what's next</button>
           <p class="motivation-xp">⭐ <span id="xp-total">0</span> XP</p>
           <p class="motivation-cert">📜 Certificate: <span id="cert-done">0</span> of 22 lessons done</p>
@@ -234,6 +236,8 @@
 <div id="toast"></div>
 <script src="auth.js?v=15"></script>
 <script src="ask.js?v=3"></script>
+<script src="friends.js?v=1"></script>
+<script>if (window.GharFriends) GharFriends.renderChip(document.getElementById("friends-chip"));</script>
 <script>
 const FREE = new Set(["alphabet", "numbers"]);
 const TIERS = { beginner: "🌱 Beginner", intermediate: "🌿 Intermediate", hard: "🌳 Hard", teen: "🔥 Teen" };

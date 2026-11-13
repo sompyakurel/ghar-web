@@ -13,7 +13,9 @@
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Places Quiz · Ghar — Learn Nepali</title>
 <link rel="stylesheet" href="style.css?v=33">
+<link rel="stylesheet" href="friends.css?v=1">
 <script src="auth.js?v=15"></script>
+<script src="friends.js?v=1"></script>
 <script src="data/map-data.js"></script>
 <style>
   .pq-hud { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin: 10px 0 4px; font-weight: 700; }
@@ -571,5 +573,98 @@ if (window.GharAuth && GharAuth.pull) GharAuth.pull().catch(() => {});
   <p>Contact: <a href="mailto:sompyakurel@gmail.com">sompyakurel@gmail.com</a> · <a href="privacy.html">Privacy Policy</a></p>
   <p class="sf-copy">© 2026 Ghar. All rights reserved.</p>
 </footer>
+<script>
+// ---- Friend duel: Places Quiz (2026-11-12). Both players get the
+// same eight places; the fact is the clue, first tap counts; the
+// server compares score, then time.
+(function () {
+  var duelId = new URLSearchParams(location.search).get("duel");
+  if (!duelId || !window.GharFriends) return;
+  var GF = window.GharFriends;
+  var stage = document.getElementById("pq-stage");
+  if (!stage) return;
+  var cid = GF.childId();
+  if (!cid) {
+    stage.innerHTML = '<div class="fg-banner"><h2>🗺️ Places duel</h2><p>Sign in — or have a parent sign in — to play this duel.</p></div>';
+    return;
+  }
+  var MD = window.GHAR_MAP_DATA || {};
+  var byId = {};
+  (MD.pins || []).concat(MD.landmarks || []).forEach(function (pl) { byId[pl.id] = pl; });
+  function end(g, myScore, opp) {
+    var html = '<div class="fg-banner"><h2>🗺️ Places duel vs ' + GF.esc(opp) + '</h2>';
+    if (g.status === "finished") {
+      GF.claimRewards(cid);
+      html += '<p>' + (g.winner === "me" ? "🏆 You won!" : g.winner === "draw" ? "🤝 It's a draw" : "🏆 " + GF.esc(opp) + " won") + '</p>';
+      if (g.my_result) html += '<p>You: ' + g.my_result.score + '/8</p>';
+      if (g.opponent_result) html += '<p>' + GF.esc(opp) + ': ' + g.opponent_result.score + '/8</p>';
+      html += '<button type="button" class="fg-btn" id="duel-rematch">Rematch</button>';
+    } else if (g.status === "abandoned") {
+      html += '<p>💤 This duel closed — no play for 14 days.</p>';
+    } else {
+      html += '<p>You scored ' + (myScore != null ? myScore : (g.my_result ? g.my_result.score : "?")) + '/8 — waiting for ' + GF.esc(opp) + ' to play.</p>';
+      setTimeout(function () {
+        GF.get(cid, duelId).then(function (g3) { if (g3.status !== "active") end(g3, myScore, opp); }).catch(function () {});
+      }, 10000);
+    }
+    html += '<a class="fg-btn fg-btn-ghost" href="leaderboard.html">All friend games</a></div>';
+    stage.innerHTML = html;
+    var rm = document.getElementById("duel-rematch");
+    if (rm) rm.addEventListener("click", function () {
+      GF.rematch(cid, duelId).then(function (ng) { location.href = "places-quiz.html?duel=" + ng.id; }).catch(function () {});
+    });
+  }
+  GF.get(cid, duelId).then(function (g) {
+    var opp = (g.opponent && g.opponent.nickname) || "Friend";
+    if (g.i_played || g.status !== "active") { end(g, null, opp); return; }
+    var qs = g.state.payload.questions;
+    var idx = 0, correct = 0, startT = performance.now(), locked = false;
+    function renderQ() {
+      locked = false;
+      var q = qs[idx];
+      var pl = byId[q.place] || {};
+      var html = '<div class="pq-card"><div class="pq-q">' +
+        '<span class="pq-visual">' + GF.esc(pl.visual || "📍") + '</span>' +
+        'Which place is this?<br><span style="font-weight:400">' + GF.esc(pl.fact || "") + '</span></div>' +
+        '<p class="quiz-xp" style="text-align:center">Question ' + (idx + 1) + ' of ' + qs.length + ' · vs ' + GF.esc(opp) + '</p>' +
+        '<p class="quiz-feedback" id="duel-fb"></p><div class="quiz-options">';
+      q.choices.forEach(function (cid2) {
+        var c = byId[cid2] || {};
+        html += '<button type="button" class="quiz-option" data-id="' + GF.esc(cid2) + '">' +
+          '<div class="opt-deva">' + GF.esc(c.name || cid2) + '</div>' +
+          '<div class="opt-sub">' + GF.esc(c.nepali || "") + '</div></button>';
+      });
+      html += '</div></div>';
+      stage.innerHTML = html;
+      stage.querySelectorAll(".quiz-option").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          if (locked) return;
+          locked = true;
+          var right = btn.dataset.id === q.place;
+          if (right) { correct++; btn.classList.add("correct"); }
+          else {
+            btn.classList.add("wrong");
+            stage.querySelectorAll(".quiz-option").forEach(function (b) {
+              if (b.dataset.id === q.place) b.classList.add("correct");
+            });
+          }
+          document.getElementById("duel-fb").textContent = right ? "✅ Correct!" : "✗ That was " + ((byId[q.place] || {}).name || "");
+          document.getElementById("duel-fb").className = "quiz-feedback " + (right ? "good" : "bad");
+          setTimeout(function () {
+            idx++;
+            if (idx < qs.length) renderQ();
+            else GF.result(cid, duelId, correct, Math.round(performance.now() - startT))
+              .then(function (g2) { end(g2, correct, opp); })
+              .catch(function () { end(g, correct, opp); });
+          }, 1100);
+        });
+      });
+    }
+    renderQ();
+  }).catch(function () {
+    stage.innerHTML = '<div class="fg-banner"><h2>🗺️ Places duel</h2><p>Could not load this duel. <a href="leaderboard.html">Back to friend games</a></p></div>';
+  });
+})();
+</script>
 </body>
 </html>

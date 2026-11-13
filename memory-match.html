@@ -13,6 +13,7 @@
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Memory Match 🧠 — Ghar</title>
 <link rel="stylesheet" href="style.css?v=33">
+<link rel="stylesheet" href="friends.css?v=1">
 <style>
 body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
 .mm-wrap { max-width: 680px; margin: 0 auto; text-align: center; }
@@ -68,6 +69,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
 <div class="prayer-side left" aria-hidden="true"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span></div>
 <div class="prayer-side right" aria-hidden="true"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span></div>
 <div class="wrap">
+<div id="fg-duel"></div>
 <div class="wrap">
   <p><a href="index.html#games">← Back to Games</a></p>
   <div class="mm-wrap">
@@ -121,6 +123,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
 <div id="toast"></div>
 
 <script src="auth.js?v=15"></script>
+<script src="friends.js?v=1"></script>
 <script>
 (function () {
   // ---- Sound & music (Web Audio, synthesized — no files, no copyright) ----
@@ -617,5 +620,124 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
   <p>Contact: <a href="mailto:sompyakurel@gmail.com">sompyakurel@gmail.com</a> · <a href="privacy.html">Privacy Policy</a></p>
   <p class="sf-copy">© 2026 Ghar. All rights reserved.</p>
 </footer>
+<script>
+// ---- Friend duel: Memory Match (2026-11-12). Both players flip the
+// same server-dealt board (same 8 words, same layout). Score rewards
+// fewer moves and faster finishing: 800 - 20 per move - 1 per second.
+(function () {
+  var duelId = new URLSearchParams(location.search).get("duel");
+  if (!duelId || !window.GharFriends) return;
+  var GF = window.GharFriends;
+  var mount = document.getElementById("fg-duel");
+  if (!mount) return;
+  var pick = document.getElementById("mode-pick");
+  if (pick) pick.hidden = true;
+  var cid = GF.childId();
+  if (!cid) {
+    mount.innerHTML = '<div class="fg-banner"><h2>🧠 Memory Match duel</h2><p>Sign in — or have a parent sign in — to play this duel.</p></div>';
+    return;
+  }
+  function fgAsset(u) {
+    if (!u) return "";
+    return u.replace(/^\/images\/nepal-v1\//, "assets/images/").replace(/^\/audio\/nepal-v1\//, "assets/audio/nepal-v1/");
+  }
+  var duelPlayer = new Audio();
+  function end(g, myScore, opp) {
+    var html = '<div class="fg-banner"><h2>🧠 Memory Match duel vs ' + GF.esc(opp) + '</h2>';
+    if (g.status === "finished") {
+      GF.claimRewards(cid);
+      html += '<p>' + (g.winner === "me" ? "🏆 You won!" : g.winner === "draw" ? "🤝 It's a draw" : "🏆 " + GF.esc(opp) + " won") + '</p>';
+      if (g.my_result) html += '<p>Your score: ' + g.my_result.score + '</p>';
+      if (g.opponent_result) html += '<p>' + GF.esc(opp) + ': ' + g.opponent_result.score + '</p>';
+      html += '<button type="button" class="fg-btn" id="duel-rematch">Rematch</button>';
+    } else if (g.status === "abandoned") {
+      html += '<p>💤 This duel closed — no play for 14 days.</p>';
+    } else {
+      html += '<p>Board cleared — waiting for ' + GF.esc(opp) + ' to play.</p>';
+      setTimeout(function () {
+        GF.get(cid, duelId).then(function (g3) { if (g3.status !== "active") end(g3, myScore, opp); }).catch(function () {});
+      }, 10000);
+    }
+    html += '<a class="fg-btn fg-btn-ghost" href="leaderboard.html">All friend games</a></div>';
+    mount.innerHTML = html;
+    var rm = document.getElementById("duel-rematch");
+    if (rm) rm.addEventListener("click", function () {
+      GF.rematch(cid, duelId).then(function (ng) { location.href = "memory-match.html?duel=" + ng.id; }).catch(function () {});
+    });
+  }
+  Promise.all([
+    GF.get(cid, duelId),
+    fetch("data/nepal-v1.json?v=4").then(function (r) { return r.json(); }),
+  ]).then(function (res) {
+    var g = res[0], packD = res[1];
+    var byId = {};
+    packD.decks.forEach(function (d) { d.words.forEach(function (w) { byId[w.id] = w; }); });
+    var opp = (g.opponent && g.opponent.nickname) || "Friend";
+    if (g.i_played || g.status !== "active") { end(g, null, opp); return; }
+    // First occurrence of each word is its picture card, second its
+    // word card — the same pairing the solo game deals.
+    var seen = {};
+    var cards = g.state.payload.layout.map(function (id) {
+      var kind = seen[id] ? "word" : "pic";
+      seen[id] = true;
+      return { id: id, kind: kind, word: byId[id] || {}, matched: false };
+    });
+    mount.innerHTML =
+      '<div class="fg-banner"><h2>🧠 Memory duel vs ' + GF.esc(opp) + '</h2>' +
+      '<p>Moves: <span id="mm-moves">0</span> · Pairs: <span id="mm-pairs">0</span>/8</p></div>' +
+      '<div id="mm-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;max-width:520px;margin:14px auto"></div>';
+    var grid = document.getElementById("mm-grid");
+    var first = null, lock = false, moves = 0, pairs = 0, startT = performance.now();
+    cards.forEach(function (c) {
+      var card = document.createElement("div");
+      card.className = "card";
+      var front = c.kind === "pic"
+        ? '<img src="' + GF.esc(fgAsset(c.word.image)) + '" alt="">'
+        : '<div class="w-dev">' + GF.esc(c.word.devanagari || "") + '</div><div class="w-rom">' + GF.esc(c.word.romanized || "") + '</div>';
+      card.innerHTML = '<div class="card-inner"><div class="card-face card-back">🏠</div>' +
+        '<div class="card-face card-front">' + front + '</div></div>';
+      card.addEventListener("click", function () {
+        if (lock || c.matched || card.classList.contains("flipped")) return;
+        card.classList.add("flipped");
+        if (c.word.audio_url) {
+          duelPlayer.pause();
+          duelPlayer.src = fgAsset(c.word.audio_url);
+          duelPlayer.play().catch(function () {});
+        }
+        if (!first) { first = { c: c, el: card }; return; }
+        moves++;
+        document.getElementById("mm-moves").textContent = moves;
+        var f = first; first = null;
+        if (f.c.id === c.id && f.c.kind !== c.kind) {
+          f.c.matched = c.matched = true;
+          f.el.classList.add("matched");
+          card.classList.add("matched");
+          pairs++;
+          document.getElementById("mm-pairs").textContent = pairs;
+          if (pairs === 8) {
+            var elapsed = performance.now() - startT;
+            var score = Math.max(0, 800 - 20 * moves - Math.floor(elapsed / 1000));
+            setTimeout(function () {
+              GF.result(cid, duelId, score, Math.round(elapsed))
+                .then(function (g2) { end(g2, score, opp); })
+                .catch(function () { end(g, score, opp); });
+            }, 700);
+          }
+        } else {
+          lock = true;
+          setTimeout(function () {
+            f.el.classList.remove("flipped");
+            card.classList.remove("flipped");
+            lock = false;
+          }, 850);
+        }
+      });
+      grid.appendChild(card);
+    });
+  }).catch(function () {
+    mount.innerHTML = '<div class="fg-banner"><h2>🧠 Memory Match duel</h2><p>Could not load this duel. <a href="leaderboard.html">Back to friend games</a></p></div>';
+  });
+})();
+</script>
 </body>
 </html>

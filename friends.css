@@ -1,0 +1,23 @@
+/* Friend games (2026-11-12): hub, chips, rows and in-game banners. */
+.fg-card { background: #fff; border: 1px solid #e5e0d8; border-radius: 16px; padding: 20px; margin: 16px 0; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+.fg-card h2 { margin: 0 0 8px; font-size: 20px; }
+.fg-subhead { margin: 18px 0 4px; font-size: 17px; }
+.fg-note { color: #666; font-size: 15px; margin: 0 0 12px; }
+.fg-xp-note { background: #fff8ee; border: 1px dashed #d4a017; border-radius: 10px; padding: 8px 12px; font-weight: 700; }
+.fg-challenge { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 10px 0; border-bottom: 1px solid #f0e8dc; }
+.fg-friend-name { font-weight: 700; font-size: 16px; min-width: 110px; }
+.fg-select { font-family: inherit; font-size: 15px; padding: 9px 10px; border: 1px solid #ccc; border-radius: 10px; background: #fff; }
+.fg-btn { font-family: inherit; font-size: 15px; font-weight: 700; padding: 9px 16px; border-radius: 999px; border: none; background: #2e7d32; color: #fff; cursor: pointer; text-decoration: none; display: inline-block; }
+.fg-btn[disabled] { opacity: .55; cursor: default; }
+.fg-btn-ghost { background: #fff; color: #2e7d32; border: 2px solid #2e7d32; }
+.fg-row { display: flex; gap: 10px; align-items: center; justify-content: space-between; background: #fff; border: 1px solid #f0e8dc; border-radius: 12px; padding: 12px 14px; margin: 8px 0; }
+.fg-row-title { font-size: 16px; font-weight: 700; }
+.fg-vs { color: #666; font-weight: 600; }
+.fg-row-status { font-size: 14px; color: #444; margin-top: 2px; }
+.fg-row-score { font-size: 14px; color: #2e7d32; font-weight: 700; margin-top: 2px; }
+.fg-row-actions { flex-shrink: 0; }
+.fg-chip { display: block; background: #e8f5e9; border: 1px solid #2e7d32; color: #1b5e20; border-radius: 12px; padding: 10px 14px; font-weight: 700; font-size: 15px; text-decoration: none; margin: 10px 0; }
+.fg-banner { background: #fff8ee; border: 1px solid #f0e8dc; border-radius: 14px; padding: 14px 16px; margin: 12px 0; text-align: center; }
+.fg-banner h2 { margin: 0 0 6px; font-size: 19px; }
+.fg-banner p { margin: 4px 0; color: #555; }
+.fg-banner .fg-btn { margin: 6px 4px 0; }
