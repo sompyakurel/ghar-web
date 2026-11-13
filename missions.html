@@ -380,9 +380,9 @@ function renderDaily() {
   } else if (c.format === "quizBlitz") {
     const a = document.createElement("a");
     a.className = "quiz-next";
-    a.href = "quiz.html";
     a.style.textDecoration = "none";
-    a.textContent = `⚡ Go to the Quiz (${GharStreak.quizTodayCount()}/5 today)`;
+    a.href = "quiz.html?daily=1";
+    a.textContent = "⚡ Start today's Quiz Blitz — 5 questions";
     actions.appendChild(a);
   } else {
     const p = document.createElement("span");

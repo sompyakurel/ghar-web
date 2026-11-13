@@ -144,7 +144,8 @@ function awardCorrect(firstTry) {
     GharAuth.api("/accounts/children/" + GharAuth.childId() + "/quiz-stats", "POST",
       { streak_best: quizStreakBest, correct_total: quizCorrect }).catch(() => {});
   }
-  if (typeof GharStreak !== "undefined") GharStreak.recordQuizSolve();
+  // Places Quiz solves do NOT feed the Quiz Blitz daily challenge
+  // (Som, 2026-11-13: the challenge is a fresh Quiz Blitz run).
   if (window.GharAuth) {
     if (GharAuth.pushTotals) GharAuth.pushTotals().catch(() => {});
     if (GharAuth.shareLeaderboard) GharAuth.shareLeaderboard().catch(() => {});

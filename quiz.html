@@ -129,6 +129,9 @@ function playWrongFeedback(isTeen) {
 let pack = null;
 let sections = [];
 let section = null;
+// Daily Quiz Blitz run state (Som, 2026-11-13): a fresh, dedicated
+// 5-question run launched from the streak challenge (?daily=1).
+let dailyRun = { active: false, solved: 0 };
 let queue = [];
 let current = null;
 let options = [];
@@ -258,6 +261,7 @@ function renderPlayer() {
       <button type="button" class="quiz-back" id="quiz-back">← Quiz menu</button>
       <h1>${section.icon} ${esc(section.title)}</h1>
       <p class="quiz-xp">⭐ ${dispXP()} XP · ${freeLeft()}</p>
+      ${dailyRun.active ? `<p class="quiz-xp" id="daily-run-bar">⚡ Daily challenge · Question ${Math.min(dailyRun.solved + 1, 5)} of 5</p>` : ""}
       <p class="quiz-prompt">${isPicture ? "What is this?" : "What did you hear?"}</p>
       ${questionHTML}
       <p class="quiz-stake ${stakeClass}" id="stake">${stake}</p>
@@ -290,17 +294,20 @@ function answer(i, btn) {
     if (GharAuth.signedIn() && GharAuth.childId()) {
       GharAuth.api("/accounts/children/" + GharAuth.childId() + "/quiz-stats", "POST", { streak_best: quizStreakBest, correct_total: quizCorrect }).catch(() => {});
     }
-    // Daily Quiz Blitz: 5 correct answers in one day finishes the daily
-    // challenge (+15 XP) and keeps the streak alive. (Matches the app.)
-    // When it completes, show a celebration overlay that STOPS the quiz —
-    // before this, the quiz just carried on to the next question and the
-    // daily challenge never visibly ended.
+    // Daily Quiz Blitz run (Som, 2026-11-13): only a dedicated
+    // ?daily=1 run counts toward the streak challenge - five solved
+    // questions inside the run finish it (+15 XP, streak day kept).
+    // Ordinary quizzing no longer drip-feeds a shared counter, and
+    // the celebration overlay still stops the quiz at completion.
     let blitz = false;
-    if (typeof GharStreak !== "undefined") {
-      GharStreak.recordQuizSolve();
-      if (GharStreak.checkBlitzComplete()) {
+    if (dailyRun.active && typeof GharStreak !== "undefined") {
+      dailyRun.solved++;
+      if (dailyRun.solved >= 5) {
+        dailyRun.active = false;
         blitz = true; xp += 15; saveXP();
         if (window.GharAuth && GharAuth.addBones) GharAuth.addBones(15);
+        GharStreak.markDailyDone();
+        GharStreak.recordMissionDone();
         const n = GharStreak.count();
         document.getElementById("blitz-celebration-sub").textContent =
           `Daily challenge done! +15 XP · 🔥 ${n} day${n === 1 ? "" : "s"} streak`;
@@ -347,6 +354,13 @@ GharAuth.pull().catch(() => {}).then(() => pullQuizStats().catch(() => {})).then
     // section, or the first one. ("← Quiz menu" inside the quiz changes
     // sections.) A ?section=<index> link can force a specific one.
     const q = new URLSearchParams(location.search);
+    // Daily run activation: only from the challenge link, only on a
+    // Quiz Blitz day, only while today's challenge is unfinished.
+    if (q.get("daily") === "1" && typeof GharStreak !== "undefined"
+        && GharStreak.todayChallenge().format === "quizBlitz"
+        && !GharStreak.dailyDoneToday()) {
+      dailyRun.active = true;
+    }
     if (q.has("menu")) {
       showMenu();
     } else {
