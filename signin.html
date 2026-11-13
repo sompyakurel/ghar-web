@@ -93,7 +93,19 @@ document.getElementById("send-link").addEventListener("click", async () => {
     document.getElementById("code").focus();
   } catch (e) {
     err.hidden = false;
-    err.textContent = "Couldn't send the code. Check your connection and try again.";
+    // Say what actually happened: this generic message used to cover a
+    // rate-limit refusal too, which sent people checking their Wi-Fi
+    // when the real answer was "too many tries — wait a while".
+    const msg = String((e && e.message) || "");
+    if (msg.includes("429")) {
+      err.textContent = "Too many sign-in tries for this email address — please wait up to an hour, then try once more.";
+    } else if (msg.includes("422")) {
+      err.textContent = "That email address doesn't look right — check it and try again.";
+    } else if (msg.includes("502")) {
+      err.textContent = "We couldn't send the email just now — please try again in a few minutes.";
+    } else {
+      err.textContent = "Couldn't send the code. Check your connection and try again.";
+    }
   }
 });
 document.getElementById("email").addEventListener("keydown", e => {
