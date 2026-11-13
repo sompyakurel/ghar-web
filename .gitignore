@@ -12,3 +12,6 @@
 *.pem
 *.key
 .DS_Store
+
+db-browser.html
+sync-check.html
