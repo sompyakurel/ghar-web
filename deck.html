@@ -257,8 +257,9 @@ document.getElementById("celebration").addEventListener("click", () => {
 });
 // Adaptive practice (2026-11-13): a deck assembled from the learner's
 // OWN history — no AI, just their records. Two buckets, in order:
-// words traced in Writing but not yet passed, then words heard in a
-// lesson but never traced. Capped at 12, shuffled inside each bucket.
+// words the quiz caught (most-missed first), then words traced in
+// Writing but not yet passed, then words heard in a lesson but never
+// traced. Capped at 12; a word appears once, in its first bucket.
 function buildReviewDeck(pack) {
   const byId = new Map();
   pack.decks.forEach(d => d.words.forEach(w => { if (!byId.has(w.id)) byId.set(w.id, { w, home: d.id }); }));
@@ -269,11 +270,18 @@ function buildReviewDeck(pack) {
     try { (JSON.parse(localStorage.getItem("ghar.heard." + d.id) || "[]")).forEach(id => heardAny.add(id)); } catch (e) {}
   });
   const shuffle = a => a.map(x => [Math.random(), x]).sort((p, q) => p[0] - q[0]).map(q => q[1]);
-  const pick = (ids, section) => ids.filter(id => byId.has(id))
+  const used = new Set();
+  const pick = (ids, section) => ids
+    .filter(id => { if (!byId.has(id) || used.has(id)) return false; used.add(id); return true; })
     .map(id => ({ ...byId.get(id).w, section, _home: byId.get(id).home }));
+  let missedMap = {};
+  try { missedMap = JSON.parse(localStorage.getItem("ghar.quiz.missed") || "{}"); } catch (e) {}
+  const missedIds = Object.keys(missedMap)
+    .sort((a, b) => (missedMap[b] || 0) - (missedMap[a] || 0));
   const stillWriting = [...traced].filter(id => !done.has(id));
   const heardNotTraced = [...heardAny].filter(id => !traced.has(id));
   const words = [
+    ...pick(missedIds, "\u{1F914} Tricky quiz words"),
     ...pick(shuffle(stillWriting), "\u270D\uFE0F Still learning to write"),
     ...pick(shuffle(heardNotTraced), "\u{1F442} Words you have heard \u2014 say them again"),
   ].slice(0, 12);

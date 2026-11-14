@@ -66,6 +66,24 @@ function saveQuizStats() {
   localStorage.setItem("ghar.quiz.streak", String(quizStreak));
   localStorage.setItem("ghar.quiz.streakBest", String(quizStreakBest));
 }
+// Words the quiz catches feed the Shaky Words practice deck
+// (deck.html?deck=review). A first wrong try records a miss; only a
+// clean first-try solve pays a miss back off — solving after wrong
+// tries keeps the word in practice. Friend duels record the same way
+// (one shot per question there: right pays off, wrong records).
+function loadMissed() {
+  try { return JSON.parse(localStorage.getItem("ghar.quiz.missed") || "{}"); } catch (e) { return {}; }
+}
+function saveMissed(m) { try { localStorage.setItem("ghar.quiz.missed", JSON.stringify(m)); } catch (e) {} }
+function noteQuizMiss(id) { if (!id) return; const m = loadMissed(); m[id] = (m[id] || 0) + 1; saveMissed(m); }
+function noteQuizMastered(id) {
+  if (!id) return;
+  const m = loadMissed();
+  if (!m[id]) return;
+  m[id]--;
+  if (m[id] <= 0) delete m[id];
+  saveMissed(m);
+}
 // Cross-device quiz stats: the server keeps the best streak and total
 // correct answers per child. Pull on load and take the max — never wipe
 // local progress. (The current streak and last section stay on this
@@ -281,6 +299,7 @@ function answer(i, btn) {
   const opt = options[i];
   if (opt.id === current.id) {
     solved = true;
+    if (wrongIDs.size === 0) noteQuizMastered(current.id);
     const earned = wrongIDs.size === 0 ? 5 : 2;
     xp += earned;
     saveXP();
@@ -325,6 +344,7 @@ function answer(i, btn) {
     document.querySelectorAll(".quiz-option").forEach(b => { b.disabled = true; });
     document.getElementById("next-word").hidden = false;
   } else {
+    if (wrongIDs.size === 0) noteQuizMiss(current.id);
     wrongIDs.add(opt.id);
     quizStreak = 0;
     saveQuizStats();
@@ -453,6 +473,7 @@ GharAuth.pull().catch(() => {}).then(() => pullQuizStats().catch(() => {})).then
           locked = true;
           var picked = opts[parseInt(btn.dataset.i, 10)];
           var right = picked && picked.id === q.word;
+          if (right) noteQuizMastered(q.word); else noteQuizMiss(q.word);
           if (right) { correct++; btn.classList.add("correct"); }
           else {
             btn.classList.add("wrong");

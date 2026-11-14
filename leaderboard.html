@@ -115,6 +115,8 @@ let players = [];
 // Reaction stickers (fixed positive set — mirrors the server allowlist).
 const STICKERS = ["बबाल!", "शाबाश!", "खत्रा!", "👏", "🔥"];
 const LEAGUE_ICONS = { Kansa: "🥉", Chandi: "🥈", Sun: "🥇", Hira: "💎" };
+// League names always carry their English meaning in parentheses (Som).
+const LEAGUE_LABELS = { Kansa: "Kansa (Bronze)", Chandi: "Chandi (Silver)", Sun: "Sun (Gold)", Hira: "Hira (Diamond)" };
 let openPickerFor = null;
 let groupName = "";
 
@@ -343,7 +345,7 @@ function renderPlayers() {
       if (lg && lg.tier) {
         const badge = document.createElement("span");
         badge.className = "lb-league";
-        badge.textContent = (LEAGUE_ICONS[lg.tier] || "") + " " + lg.tier + " league \u00b7 " + (Number(lg.week_xp) || 0) + " XP this week";
+        badge.textContent = (LEAGUE_ICONS[lg.tier] || "") + " " + (LEAGUE_LABELS[lg.tier] || lg.tier) + " league \u00b7 " + (Number(lg.week_xp) || 0) + " XP this week";
         li.appendChild(badge);
       }
       // Stickers this player received in the last 7 days.
