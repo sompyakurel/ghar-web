@@ -563,7 +563,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
     if (!pack) {
       loadingEl.hidden = false;
       gridEl.innerHTML = '';
-      fetch('data/nepal-v1.json?v=4').then(function (r) { return r.json(); }).then(function (j) {
+      fetch('data/nepal-v1.json?v=5').then(function (r) { return r.json(); }).then(function (j) {
         pack = j;
         loadingEl.hidden = true;
         buildGrid();
@@ -681,7 +681,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
   }
   Promise.all([
     GF.get(cid, duelId),
-    fetch("data/nepal-v1.json?v=4").then(function (r) { return r.json(); }),
+    fetch("data/nepal-v1.json?v=5").then(function (r) { return r.json(); }),
   ]).then(function (res) {
     var g = res[0], packD = res[1];
     var byId = {};

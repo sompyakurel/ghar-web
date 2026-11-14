@@ -349,7 +349,7 @@ function pushDeckReward(id) {
     GharAuth.api("/accounts/children/" + GharAuth.childId() + "/deck-rewards", "POST", { deck_id: id }).catch(() => {});
   } catch (e) {}
 }
-GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => false)).then(() => pullDeckRewards()).then(() => fetch("data/nepal-v1.json?v=4"))
+GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => false)).then(() => pullDeckRewards()).then(() => fetch("data/nepal-v1.json?v=5"))
   .then(r => { if (!r.ok) throw new Error("load failed"); return r.json(); })
   .then(pack => {
     const deck = deckId === "review" ? buildReviewDeck(pack) : pack.decks.find(d => d.id === deckId);

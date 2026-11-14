@@ -475,8 +475,8 @@ GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => 
   // One retry: a single network blip should not leave the lessons unloadable.
   // The ?v=2 busts a stale cached copy (a bad cached lessons file would
   // otherwise keep failing even though the live file is fine).
-  return fetch("data/nepal-v1.json?v=4").then(r => { if (!r.ok) throw new Error("load failed"); return r; })
-    .catch(() => new Promise(res => setTimeout(() => res(fetch("data/nepal-v1.json?v=4")), 1200)));
+  return fetch("data/nepal-v1.json?v=5").then(r => { if (!r.ok) throw new Error("load failed"); return r; })
+    .catch(() => new Promise(res => setTimeout(() => res(fetch("data/nepal-v1.json?v=5")), 1200)));
 })
   .then(r => { if (!r.ok) throw new Error("load failed"); return r.json(); })
   .then(pack => {

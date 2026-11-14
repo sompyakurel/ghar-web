@@ -67872,6 +67872,26 @@
             ]
           ],
           "trace_image": "/images/nepal-v1/body_dhaad_simple.jpg"
+        },
+        {
+          "id": "kammar",
+          "devanagari": "कम्मर",
+          "romanized": "kammar",
+          "english": "hips",
+          "audio_url": "/audio/nepal-v1/body_kammar_np.m4a",
+          "image": "/images/nepal-v1/body_kammar.jpg",
+          "has_audio": true,
+          "trace_image": "/images/nepal-v1/body_kammar.jpg"
+        },
+        {
+          "id": "poitala",
+          "devanagari": "पैताला",
+          "romanized": "poitala",
+          "english": "feet",
+          "audio_url": "/audio/nepal-v1/body_poitala_np.m4a",
+          "image": "/images/nepal-v1/body_poitala.jpg",
+          "has_audio": true,
+          "trace_image": "/images/nepal-v1/body_poitala.jpg"
         }
       ],
       "difficulty": "intermediate"
