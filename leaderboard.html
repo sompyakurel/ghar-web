@@ -23,7 +23,7 @@
 .lb-tab { font-family: inherit; font-size: 15px; font-weight: 700; padding: 9px 14px; border-radius: 999px; border: 2px solid #f0e8dc; background: #fff; cursor: pointer; color: inherit; }
 .lb-tab.active { border-color: #2e7d32; background: #e8f5e9; }
 .lb-list { list-style: none; margin: 8px 0 0; padding: 0; }
-.lb-list li { display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid #f0e8dc; border-radius: 12px; padding: 12px 14px; margin: 8px 0; }
+.lb-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; background: #fff; border: 1px solid #f0e8dc; border-radius: 12px; padding: 12px 14px; margin: 8px 0; }
 .lb-list li.me { border-color: #2e7d32; background: #e8f5e9; }
 .lb-rank { font-size: 20px; font-weight: 800; width: 36px; text-align: center; flex-shrink: 0; }
 .lb-name { flex: 1; font-size: 17px; font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -31,6 +31,14 @@
 .lb-note { font-size: 13px; color: #999; text-align: center; margin: 16px 0 0; }
 .lb-empty { text-align: center; color: #666; padding: 24px 12px; }
 .lb-danger { background: none; border: none; color: #c62828; font-size: 14px; cursor: pointer; padding: 0; text-decoration: underline; font-family: inherit; }
+.lb-league { width: 100%; order: 4; padding-left: 48px; box-sizing: border-box; font-size: 13px; font-weight: 700; color: #8d6e63; }
+.lb-reactions { display: flex; gap: 6px; flex-wrap: wrap; width: 100%; order: 5; padding-left: 48px; box-sizing: border-box; }
+.lb-react-chip { background: #fff8ee; border: 1px solid #f0e8dc; border-radius: 999px; padding: 2px 9px; font-size: 14px; font-weight: 700; }
+.lb-react-btn { font-family: inherit; font-size: 14px; font-weight: 700; padding: 6px 12px; border-radius: 999px; border: 2px solid #f0e8dc; background: #fff; cursor: pointer; flex-shrink: 0; color: inherit; }
+.lb-react-btn:hover { border-color: #d4a017; }
+.lb-picker { display: flex; gap: 8px; flex-wrap: wrap; width: 100%; order: 6; padding-left: 48px; box-sizing: border-box; }
+.lb-pick { font-family: inherit; font-size: 16px; font-weight: 700; padding: 8px 14px; border-radius: 999px; border: 2px solid #f0e8dc; background: #fff8ee; cursor: pointer; color: inherit; }
+.lb-pick:hover { border-color: #2e7d32; }
 </style>
 </head>
 <body>
@@ -104,6 +112,10 @@ const BOARDS = {
 };
 let board = "xp";
 let players = [];
+// Reaction stickers (fixed positive set — mirrors the server allowlist).
+const STICKERS = ["बबाल!", "शाबाश!", "खत्रा!", "👏", "🔥"];
+const LEAGUE_ICONS = { Kansa: "🥉", Chandi: "🥈", Sun: "🥇", Hira: "💎" };
+let openPickerFor = null;
 let groupName = "";
 
 function showError(msg) {
@@ -326,6 +338,55 @@ function renderPlayers() {
       const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : (i + 1);
       li.innerHTML = `<span class="lb-rank">${medal}</span><span class="lb-name"></span><span class="lb-stat">${Number(p[board]) || 0}${b.label ? " " + b.label : ""}</span>`;
       li.querySelector(".lb-name").textContent = p.nickname + (me && p.nickname === me ? " (you)" : "");
+      // Weekly league: tier + this week's XP (settles every Monday).
+      const lg = p.league;
+      if (lg && lg.tier) {
+        const badge = document.createElement("span");
+        badge.className = "lb-league";
+        badge.textContent = (LEAGUE_ICONS[lg.tier] || "") + " " + lg.tier + " league \u00b7 " + (Number(lg.week_xp) || 0) + " XP this week";
+        li.appendChild(badge);
+      }
+      // Stickers this player received in the last 7 days.
+      const rec = p.reactions || {};
+      const chips = STICKERS.filter(x => rec[x] > 0);
+      if (chips.length) {
+        const wrap = document.createElement("span");
+        wrap.className = "lb-reactions";
+        chips.forEach(x => {
+          const chip = document.createElement("span");
+          chip.className = "lb-react-chip";
+          chip.textContent = x + " \u00d7" + rec[x];
+          wrap.appendChild(chip);
+        });
+        li.appendChild(wrap);
+      }
+      // Sending takes a signed-in child with a nickname in this group,
+      // and never to yourself. Guests just see the stickers.
+      const canReact = me && p.nickname !== me && window.GharAuth && GharAuth.signedIn() && GharAuth.childId();
+      if (canReact) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "lb-react-btn";
+        btn.textContent = "\u{1F389} React";
+        btn.addEventListener("click", () => {
+          openPickerFor = openPickerFor === p.nickname ? null : p.nickname;
+          renderPlayers();
+        });
+        li.appendChild(btn);
+        if (openPickerFor === p.nickname) {
+          const picker = document.createElement("div");
+          picker.className = "lb-picker";
+          STICKERS.forEach(x => {
+            const pick = document.createElement("button");
+            pick.type = "button";
+            pick.className = "lb-pick";
+            pick.textContent = x;
+            pick.addEventListener("click", () => sendReaction(p.nickname, x));
+            picker.appendChild(pick);
+          });
+          li.appendChild(picker);
+        }
+      }
       ul.appendChild(li);
     });
   }
@@ -333,6 +394,31 @@ function renderPlayers() {
   document.getElementById("board-note").textContent = mine
     ? `You are #${sorted.indexOf(mine) + 1} of ${sorted.length} on this board.`
     : "Your score is not on this board yet — tap “Share my score”.";
+}
+
+async function sendReaction(toNickname, sticker) {
+  const auth = authHeaders();
+  if (!auth) return needSignIn();
+  try {
+    const r = await fetch(LB_API + "/reactions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...auth },
+      body: JSON.stringify({ child_id: GharAuth.childId(), to_nickname: toNickname, sticker }),
+    });
+    if (r.status === 401) { showError("Your sign-in expired — please sign in again."); return; }
+    if (r.status === 429) { openPickerFor = null; renderPlayers(); showError("You've sent all today's stickers — more tomorrow!"); return; }
+    if (r.status === 404) { showError("That player isn't on this board anymore."); return; }
+    if (r.status === 422) { const d = await r.json().catch(() => ({})); showError(d.detail || "That sticker couldn't be sent."); return; }
+    if (!r.ok) throw new Error("Could not send the sticker.");
+    openPickerFor = null;
+    // Show it landing straight away, then refresh for the true counts.
+    const p = players.find(x => x.nickname === toNickname);
+    if (p) { p.reactions = p.reactions || {}; p.reactions[sticker] = (p.reactions[sticker] || 0) + 1; }
+    renderPlayers();
+    loadBoard();
+  } catch (e) {
+    showError(e.message || "Could not send the sticker.");
+  }
 }
 
 async function shareScore() {
