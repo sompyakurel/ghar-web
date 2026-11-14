@@ -255,6 +255,30 @@ function showCelebration(title, allDone, isTeen, nextId) {
 document.getElementById("celebration").addEventListener("click", () => {
   document.getElementById("celebration").hidden = true;
 });
+// Adaptive practice (2026-11-13): a deck assembled from the learner's
+// OWN history — no AI, just their records. Two buckets, in order:
+// words traced in Writing but not yet passed, then words heard in a
+// lesson but never traced. Capped at 12, shuffled inside each bucket.
+function buildReviewDeck(pack) {
+  const byId = new Map();
+  pack.decks.forEach(d => d.words.forEach(w => { if (!byId.has(w.id)) byId.set(w.id, { w, home: d.id }); }));
+  const csv = k => new Set((localStorage.getItem(k) || "").split(",").filter(Boolean));
+  const traced = csv("ghar.writing.traced"), done = csv("ghar.writing.done");
+  const heardAny = new Set();
+  pack.decks.forEach(d => {
+    try { (JSON.parse(localStorage.getItem("ghar.heard." + d.id) || "[]")).forEach(id => heardAny.add(id)); } catch (e) {}
+  });
+  const shuffle = a => a.map(x => [Math.random(), x]).sort((p, q) => p[0] - q[0]).map(q => q[1]);
+  const pick = (ids, section) => ids.filter(id => byId.has(id))
+    .map(id => ({ ...byId.get(id).w, section, _home: byId.get(id).home }));
+  const stillWriting = [...traced].filter(id => !done.has(id));
+  const heardNotTraced = [...heardAny].filter(id => !traced.has(id));
+  const words = [
+    ...pick(shuffle(stillWriting), "\u270D\uFE0F Still learning to write"),
+    ...pick(shuffle(heardNotTraced), "\u{1F442} Words you have heard \u2014 say them again"),
+  ].slice(0, 12);
+  return { id: "review", title: "\u{1F501} Shaky Words Practice", kind: "words", words, _seedHeard: heardAny };
+}
 const storeKey = `ghar.heard.${deckId}`;
 function loadHeard() {
   // Guarded like index.html: a corrupt or non-array saved value must not
@@ -298,14 +322,27 @@ function pushDeckReward(id) {
 GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => false)).then(() => pullDeckRewards()).then(() => fetch("data/nepal-v1.json?v=4"))
   .then(r => { if (!r.ok) throw new Error("load failed"); return r.json(); })
   .then(pack => {
-    const deck = pack.decks.find(d => d.id === deckId);
+    const deck = deckId === "review" ? buildReviewDeck(pack) : pack.decks.find(d => d.id === deckId);
     if (!deck) throw new Error("no deck");
     heard = loadHeard();
+    if (deckId === "review") {
+      // The review list changes as the learner improves: keep only the
+      // words on today's list, and credit the ones already heard at home.
+      const ids = new Set(deck.words.map(w => w.id));
+      heard = new Set([...heard].filter(id => ids.has(id)));
+      deck.words.forEach(w => { if (deck._seedHeard && deck._seedHeard.has(w.id)) heard.add(w.id); });
+      saveHeard();
+    }
     const isConvo = deck.kind === "convo";
     document.title = `Ghar — ${deck.title}`;
     const content = document.getElementById("content");
+    if (deckId === "review" && deck.words.length === 0) {
+      content.innerHTML = `<div class="deck-head"><h1>\u{1F501} Shaky Words Practice</h1><p>Nothing shaky yet! Hear some words in the lessons and trace a few in Writing \u2014 the tricky ones will collect here for extra practice.</p></div>`;
+      return;
+    }
     // Server unlock (Stripe $7.99) opens Premium decks, same as TEST.
-    if (!FREE.has(deck.id) && !TEST && !GharAuth.isUnlocked()) {
+    // The review deck is the learner's own history, so it never locks.
+    if (deckId !== "review" && !FREE.has(deck.id) && !TEST && !GharAuth.isUnlocked()) {
       content.innerHTML = `<div class="deck-head"><h1>🔒 ${esc(deck.title)}</h1><p>This deck unlocks with Ghar Premium.</p><p><button type="button" class="quiz-next" id="unlock-deck-btn">🔓 Unlock — $7.99</button></p><p class="section-sub">One-time payment for the whole family. Already paid? <a href="signin.html">Sign in</a> to restore it.</p></div>`;
       document.getElementById("unlock-deck-btn").addEventListener("click", () => {
         if (!GharAuth.signedIn()) { location.href = "signin.html"; return; }
@@ -353,6 +390,15 @@ GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => 
     function markHeard(w, card) {
       if (heard.has(w.id)) return;
       heard.add(w.id);
+      if (deckId === "review" && w._home) {
+        // Practice counts where the word lives: credit its home deck.
+        try {
+          const k = "ghar.heard." + w._home;
+          const arr = new Set(JSON.parse(localStorage.getItem(k) || "[]"));
+          arr.add(w.id);
+          localStorage.setItem(k, JSON.stringify([...arr]));
+        } catch (e) {}
+      }
       card.classList.add("heard");
       saveHeard();
       GharAuth.push(deckId).catch(() => {});
@@ -414,6 +460,7 @@ GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => 
       sectionsEl.appendChild(grid);
     });
     function evaluateCompletion() {
+      if (deckId === "review") return; // practice, not a lesson: no bonus XP, no deck reward
       if (!(total > 0 && heard.size === total)) return;
       // Mark the lesson just completed EVERY time it is finished (first time
       // or re-do), so the home-page guidance (Jessica) fires on re-dos too —
