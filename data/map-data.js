@@ -164,7 +164,7 @@ window.GHAR_MAP_DATA = {
       name: "Sagarmatha / Mount Everest",
       nepali: "सगरमाथा",
       province: "koshi",
-      fact: "The highest mountain on Earth, 8,848.86 m, stands on Nepal's border with China; in Nepali it is called Sagarmatha.",
+      fact: "The highest mountain on Earth, 8,848 m, stands on Nepal's border with China; in Nepali it is called Sagarmatha.",
       free: false,
       audioName: "assets/audio/map/sagarmatha_name_np.m4a",
       audioFact: "assets/audio/map/sagarmatha_fact_np.m4a"
