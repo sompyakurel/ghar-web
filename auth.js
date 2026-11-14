@@ -426,6 +426,10 @@ const GharAuth = {
         // The leaderboard shares the spendable balance, matching the app
         // (where totalXP is the wallet and drops when XP is spent).
         xp: this.spendable(),
+        // Lifetime earned rides along so the weekly league can count
+        // what was actually earned this week — the balance above sits
+        // below its old peak after shop spending and would hide it.
+        xp_earned: this.xp(),
         quiz_streak_best: parseInt(localStorage.getItem("ghar.quiz.streakBest") || "0", 10) || 0,
         quiz_correct_total: parseInt(localStorage.getItem("ghar.quiz.correctTotal") || "0", 10) || 0,
         missions_done: missions,
