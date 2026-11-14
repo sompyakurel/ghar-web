@@ -9,6 +9,7 @@
 <link rel="manifest" href="/site.webmanifest">
 <meta name="theme-color" content="#a31721">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://backend-patient-wave-3724.fly.dev https://api.open-meteo.com https://unpkg.com https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self';">
 <title>Ghar — Quiz</title>
 <link rel="stylesheet" href="style.css?v=37">
 <link rel="stylesheet" href="friends.css?v=2">
@@ -32,7 +33,7 @@
   </div>
 </div>
 <script src="auth.js?v=17"></script>
-<script src="friends.js?v=6"></script>
+<script src="friends.js?v=7"></script>
 <script>
 const TIERS = { beginner: "🌱 Beginner", intermediate: "🌿 Intermediate", hard: "🌳 Hard", teen: "🔥 Teen" };
 function isTestUnlock() {
@@ -481,7 +482,7 @@ GharAuth.pull().catch(() => {}).then(() => pullQuizStats().catch(() => {})).then
         if (g2.opponent_result) html += '<p>' + GF.esc(opp) + ': ' + g2.opponent_result.score + '/' + total + ' · ' + GF.fmtTime(g2.opponent_result.time_ms) + '</p>';
         html += '<button type="button" class="fg-btn" id="duel-rematch">Rematch</button>';
       } else if (g2.status === "abandoned") {
-        html += '<p>\uD83D\uDCA4 This duel closed \u2014 no play for 14 days.</p>';
+        html += '<p>\uD83D\uDCA4 This duel closed \u2014 no play for 7 days.</p>';
       } else {
         html += '<p>You scored ' + (myScore != null ? myScore : (g2.my_result ? g2.my_result.score : "?")) + '/' + total + ' \u2014 waiting for ' + GF.esc(opp) + ' to play.</p>';
         setTimeout(function () {

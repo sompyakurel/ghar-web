@@ -9,6 +9,7 @@
 <link rel="manifest" href="/site.webmanifest">
 <meta name="theme-color" content="#a31721">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://backend-patient-wave-3724.fly.dev https://api.open-meteo.com https://unpkg.com https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self';">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Balloon Pop 🎈 — Ghar</title>
 <link rel="stylesheet" href="style.css?v=37">
@@ -62,7 +63,7 @@
 </div>
 
 <script src="auth.js?v=17"></script>
-<script src="friends.js?v=6"></script>
+<script src="friends.js?v=7"></script>
 <script>
 function asset(u) {
   if (!u) return "";
@@ -458,7 +459,7 @@ GharAuth.pull().catch(() => {}).then(() => (GharAuth.refreshUnlock ? GharAuth.re
       if (g.opponent_result) html += '<p>' + GF.esc(opp) + ': ' + g.opponent_result.score + '/8 rounds · ' + GF.fmtTime(g.opponent_result.time_ms) + '</p>';
       html += '<button type="button" class="fg-btn" id="duel-rematch">Rematch</button>';
     } else if (g.status === "abandoned") {
-      html += '<p>💤 This duel closed — no play for 14 days.</p>';
+      html += '<p>💤 This duel closed — no play for 7 days.</p>';
     } else {
       html += '<p>You won ' + (myScore != null ? myScore : (g.my_result ? g.my_result.score : "?")) + '/8 rounds — waiting for ' + GF.esc(opp) + ' to play.</p>';
       setTimeout(function () {

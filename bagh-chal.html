@@ -9,6 +9,7 @@
 <link rel="manifest" href="/site.webmanifest">
 <meta name="theme-color" content="#a31721">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://backend-patient-wave-3724.fly.dev https://api.open-meteo.com https://unpkg.com https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self';">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Bagh-Chal 🐯 — Ghar</title>
 <link rel="stylesheet" href="style.css?v=37">
@@ -83,7 +84,7 @@
 </div>
 
 <script src="auth.js?v=17"></script>
-<script src="friends.js?v=6"></script>
+<script src="friends.js?v=7"></script>
 <script>
 // Bagh-Chal — the classic Nepali tiger-and-goats game, ported from the
 // app's BaghChalView.swift (which mirrors ~/workspace/baghchal/baghchal.py).
@@ -990,7 +991,10 @@ GharAuth.pull().catch(() => {}).then(() => syncBaghchalGames()).then(() => {
 </script>
 <div class="prayer-bunting prayer-bottom" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span></div></div>
 <script>
-// Premium gate (Som's rule, 2026-11-11): on the free tier only Balloon
+// Premium gate (Som's rule, 2026-11-11; friend invitations used to
+// lift it until Som's final friend-games rule, 2026-11-13: on free,
+// friend play is Balloon Pop, Memory Match and Quiz Blitz ONLY, so
+// a ?game= invitation no longer lifts this lock): on the free tier only Balloon
 // Pop is free — Bagh-Chal unlocks with Ghar Premium. A full-screen lock
 // covers the board when the cached state says locked; the server
 // refresh then confirms — it lifts the lock if this browser is actually
@@ -1010,7 +1014,7 @@ GharAuth.pull().catch(() => {}).then(() => syncBaghchalGames()).then(() => {
   }
   function hideLock() { if (lockEl) lockEl.style.display = "none"; }
   function unlocked() { try { return !!(window.GharAuth && GharAuth.isUnlocked && GharAuth.isUnlocked()); } catch (e) { return false; } }
-  function applyGate() { if (TEST || unlocked() || new URLSearchParams(location.search).get("game")) hideLock(); else showLock(); }
+  function applyGate() { if (TEST || unlocked()) hideLock(); else showLock(); }
 
   applyGate();
   if (window.GharAuth && GharAuth.pull) {

@@ -26,6 +26,13 @@
   function childId() {
     return (window.GharAuth && GharAuth.signedIn() && GharAuth.childId()) || "";
   }
+  // The free tier's friend games (Som's FINAL rule, 2026-11-13,
+  // superseding the same-day board-games-only gate): on free, these
+  // three may be started AND joined; every other friend game -
+  // Chess, Bagh-Chal, Word Scramble, Places Quiz - is premium at
+  // both doors, invitation or not.
+  const FREE_FRIEND_GAMES = { balloon: true, memory: true, quiz: true };
+
   // Same test the game pages use: the deliberate ?test unlock, or the
   // server-issued unlock flag cached by auth.js.
   function premiumOpen() {
@@ -55,17 +62,16 @@
   const friends = (cid) => api(base(cid) + "/friends");
   const games = (cid) => api(base(cid) + "/friend-games");
   const create = (cid, opponentId, game, side, questionCount) => {
-    // Board-game challenges are a premium perk (Som's decision,
-    // 2026-11-13, on Jarvis's recommendation): a free account can be
-    // INVITED into a board game by a premium friend - joining always
-    // works - it just can't START one. The five duels stay free for
-    // everyone on purpose: they are the hook that brings free
-    // families in. Enforced here and in the picker below; like every
-    // lock on this static site it is client-side until the server
-    // carries the unlock flag (Stripe phase).
-    if (GAMES[game] && GAMES[game].board && !premiumOpen()) {
+    // Free-tier friend games (Som's final rule, 2026-11-13): a free
+    // account may only START Balloon Pop, Memory Match and Quiz
+    // Blitz friend games. Everything else is premium, at both doors
+    // (see FREE_FRIEND_GAMES). Enforced here, in the picker below,
+    // and on the game pages themselves; like every lock on this
+    // static site it is client-side until the server carries the
+    // unlock flag (Stripe phase).
+    if (!FREE_FRIEND_GAMES[game] && !premiumOpen()) {
       return Promise.reject(new Error(
-        "Chess and Bagh-Chal challenges are part of the full version of Ghar \u2014 duels are free for everyone!"));
+        "That friend game is part of Ghar Premium \u2014 on the free tier, friends play Balloon Pop, Memory Match and Quiz Blitz."));
     }
     return api(base(cid) + "/friend-games", "POST", { opponent_child_id: opponentId, game: game, side: side || undefined, question_count: questionCount || undefined });
   };
@@ -137,14 +143,22 @@
     const actions = document.createElement("div");
     actions.className = "fg-row-actions";
     if (!opts.readOnly) {
+      const tierLocked = !FREE_FRIEND_GAMES[g.game] && !premiumOpen();
       if (g.status === "active" && (g.kind === "board" || !g.i_played)) {
-        const b = document.createElement("a");
-        b.className = "fg-btn";
-        b.href = playUrl(g);
-        b.textContent = g.kind === "board" ? "Open" : "Play";
-        actions.appendChild(b);
+        if (tierLocked) {
+          const b = document.createElement("span");
+          b.className = "fg-btn fg-btn-ghost";
+          b.textContent = "\uD83D\uDD12 Premium";
+          actions.appendChild(b);
+        } else {
+          const b = document.createElement("a");
+          b.className = "fg-btn";
+          b.href = playUrl(g);
+          b.textContent = g.kind === "board" ? "Open" : "Play";
+          actions.appendChild(b);
+        }
       }
-      if (g.status !== "active") {
+      if (g.status !== "active" && !tierLocked) {
         const b = document.createElement("button");
         b.type = "button";
         b.className = "fg-btn fg-btn-ghost";
@@ -220,7 +234,7 @@
       Object.keys(GAMES).forEach((k) => {
         const o = document.createElement("option");
         o.value = k; o.textContent = GAMES[k].icon + " " + GAMES[k].name;
-        if (GAMES[k].board && !premiumOpen()) {
+        if (!FREE_FRIEND_GAMES[k] && !premiumOpen()) {
           o.disabled = true;
           o.textContent += " \uD83D\uDD12";
         }

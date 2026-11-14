@@ -9,6 +9,7 @@
 <link rel="manifest" href="/site.webmanifest">
 <meta name="theme-color" content="#a31721">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://unpkg.com 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://backend-patient-wave-3724.fly.dev https://api.open-meteo.com https://unpkg.com https://cdn.jsdelivr.net; object-src 'none'; base-uri 'self';">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Word Scramble 🔤 — Ghar</title>
 <link rel="stylesheet" href="style.css?v=37">
@@ -138,7 +139,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
 <div id="toast"></div>
 
 <script src="auth.js?v=17"></script>
-<script src="friends.js?v=6"></script>
+<script src="friends.js?v=7"></script>
 <script>
 (function () {
   // ---- Sound & music (Web Audio, synthesized — no files, no copyright) ----
@@ -752,9 +753,20 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
   var GF = window.GharFriends;
   var mount = document.getElementById("fg-duel");
   if (!mount) return;
+  // Free-tier friend games (Som's final rule, 2026-11-13): Word
+  // Scramble duels are premium at BOTH doors - a free account can
+  // neither start one nor play one it was invited to.
+  function fgPremiumOpen() {
+    return localStorage.getItem("ghar.testUnlock") === "1"
+        || (window.GharAuth && GharAuth.isUnlocked && GharAuth.isUnlocked());
+  }
   var pick = document.getElementById("mode-pick");
   if (pick) pick.hidden = true;
   var cid = GF.childId();
+  if (cid && !fgPremiumOpen()) {
+    mount.innerHTML = '<div class="fg-banner"><h2>🔤 Word Scramble duel</h2><p>🔒 This duel is part of Ghar Premium. On the free tier, friends play Balloon Pop, Memory Match and Quiz Blitz.</p></div>';
+    return;
+  }
   if (!cid) {
     mount.innerHTML = '<div class="fg-banner"><h2>🔤 Word Scramble duel</h2><p>Sign in — or have a parent sign in — to play this duel.</p></div>';
     return;
@@ -773,7 +785,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
       if (g.opponent_result) html += '<p>' + GF.esc(opp) + ': ' + g.opponent_result.score + '/6 words · ' + GF.fmtTime(g.opponent_result.time_ms) + '</p>';
       html += '<button type="button" class="fg-btn" id="duel-rematch">Rematch</button>';
     } else if (g.status === "abandoned") {
-      html += '<p>💤 This duel closed — no play for 14 days.</p>';
+      html += '<p>💤 This duel closed — no play for 7 days.</p>';
     } else {
       html += '<p>You solved ' + (myScore != null ? myScore : (g.my_result ? g.my_result.score : "?")) + '/6 — waiting for ' + GF.esc(opp) + ' to play.</p>';
       setTimeout(function () {
