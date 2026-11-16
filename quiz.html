@@ -278,7 +278,7 @@ function renderPlayer() {
       <button type="button" class="quiz-back" id="quiz-back">← Quiz menu</button>
       <h1>${section.icon} ${esc(section.title)}</h1>
       <p class="quiz-xp">⭐ ${dispXP()} XP · ${freeLeft()}</p>
-      ${dailyRun.active ? `<p class="quiz-xp" id="daily-run-bar">⚡ Daily challenge · Question ${Math.min(dailyRun.solved + 1, 5)} of 5</p>` : ""}
+      ${dailyRun.active ? `<p class="quiz-xp" id="daily-run-bar">⚡ ${(typeof GharStreak !== "undefined" && GharStreak.todayChallenge().format === "quizBlitz") ? "Daily challenge" : "Quiz Blitz"} · Question ${Math.min(dailyRun.solved + 1, 5)} of 5</p>` : ""}
       <p class="quiz-prompt">${isPicture ? "What is this?" : "What did you hear?"}</p>
       ${questionHTML}
       <p class="quiz-stake ${stakeClass}" id="stake">${stake}</p>
@@ -313,22 +313,36 @@ function answer(i, btn) {
       GharAuth.api("/accounts/children/" + GharAuth.childId() + "/quiz-stats", "POST", { streak_best: quizStreakBest, correct_total: quizCorrect }).catch(() => {});
     }
     // Daily Quiz Blitz run (Som, 2026-11-13): only a dedicated
-    // ?daily=1 run counts toward the streak challenge - five solved
-    // questions inside the run finish it (+15 XP, streak day kept).
-    // Ordinary quizzing no longer drip-feeds a shared counter, and
-    // the celebration overlay still stops the quiz at completion.
+    // ?daily=1 run counts - five solved questions inside the run
+    // finish it. On a Quiz Blitz day it claims the featured
+    // challenge (+15 XP); on other days it keeps the streak only
+    // (2026-11-16). Ordinary quizzing no longer drip-feeds a shared
+    // counter, and the celebration overlay still stops the quiz at
+    // completion.
     let blitz = false;
+    let runPaid = false;
     if (dailyRun.active && typeof GharStreak !== "undefined") {
       dailyRun.solved++;
       if (dailyRun.solved >= 5) {
         dailyRun.active = false;
-        blitz = true; xp += 15; saveXP();
-        if (window.GharAuth && GharAuth.addBones) GharAuth.addBones(15);
-        GharStreak.markDailyDone();
-        GharStreak.recordMissionDone();
-        const n = GharStreak.count();
-        document.getElementById("blitz-celebration-sub").textContent =
-          `Daily challenge done! +15 XP · 🔥 ${n} day${n === 1 ? "" : "s"} streak`;
+        blitz = true;
+        if (GharStreak.todayChallenge().format === "quizBlitz") {
+          // Blitz day: the run IS the featured challenge - claim it.
+          runPaid = true; xp += 15; saveXP();
+          if (window.GharAuth && GharAuth.addBones) GharAuth.addBones(15);
+          GharStreak.markDailyDone();
+          GharStreak.recordMissionDone();
+          const n = GharStreak.count();
+          document.getElementById("blitz-celebration-sub").textContent =
+            `Daily challenge done! +15 XP · 🔥 ${n} day${n === 1 ? "" : "s"} streak`;
+        } else {
+          // Other days: the run keeps the streak. The featured
+          // challenge and its +15 XP stay open on the Missions page.
+          GharStreak.recordMissionDone();
+          const n = GharStreak.count();
+          document.getElementById("blitz-celebration-sub").textContent =
+            `Streak saved! 🔥 ${n} day${n === 1 ? "" : "s"} - today's featured challenge is still waiting on the Missions page`;
+        }
         document.getElementById("blitz-celebration").hidden = false;
       }
     }
@@ -338,7 +352,7 @@ function answer(i, btn) {
     btn.classList.add("correct");
     document.getElementById("celebrate").textContent = "🎉";
     const fb = document.getElementById("feedback");
-    fb.textContent = blitz ? `✅ Correct! +${earned} XP · ⚡ Quiz Blitz complete! +15 XP` : `✅ Correct! +${earned} XP`;
+    fb.textContent = blitz ? (runPaid ? `✅ Correct! +${earned} XP · ⚡ Quiz Blitz complete! +15 XP` : `✅ Correct! +${earned} XP · ⚡ Quiz Blitz complete - streak saved!`) : `✅ Correct! +${earned} XP`;
     fb.className = "quiz-feedback good";
     document.querySelector(".quiz-xp").textContent = `⭐ ${dispXP()} XP · ${freeLeft()}`;
     document.querySelectorAll(".quiz-option").forEach(b => { b.disabled = true; });
@@ -373,11 +387,17 @@ GharAuth.pull().catch(() => {}).then(() => pullQuizStats().catch(() => {})).then
     // section, or the first one. ("← Quiz menu" inside the quiz changes
     // sections.) A ?section=<index> link can force a specific one.
     const q = new URLSearchParams(location.search);
-    // Daily run activation: only from the challenge link, only on a
-    // Quiz Blitz day, only while today's challenge is unfinished.
+    // Daily run activation: from the challenge link, while today's
+    // challenge is unfinished. On a Quiz Blitz day the run IS the
+    // featured challenge. On other days it still keeps the streak
+    // (2026-11-16 fix: the run used to activate only on Blitz days,
+    // so a quiz-habit learner's streak silently broke two days out
+    // of three). Once other practice has already recorded today's
+    // streak, the run no longer needs to activate off-Blitz.
     if (q.get("daily") === "1" && typeof GharStreak !== "undefined"
-        && GharStreak.todayChallenge().format === "quizBlitz"
-        && !GharStreak.dailyDoneToday()) {
+        && !GharStreak.dailyDoneToday()
+        && (GharStreak.todayChallenge().format === "quizBlitz"
+            || !GharStreak.missionDoneToday())) {
       dailyRun.active = true;
     }
     if (q.has("menu")) {
