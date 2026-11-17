@@ -94,7 +94,7 @@
     <span class="map-banner-arrow" aria-hidden="true">👇</span>
   </a>
 
-  <p class="trust-strip">Made for Nepali families · No ads · No strangers · One-time $7.99 — no subscription</p>
+  <p class="trust-strip" id="trust-strip" hidden>Made for Nepali families · No ads · No strangers · One-time $7.99 — no subscription</p>
   <section class="home-section" id="lessons">
     <div class="lessons-layout">
       <div class="motivation" id="motivation">
@@ -470,6 +470,12 @@ GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => 
   // callback can resolve before the parser reaches the section, so it
   // must never be the thing that attaches the listener.)
   const applyParentsState = () => {
+    // The trust strip is a pitch to families who have not paid yet —
+    // a family that already unlocked never sees it (Som, 2026-11-17).
+    // It starts hidden in the markup and is only revealed here, once
+    // the server unlock flag has resolved, so it never flashes.
+    const strip = document.getElementById("trust-strip");
+    if (strip) strip.hidden = GharAuth.isUnlocked();
     const parentsBtn = document.getElementById("parents-unlock-btn");
     const parentsNote = document.getElementById("parents-unlocked-note");
     if (!parentsBtn) return;
