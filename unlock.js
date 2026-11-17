@@ -65,5 +65,15 @@
     document.body.appendChild(overlay);
   }
 
+  // Any element carrying [data-unlock-open] opens the offer modal.
+  // Wired here, on DOMContentLoaded, so callers never race the parser:
+  // page scripts that resolve auth state early (a guest's pull()
+  // settles in a microtask) can run before later sections exist.
+  document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll("[data-unlock-open]").forEach(function (b) {
+      b.addEventListener("click", function () { show(); });
+    });
+  });
+
   window.GharUnlock = { show: show, close: close };
 })();

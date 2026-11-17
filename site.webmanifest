@@ -1,6 +1,8 @@
 {
-  "name": "Ghar \u2014 Learn Nepali",
+  "name": "Ghar — Learn Nepali",
   "short_name": "Ghar",
+  "start_url": "/index.html",
+  "scope": "/",
   "icons": [
     {
       "src": "/icon-192.png",

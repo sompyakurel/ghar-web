@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="style.css?v=37">
 <link rel="stylesheet" href="ask.css?v=4">
 <link rel="stylesheet" href="friends.css?v=2">
-<link rel="stylesheet" href="unlock.css?v=1">
+<link rel="stylesheet" href="unlock.css?v=2">
 <script src="https://unpkg.com/@rive-app/webgl2@2.49.4/rive.js" integrity="sha384-RV9aehPhuWkr3poRCN7kYUCRgVmGp02K4UDD9mCdz+3WJC7iu76qMwbys1ctuK7T" crossorigin="anonymous"></script>
 <script src="assets/js/bhunte-rive.js?v=2"></script>
 <style>
@@ -94,6 +94,7 @@
     <span class="map-banner-arrow" aria-hidden="true">👇</span>
   </a>
 
+  <p class="trust-strip">Made for Nepali families · No ads · No strangers · One-time $7.99 — no subscription</p>
   <section class="home-section" id="lessons">
     <div class="lessons-layout">
       <div class="motivation" id="motivation">
@@ -246,10 +247,11 @@
   </section>
 </div>
 <div id="toast"></div>
+<script>if ("serviceWorker" in navigator) { window.addEventListener("load", function () { navigator.serviceWorker.register("/sw.js").catch(function () {}); }); }</script>
 <script src="auth.js?v=18"></script>
 <script src="ask.js?v=5"></script>
 <script src="friends.js?v=7"></script>
-<script src="unlock.js?v=1"></script>
+<script src="unlock.js?v=2"></script>
 <script>if (window.GharFriends) GharFriends.renderChip(document.getElementById("friends-chip"));</script>
 <script>
 const FREE = new Set(["alphabet", "numbers"]);
@@ -461,6 +463,25 @@ GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => 
     });
   } else {
     unlockBtn.hidden = true;
+  }
+  // Parents-section state mirrors the header button: once the family
+  // unlocks, the CTA is replaced by a short confirmation line. (The
+  // click itself is wired by unlock.js via [data-unlock-open] — this
+  // callback can resolve before the parser reaches the section, so it
+  // must never be the thing that attaches the listener.)
+  const applyParentsState = () => {
+    const parentsBtn = document.getElementById("parents-unlock-btn");
+    const parentsNote = document.getElementById("parents-unlocked-note");
+    if (!parentsBtn) return;
+    if (GharAuth.isUnlocked()) {
+      parentsBtn.hidden = true;
+      if (parentsNote) parentsNote.hidden = false;
+    }
+  };
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", applyParentsState);
+  } else {
+    applyParentsState();
   }
   // Returning from Stripe Checkout: ?unlocked=1 means the payment
   // completed (the webhook marks the account unlocked); ?unlocked=0
@@ -812,6 +833,23 @@ GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => 
 .site-footer a:hover { text-decoration: underline; }
 .site-footer .sf-copy { color: #999; font-size: 13px; }
 </style>
+<section class="home-section" id="parents">
+    <h2>👨‍👩‍👧 For parents</h2>
+    <p class="section-sub">Why families choose Ghar</p>
+    <div class="parents-grid">
+      <div class="parents-card"><h3>🛡️ Safe by design</h3><p>No ads, no tracking, no chatting with strangers. Friend games happen only inside your child's own group.</p></div>
+      <div class="parents-card"><h3>👀 You see everything</h3><p>Your parent dashboard shows lessons finished, quiz scores and streaks — and every question your child asks Bhunte.</p></div>
+      <div class="parents-card"><h3>🗣️ Real Nepali, out loud</h3><p>350+ words spoken in a real voice, letters traced stroke by stroke, and games like Bagh-Chal that grandparents played.</p></div>
+      <div class="parents-card"><h3>💛 One price, forever</h3><p>Start free. Unlock everything for a one-time $7.99. No subscription, no renewals, no surprises.</p></div>
+    </div>
+    <div class="parents-cta">
+      <button class="parents-unlock" id="parents-unlock-btn" type="button" data-unlock-open>🔓 Unlock everything — $7.99 one time</button>
+      <span class="parents-unlocked-note" id="parents-unlocked-note" hidden>✓ Your family has everything unlocked — enjoy!</span>
+      <a class="parents-dash" href="dashboard.html">See the parent dashboard →</a>
+    </div>
+    <p class="parents-note">Made by a Nepali family in Ohio, for families like yours. 🇳🇵</p>
+  </section>
+
 <footer class="site-footer">
   <p>🐶 <strong>Ghar</strong> — Nepali for every family.</p>
   <p>Contact: <a href="mailto:sompyakurel@gmail.com">sompyakurel@gmail.com</a> · <a href="privacy.html">Privacy Policy</a></p>
