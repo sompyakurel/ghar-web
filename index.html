@@ -274,7 +274,7 @@ if (TEST) {
   document.getElementById("badge-rhymes").className = "badge free";
   document.getElementById("badge-sentences").textContent = "TEST";
   document.getElementById("badge-sentences").className = "badge free";
-  document.querySelectorAll("[data-game-lock]").forEach(b => { b.hidden = true; });
+  document.querySelectorAll("[data-game-lock]").forEach(b => { b.hidden = true; b.style.display = "none"; });
   document.getElementById("songs-lock").hidden = true;
   document.getElementById("rhymes-lock").hidden = true;
   document.getElementById("songs-list").hidden = false;
@@ -328,7 +328,7 @@ function loadHomeMedia() {
 }
 function applyUnlockUI() {
   if (!TEST && !GharAuth.isUnlocked()) return;
-  document.querySelectorAll("[data-game-lock]").forEach(b => { b.hidden = true; });
+  document.querySelectorAll("[data-game-lock]").forEach(b => { b.hidden = true; b.style.display = "none"; });
   document.getElementById("badge-songs").textContent = TEST ? "TEST" : "✓ Unlocked";
   document.getElementById("badge-songs").className = "badge free";
   document.getElementById("badge-rhymes").textContent = TEST ? "TEST" : "✓ Unlocked";
