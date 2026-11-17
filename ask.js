@@ -228,5 +228,52 @@
     if (!window.GharAuth) return;
     document.querySelectorAll('[data-ask="box"]').forEach(renderBox);
     document.querySelectorAll('[data-ask="history"]').forEach(renderHistory);
+    wireFab();
   });
+
+  // The floating Bhunte button (home + lesson pages): the question box
+  // lives inside a pop-up panel the button toggles. Pages without the
+  // button (the dashboard) simply skip this.
+  function wireFab() {
+    const fab = document.getElementById("ask-fab");
+    const panel = document.getElementById("ask-panel");
+    if (!fab || !panel) return;
+    const closeBtn = panel.querySelector(".ask-panel-close");
+    let open = false;
+    function setOpen(next) {
+      open = next;
+      panel.hidden = !open;
+      fab.setAttribute("aria-expanded", open ? "true" : "false");
+      if (open) {
+        fab.classList.remove("wiggle");
+        try {
+          localStorage.setItem("ghar.askFabSeen", "1");
+        } catch (e) {}
+        const input = panel.querySelector(".ask-input");
+        if (input) input.focus();
+      }
+    }
+    fab.addEventListener("click", function () {
+      setOpen(!open);
+    });
+    if (closeBtn) {
+      closeBtn.addEventListener("click", function () {
+        setOpen(false);
+      });
+    }
+    document.addEventListener("keydown", function (ev) {
+      if (ev.key === "Escape" && open) setOpen(false);
+    });
+    // One gentle wiggle for families who have never opened it, so the
+    // button gets noticed exactly once in its life per device.
+    let seen = false;
+    try {
+      seen = !!localStorage.getItem("ghar.askFabSeen");
+    } catch (e) {}
+    if (!seen) {
+      setTimeout(function () {
+        if (!open) fab.classList.add("wiggle");
+      }, 1200);
+    }
+  }
 })();

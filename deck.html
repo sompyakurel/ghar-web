@@ -11,7 +11,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ghar — Deck</title>
 <link rel="stylesheet" href="style.css?v=37">
-<link rel="stylesheet" href="ask.css?v=4">
+<link rel="stylesheet" href="ask.css?v=5">
 </head>
 <body>
 <div class="prayer-bunting" aria-hidden="true"><div class="prayer-string"></div><div class="prayer-row"><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span><span class="prayer-flag c-green"></span><span class="prayer-flag c-yellow"></span><span class="prayer-flag c-blue"></span><span class="prayer-flag c-white"></span><span class="prayer-flag c-red"></span></div></div>
@@ -24,11 +24,19 @@
       <div id="content"></div>
       <p class="error" id="error" hidden>Couldn't load this deck.</p>
     </div>
-    <aside class="deck-side"><div data-ask="box"></div></aside>
   </div>
 </div>
 <script src="auth.js?v=18"></script>
-<script src="ask.js?v=5"></script>
+<script src="ask.js?v=6"></script>
+<button type="button" class="ask-fab" id="ask-fab" aria-expanded="false" aria-controls="ask-panel" aria-label="Ask Bhunte a question">
+  <img src="assets/images/bhunte.svg" alt="" aria-hidden="true">
+  <span>Ask Bhunte</span>
+</button>
+<div class="ask-panel" id="ask-panel" role="dialog" aria-label="Ask Bhunte" hidden>
+  <button type="button" class="ask-panel-close" aria-label="Close Ask Bhunte">✕</button>
+  <div data-ask="box"></div>
+</div>
+
 <div class="celebration" id="celebration" hidden>
   <div class="confetti" id="confetti"></div>
   <div class="celebration-card">

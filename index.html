@@ -11,7 +11,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ghar — Learn Nepali</title>
 <link rel="stylesheet" href="style.css?v=37">
-<link rel="stylesheet" href="ask.css?v=4">
+<link rel="stylesheet" href="ask.css?v=5">
 <link rel="stylesheet" href="friends.css?v=2">
 <link rel="stylesheet" href="unlock.css?v=3">
 <script src="https://unpkg.com/@rive-app/webgl2@2.49.4/rive.js" integrity="sha384-RV9aehPhuWkr3poRCN7kYUCRgVmGp02K4UDD9mCdz+3WJC7iu76qMwbys1ctuK7T" crossorigin="anonymous"></script>
@@ -109,7 +109,6 @@
           <p class="motivation-goals">Earn XP to decorate your house · Complete all lessons for a certificate · Mystery rewards along the way</p>
           <p class="motivation-tour"><a href="#" id="tour-replay">👋 Take the tour</a></p>
           <p class="motivation-cert-link" id="cert-link" hidden><a href="certificate.html">🏆 View your certificate →</a></p>
-          <div data-ask="box"></div>
         </div>
       </div>
       <div class="lessons-right">
@@ -249,7 +248,7 @@
 <div id="toast"></div>
 <script>if ("serviceWorker" in navigator) { window.addEventListener("load", function () { navigator.serviceWorker.register("/sw.js").catch(function () {}); }); }</script>
 <script src="auth.js?v=18"></script>
-<script src="ask.js?v=5"></script>
+<script src="ask.js?v=6"></script>
 <script src="friends.js?v=7"></script>
 <script src="unlock.js?v=2"></script>
 <script>if (window.GharFriends) GharFriends.renderChip(document.getElementById("friends-chip"));</script>
@@ -861,5 +860,13 @@ GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => 
   <p>Contact: <a href="mailto:sompyakurel@gmail.com">sompyakurel@gmail.com</a> · <a href="privacy.html">Privacy Policy</a></p>
   <p class="sf-copy">© 2026 Ghar. All rights reserved.</p>
 </footer>
+<button type="button" class="ask-fab" id="ask-fab" aria-expanded="false" aria-controls="ask-panel" aria-label="Ask Bhunte a question">
+  <img src="assets/images/bhunte.svg" alt="" aria-hidden="true">
+  <span>Ask Bhunte</span>
+</button>
+<div class="ask-panel" id="ask-panel" role="dialog" aria-label="Ask Bhunte" hidden>
+  <button type="button" class="ask-panel-close" aria-label="Close Ask Bhunte">✕</button>
+  <div data-ask="box"></div>
+</div>
 </body>
 </html>
