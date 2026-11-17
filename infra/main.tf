@@ -497,6 +497,49 @@ resource "aws_cloudwatch_metric_alarm" "gharlearn_cloudfront_5xx" {
   ok_actions    = [aws_sns_topic.ghar_site_alerts.arn]
 }
 
+# --- Backend health monitoring (added 2026-11-16) ---
+# Same pattern as the site check above, pointed at the Fly backend's
+# /health endpoint. The backend has been always-on since 2026-11-15,
+# so a failure here is a real outage, not a nap. Alerts go to the
+# same SNS topic and email as the site alarms.
+# Cost: health check $0.50/mo; the alarm is inside the free tier.
+
+resource "aws_route53_health_check" "ghar_backend" {
+  fqdn              = "backend-patient-wave-3724.fly.dev"
+  port              = 443
+  type              = "HTTPS"
+  resource_path     = "/health"
+  request_interval  = 30
+  failure_threshold = 3
+  enable_sni        = true
+
+  tags = {
+    Name = "ghar-backend"
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "ghar_backend_down" {
+  provider = aws.us_east_1
+
+  alarm_name          = "ghar-backend-down"
+  alarm_description   = "Ghar backend (Fly) failed its Route 53 health check on /health (HTTPS, 3 x 30s failures)"
+  namespace           = "AWS/Route53"
+  metric_name         = "HealthCheckStatus"
+  statistic           = "Minimum"
+  period              = 60
+  evaluation_periods  = 1
+  threshold           = 1
+  comparison_operator = "LessThanThreshold"
+  treat_missing_data  = "breaching"
+
+  dimensions = {
+    HealthCheckId = aws_route53_health_check.ghar_backend.id
+  }
+
+  alarm_actions = [aws_sns_topic.ghar_site_alerts.arn]
+  ok_actions    = [aws_sns_topic.ghar_site_alerts.arn]
+}
+
 # ---------------------------------------------------------------------------
 # Security response headers (added 2026-11-11, Som approved): HSTS +
 # X-Frame-Options + X-Content-Type-Options + Referrer-Policy, applied to
