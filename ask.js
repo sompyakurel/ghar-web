@@ -13,6 +13,11 @@
 // The vendor never hears about this page: the request carries only the
 // question; the child's identity stays in the session header, which
 // only our own server reads.
+//
+// The "What did I learn today?" quick button asks the recap question:
+// the server recognises it and answers from the child's own recorded
+// activity for the day (lessons, games, XP, quiz counts — activity
+// only, still no identity).
 (function () {
   "use strict";
 
@@ -73,21 +78,22 @@
       '<input class="ask-input" type="text" maxlength="300" autocomplete="off" ' +
       'placeholder="Ask about a Nepali word…">' +
       '<button class="ask-btn" type="submit">Ask</button></form>' +
+      '<div class="ask-quick"><button type="button" class="ask-recap-btn">' +
+      "📅 What did I learn today?</button></div>" +
       '<div class="ask-answer" hidden></div>' +
       '<p class="ask-meta"></p>';
 
     const form = body.querySelector(".ask-form");
     const input = body.querySelector(".ask-input");
     const btn = body.querySelector(".ask-btn");
+    const recapBtn = body.querySelector(".ask-recap-btn");
     const answer = body.querySelector(".ask-answer");
     const meta = body.querySelector(".ask-meta");
 
-    form.addEventListener("submit", async function (ev) {
-      ev.preventDefault();
-      const q = input.value.trim();
-      if (!q) return;
+    async function doAsk(q) {
       btn.disabled = true;
       input.disabled = true;
+      if (recapBtn) recapBtn.disabled = true;
       answer.hidden = false;
       answer.textContent = "Bhunte is thinking…";
       meta.textContent = "";
@@ -123,9 +129,21 @@
       } finally {
         btn.disabled = false;
         input.disabled = false;
+        if (recapBtn) recapBtn.disabled = false;
         input.focus();
       }
+    }
+
+    form.addEventListener("submit", function (ev) {
+      ev.preventDefault();
+      const q = input.value.trim();
+      if (q) doAsk(q);
     });
+    if (recapBtn) {
+      recapBtn.addEventListener("click", function () {
+        doAsk("What did I learn today?");
+      });
+    }
   }
 
   async function renderHistory(mount) {

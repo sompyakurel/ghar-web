@@ -12,7 +12,7 @@
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Ghar — Parent dashboard</title>
 <link rel="stylesheet" href="style.css?v=37">
-<link rel="stylesheet" href="ask.css?v=2">
+<link rel="stylesheet" href="ask.css?v=3">
 <link rel="stylesheet" href="friends.css?v=2">
 </head>
 <body>
@@ -46,7 +46,7 @@
   <p class="auth-note">One unlock covers the whole family. The unlock is a one-time payment for this website only — it doesn't unlock the Ghar iOS app, and the app's unlock doesn't cover this website. A child's progress is saved to their profile — it follows them across devices. Delete a child any time and their data goes with them. <a href="certificate.html?preview">Preview the certificate →</a></p>
 </div>
 <script src="auth.js?v=18"></script>
-<script src="ask.js?v=3"></script>
+<script src="ask.js?v=4"></script>
 <script src="friends.js?v=7"></script>
 <script src="shop-data.js?v=5"></script>
 <script src="data/map-data.js"></script>
@@ -118,8 +118,8 @@ async function load() {
     list.innerHTML = "";
     for (const child of me.children) {
       const ov = ovById ? ovById[child.id] : null;
-      const [p, missions, shop, mystery, streak, quizStats, mapState, deckRewards, writing, suga, myghar, games, lbIdentity, myname] = ov
-        ? [ov.progress, ov.missions, ov.shop, ov.mystery, ov.streak, ov.quiz_stats, ov.map, ov.deck_rewards, ov.writing, ov.suga, ov.myghar, ov.games, ov.identity, ov.myname]
+      const [p, missions, shop, mystery, streak, quizStats, mapState, deckRewards, writing, suga, myghar, games, lbIdentity, myname, today] = ov
+        ? [ov.progress, ov.missions, ov.shop, ov.mystery, ov.streak, ov.quiz_stats, ov.map, ov.deck_rewards, ov.writing, ov.suga, ov.myghar, ov.games, ov.identity, ov.myname, ov.today]
         : await Promise.all([
         GharAuth.api("/accounts/children/" + child.id + "/progress"),
         GharAuth.api("/accounts/children/" + child.id + "/missions"),
@@ -138,7 +138,8 @@ async function load() {
         GharAuth.api("/accounts/children/" + child.id + "/myghar").catch(() => ({})),
         GharAuth.api("/accounts/children/" + child.id + "/games").catch(() => ({})),
         GharAuth.api("/accounts/children/" + child.id + "/leaderboard-identity").catch(() => ({})),
-        GharAuth.api("/accounts/children/" + child.id + "/myname").catch(() => ({}))
+        GharAuth.api("/accounts/children/" + child.id + "/myname").catch(() => ({})),
+        GharAuth.api("/accounts/children/" + child.id + "/today").catch(() => ({}))
       ]);
       // Lessons done: a deck is done when every word in it has been heard.
       const doneDecks = pack.decks.filter(deck => (p.heard[deck.id] || []).length >= deck.words.length);
@@ -146,6 +147,35 @@ async function load() {
       const missionIds = Object.keys(missions);
       const verifiedCount = missionIds.filter(id => missions[id] === "verified").length;
       const active = GharAuth.childId() === child.id;
+      // Today's summary (2026-11-17): the headline a parent reads
+      // first. Everything after it sits behind "Show everything".
+      // `today` comes from the server's per-day records (the same
+      // rows Bhunte's recap reads), so the two can never disagree.
+      const td = today || {};
+      const deckName = {};
+      pack.decks.forEach(d => deckName[d.id] = d.title);
+      const gameName = { balloon: "Balloon Pop", baghchal: "Bagh-Chal", chess: "Chess", memory: "Memory Match", scramble: "Word Scramble", fetch: "Fetch" };
+      const pretty = s => String(s).replace(/[-_]+/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const doneTodayIds = td.decks_completed || [];
+      const practicedToday = (td.decks_practiced || []).filter(x => !doneTodayIds.includes(x.deck_id));
+      const todayParts = [];
+      if (td.xp_gained) todayParts.push("⭐ +" + td.xp_gained + " XP");
+      if (td.streak_count) todayParts.push("🔥 " + td.streak_count + "-day streak");
+      if (td.daily_quiz_done) todayParts.push("⚡ Daily Quiz Blitz done");
+      if (td.quiz_attempted) todayParts.push("❓ Quiz: " + td.quiz_correct + " of " + td.quiz_attempted + " right");
+      if (doneTodayIds.length) todayParts.push("📚 Finished: " + doneTodayIds.map(id => deckName[id] || pretty(id)).join(", "));
+      if (practicedToday.length) todayParts.push("✏️ Practiced: " + practicedToday.map(x => deckName[x.deck_id] || pretty(x.deck_id)).join(", "));
+      if ((td.games || []).length) todayParts.push("🎮 Played: " + td.games.map(g => gameName[g.game] || pretty(g.game)).join(", "));
+      if ((td.missions_done || []).length) todayParts.push("🎯 Missions: " + td.missions_done.map(id => (missionTitles[id] || {}).en || pretty(id)).join(", "));
+      if ((td.map_places_found || []).length) todayParts.push("🗺️ New map places: " + td.map_places_found.map(pretty).join(", "));
+      if (td.ask_count) todayParts.push("🐶 Asked Bhunte " + td.ask_count + (td.ask_count === 1 ? " question" : " questions"));
+      const todayHtml = `
+        <div class="today-strip">
+          <h3>📅 Today</h3>
+          <p class="today-line">${todayParts.length ? todayParts.map(esc).join(" · ") : "No learning recorded yet today."}</p>
+        </div>
+        <button type="button" class="show-all-btn">Show everything ▾</button>
+        <div class="child-detail" hidden>`;
 
       const card = document.createElement("div");
       card.className = "child-card" + (active ? " active" : "");
@@ -157,6 +187,7 @@ async function load() {
           </div>
           <button class="quiz-next child-play">${active ? "✓ Learning as " + esc(child.name) : "Learn as " + esc(child.name) + " →"}</button>
         </div>
+        ${todayHtml}
         <div class="child-progress">
           <h3>Progress</h3>
           ${statRow("Total XP", child.xp)}
@@ -242,6 +273,10 @@ async function load() {
           ${statRow("Leaderboard", esc(lbIdentity.nickname || "—") + (lbIdentity.group_name ? " · " + esc(lbIdentity.group_name) : "") + (lbIdentity.group_code ? " (" + esc(lbIdentity.group_code) + ")" : ""))}
           ${statRow("My Name", esc(myname.english || "—") + (myname.devanagari ? " · " + esc(myname.devanagari) : ""))}
           ${gameRows ? `<h4>Games</h4>${gameRows}` : ""}`;
+      // Close .child-progress and the .child-detail fold opened by
+      // todayHtml — the certificate line and the delete button stay
+      // outside the fold, always visible.
+      html += `</div></div>`;
       if (p.cert_earned_at) {
         const d = new Date(p.cert_earned_at * 1000).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
         html += `<p class="cert-line">📜 Certificate earned ${d}</p>`;
@@ -264,6 +299,15 @@ async function load() {
           alert("Couldn't delete the profile. Check your connection and try again.");
         }
       });
+      const showBtn = card.querySelector(".show-all-btn");
+      const detail = card.querySelector(".child-detail");
+      if (showBtn && detail) {
+        showBtn.addEventListener("click", () => {
+          const open = detail.hidden;
+          detail.hidden = !open;
+          showBtn.textContent = open ? "Show less ▴" : "Show everything ▾";
+        });
+      }
       list.appendChild(card);
       if (window.GharFriends) {
         const fgEl = card.querySelector(".dash-friend-games");
@@ -319,6 +363,11 @@ load();
 .danger-zone { border: 1px solid #e0b4b4; border-radius: 12px; padding: 20px 24px; margin: 24px 0; text-align: center; }
 .danger-zone h2 { color: #b3261e; font-size: 18px; margin: 0 0 8px; }
 #delete-account { background: #b3261e; color: #fff; border: none; border-radius: 999px; padding: 11px 22px; font-size: 15px; font-weight: 700; cursor: pointer; }
+.today-strip { background: #fff8ec; border: 1px solid #f0dfba; border-radius: 12px; padding: 12px 16px; margin: 14px 0 4px; }
+.today-strip h3 { margin: 0 0 6px; font-size: 15px; }
+.today-line { margin: 0; font-size: 14px; line-height: 1.8; color: #444; }
+.show-all-btn { background: none; border: 1px solid #d8cfc0; color: #6b5d43; border-radius: 999px; padding: 8px 16px; font-size: 13px; font-weight: 700; cursor: pointer; margin: 12px 0 4px; }
+.show-all-btn:hover { background: #faf5ea; }
 </style>
 <style>
 .site-footer { text-align: center; padding: 28px 16px 36px; margin-top: 40px; border-top: 1px solid #e5e0d8; color: #666; font-size: 14px; }

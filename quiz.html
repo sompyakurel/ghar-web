@@ -84,6 +84,27 @@ function noteQuizMastered(id) {
   if (m[id] <= 0) delete m[id];
   saveMissed(m);
 }
+// Per-day quiz tallies (2026-11-17): what the dashboard's Today
+// summary and Bhunte's "what did I learn today?" recap read. Kept
+// beside the lifetime totals, reported with them on every sync, and
+// max-merged on the server per Eastern day.
+function quizDayKey() {
+  return new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+}
+function quizToday() {
+  let t = null;
+  try { t = JSON.parse(localStorage.getItem("ghar.quiz.today") || "null"); } catch (e) {}
+  if (!t || t.day !== quizDayKey()) t = { day: quizDayKey(), correct: 0, attempted: 0 };
+  return t;
+}
+function saveQuizToday(t) {
+  try { localStorage.setItem("ghar.quiz.today", JSON.stringify(t)); } catch (e) {}
+}
+function quizStatsBody() {
+  const t = quizToday();
+  return { streak_best: quizStreakBest, correct_total: quizCorrect,
+           day: t.day, correct_today: t.correct, attempted_today: t.attempted };
+}
 // Cross-device quiz stats: the server keeps the best streak and total
 // correct answers per child. Pull on load and take the max — never wipe
 // local progress. (The current streak and last section stay on this
@@ -101,11 +122,19 @@ async function pullQuizStats() {
     localStorage.setItem("ghar.quiz.correctTotal", String(total));
     quizStreakBest = best;
     quizCorrect = total;
+    // Same max-merge for today's tallies, when the server's day is
+    // this device's day.
+    if (s.today && s.today.day === quizDayKey()) {
+      const t = quizToday();
+      t.correct = Math.max(t.correct, parseInt(s.today.correct || "0", 10) || 0);
+      t.attempted = Math.max(t.attempted, parseInt(s.today.attempted || "0", 10) || 0);
+      saveQuizToday(t);
+    }
     // Push the merged state back when the local side is ahead — a best streak
     // / correct total built before the sync existed (server empty or lower)
     // otherwise never reaches the database, and the dashboard keeps showing 0.
     if (best > serverBest || total > serverTotal) {
-      GharAuth.api("/accounts/children/" + GharAuth.childId() + "/quiz-stats", "POST", { streak_best: best, correct_total: total }).catch(() => {});
+      GharAuth.api("/accounts/children/" + GharAuth.childId() + "/quiz-stats", "POST", quizStatsBody()).catch(() => {});
     }
   } catch (e) { /* guest or offline — local stats stand */ }
 }
@@ -243,6 +272,8 @@ function newQuestion() {
   options = shuffle([current, ...distractors]);
   solved = false;
   wrongIDs = new Set();
+  // A question was actually presented — count it in today's tallies.
+  const qtA = quizToday(); qtA.attempted += 1; saveQuizToday(qtA);
   renderPlayer();
   if (section.mode === "listen") playCurrent();
 }
@@ -305,12 +336,14 @@ function answer(i, btn) {
     saveXP();
     if (window.GharAuth && GharAuth.addBones) GharAuth.addBones(earned);
     quizCorrect++;
+    const qtC = quizToday(); qtC.correct += 1; saveQuizToday(qtC);
     quizStreak++;
     if (quizStreak > quizStreakBest) quizStreakBest = quizStreak;
     saveQuizStats();
-    // Sync the new best + total to the server (max-merged there too).
+    // Sync the new best + total to the server (max-merged there too),
+    // with today's tallies riding along for the recap + dashboard.
     if (GharAuth.signedIn() && GharAuth.childId()) {
-      GharAuth.api("/accounts/children/" + GharAuth.childId() + "/quiz-stats", "POST", { streak_best: quizStreakBest, correct_total: quizCorrect }).catch(() => {});
+      GharAuth.api("/accounts/children/" + GharAuth.childId() + "/quiz-stats", "POST", quizStatsBody()).catch(() => {});
     }
     // Daily Quiz Blitz run (Som, 2026-11-13): only a dedicated
     // ?daily=1 run counts - five solved questions inside the run

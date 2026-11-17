@@ -19,4 +19,8 @@
 .ask-q { font-weight: 700; margin: 0 0 2px; font-size: 15px; }
 .ask-when { font-size: 12px; color: #999; font-weight: 400; }
 .ask-a { margin: 0; font-size: 15px; color: #333; }
+.ask-quick { margin-top: 10px; }
+.ask-recap-btn { background: #fff3e0; border: 1px solid #f0dfba; color: #6b5d43; border-radius: 999px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; }
+.ask-recap-btn:hover { background: #ffe9c4; }
+.ask-recap-btn:disabled { opacity: .6; cursor: default; }
 @media (max-width: 560px) { .ask-form { flex-direction: column; } .ask-btn { width: 100%; } }
