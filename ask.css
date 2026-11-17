@@ -23,4 +23,6 @@
 .ask-recap-btn { background: #fff3e0; border: 1px solid #f0dfba; color: #6b5d43; border-radius: 999px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; }
 .ask-recap-btn:hover { background: #ffe9c4; }
 .ask-recap-btn:disabled { opacity: .6; cursor: default; }
+.ask-more-btn { background: #fff3e0; border: 1px solid #f0dfba; color: #6b5d43; border-radius: 999px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; margin-top: 10px; }
+.ask-more-btn:hover { background: #ffe9c4; }
 @media (max-width: 560px) { .ask-form { flex-direction: column; } .ask-btn { width: 100%; } }

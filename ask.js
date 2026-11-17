@@ -181,11 +181,15 @@
       if (!hist.length) {
         html += '<p class="ask-note">No questions yet.</p>';
       } else {
-        for (const item of hist) {
+        // Parents see the newest 5 questions (the API returns newest
+        // first); older ones sit behind a "Show more" toggle so a long
+        // history doesn't flood the dashboard.
+        hist.forEach(function (item, idx) {
           const when = new Date(item.created_at * 1000).toLocaleDateString(
             undefined,
             { month: "short", day: "numeric" }
           );
+          if (idx === 5) html += '<div class="ask-more" hidden>';
           html +=
             '<div class="ask-qa"><p class="ask-q">' +
             esc(item.question) +
@@ -194,11 +198,30 @@
             '</span></p><p class="ask-a">' +
             fmt(item.answer) +
             "</p></div>";
+        });
+        if (hist.length > 5) {
+          const older = hist.length - 5;
+          html +=
+            "</div>" +
+            '<button class="ask-more-btn" type="button" data-label="Show more (' +
+            older +
+            ' older) ▾">Show more (' +
+            older +
+            " older) ▾</button>";
         }
       }
       html += "</div>";
     }
     body.innerHTML = html;
+    body.querySelectorAll(".ask-more-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        const more = btn.parentElement.querySelector(".ask-more");
+        if (!more) return;
+        const opening = more.hidden;
+        more.hidden = !opening;
+        btn.textContent = opening ? "Show less ▴" : btn.getAttribute("data-label");
+      });
+    });
   }
 
   document.addEventListener("DOMContentLoaded", function () {
