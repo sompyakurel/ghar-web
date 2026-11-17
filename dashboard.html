@@ -102,7 +102,7 @@ async function load() {
         ov.children.forEach(c => { ovById[c.id] = c; });
       }
     } catch (e) { ovById = null; }
-    pack = await (await fetch("data/nepal-v1.json?v=4")).json();
+    pack = await (await fetch("data/nepal-v1.json?v=6")).json();
     const list = document.getElementById("children-list");
     if (me.children.length === 0) {
       list.innerHTML = `<p class="auth-note">No children yet — add one below to get started.</p>`;
