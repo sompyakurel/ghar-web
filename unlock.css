@@ -85,3 +85,12 @@
 .parents-unlocked-note { font-size: 15px; font-weight: 700; color: #2e7d32; }
 .parents-dash { font-weight: 700; color: #2e7d32; }
 .parents-note { font-size: 13px; color: #6b5d4f; margin-top: 12px; }
+
+/* The fixed prayer-flag columns (style.css .prayer-side) overlay the
+   outer ~38px of the viewport on wide screens, and this section runs
+   full-width — its cards' text slid underneath the flags. Inset the
+   section past the flags exactly where the flags are shown (they
+   are display:none at 1100px and below, where no inset is needed). */
+@media (min-width: 1101px) {
+  #parents { padding-left: 48px; padding-right: 48px; }
+}
