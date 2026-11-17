@@ -101,8 +101,8 @@ let xp = parseInt(localStorage.getItem("ghar.xp.total") || "0", 10);
 // and a server unlock (Stripe $7.99) open everything, same as the decks.
 function isTestUnlock() {
   const q = new URLSearchParams(location.search);
-  if (q.has("test")) localStorage.setItem("ghar.testUnlock", q.get("test") === "off" ? "" : "1");
-  return localStorage.getItem("ghar.testUnlock") === "1";
+  localStorage.removeItem("ghar.testUnlock"); // ?test bypass removed 2026-11-16 (payments live)
+  return false;
 }
 const TEST = isTestUnlock();
 const FREE_MISSIONS = new Set(["tihar-greeting", "count-to-five"]);

@@ -37,8 +37,8 @@
 const TIERS = { beginner: "🌱 Beginner", intermediate: "🌿 Intermediate", hard: "🌳 Hard", teen: "🔥 Teen" };
 function isTestUnlock() {
   const q = new URLSearchParams(location.search);
-  if (q.has("test")) localStorage.setItem("ghar.testUnlock", q.get("test") === "off" ? "" : "1");
-  return localStorage.getItem("ghar.testUnlock") === "1";
+  localStorage.removeItem("ghar.testUnlock"); // ?test bypass removed 2026-11-16 (payments live)
+  return false;
 }
 const TEST = isTestUnlock();
 function asset(u) {

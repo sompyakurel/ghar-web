@@ -274,8 +274,8 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
   // restriction below stays as a second line of defence.
   function isTestUnlock() {
     var q = new URLSearchParams(location.search);
-    if (q.has("test")) localStorage.setItem("ghar.testUnlock", q.get("test") === "off" ? "" : "1");
-    return localStorage.getItem("ghar.testUnlock") === "1";
+    localStorage.removeItem("ghar.testUnlock"); // ?test bypass removed 2026-11-16 (payments live)
+    return false;
   }
   var TEST = isTestUnlock();
   var FREE_DECKS = ['alphabet', 'numbers'];
@@ -756,8 +756,7 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
   // Scramble duels are premium at BOTH doors - a free account can
   // neither start one nor play one it was invited to.
   function fgPremiumOpen() {
-    return localStorage.getItem("ghar.testUnlock") === "1"
-        || (window.GharAuth && GharAuth.isUnlocked && GharAuth.isUnlocked());
+    return (window.GharAuth && GharAuth.isUnlocked && GharAuth.isUnlocked());
   }
   var pick = document.getElementById("mode-pick");
   if (pick) pick.hidden = true;

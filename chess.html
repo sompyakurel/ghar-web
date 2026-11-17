@@ -971,8 +971,8 @@ body { background: linear-gradient(180deg, #fff8ee 0%, #f6e8d5 100%); }
 // board itself is never touched, so an unlocked player loses nothing.
 (function () {
   var q = new URLSearchParams(location.search);
-  if (q.has("test")) localStorage.setItem("ghar.testUnlock", q.get("test") === "off" ? "" : "1");
-  var TEST = localStorage.getItem("ghar.testUnlock") === "1";
+  localStorage.removeItem("ghar.testUnlock"); // ?test bypass removed 2026-11-16 (payments live)
+  var TEST = false;
   var lockEl = null;
   function showLock() {
     if (lockEl) { lockEl.style.display = "flex"; return; }

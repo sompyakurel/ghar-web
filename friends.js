@@ -36,8 +36,7 @@
   // Same test the game pages use: the deliberate ?test unlock, or the
   // server-issued unlock flag cached by auth.js.
   function premiumOpen() {
-    return localStorage.getItem("ghar.testUnlock") === "1"
-        || (window.GharAuth && GharAuth.isUnlocked && GharAuth.isUnlocked());
+    return (window.GharAuth && GharAuth.isUnlocked && GharAuth.isUnlocked());
   }
   async function api(path, method, body) {
     const res = await fetch(API_BASE + path, {

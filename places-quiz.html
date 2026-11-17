@@ -215,8 +215,7 @@ async function pullQuizStats() {
 // free places (Kathmandu + Pokhara) plus a taste of the mountains.
 let pqUnlocked = (function () {
   try {
-    if (new URLSearchParams(location.search).has("test")) localStorage.setItem("ghar.testUnlock", "1");
-    if (localStorage.getItem("ghar.testUnlock") === "1") return true;
+    localStorage.removeItem("ghar.testUnlock"); // ?test bypass removed 2026-11-16 (payments live)
     if (localStorage.getItem("ghar.unlocked") === "1") return true;
   } catch (e) {}
   if (window.GharAuth && GharAuth.isUnlocked && GharAuth.isUnlocked()) return true;
@@ -610,8 +609,7 @@ if (window.GharAuth && GharAuth.pull) GharAuth.pull().catch(() => {});
   // Quiz duels are premium at BOTH doors - a free account can
   // neither start one nor play one it was invited to.
   function fgPremiumOpen() {
-    return localStorage.getItem("ghar.testUnlock") === "1"
-        || (window.GharAuth && GharAuth.isUnlocked && GharAuth.isUnlocked());
+    return (window.GharAuth && GharAuth.isUnlocked && GharAuth.isUnlocked());
   }
   if (cid && !fgPremiumOpen()) {
     stage.innerHTML = '<div class="fg-banner"><h2>🗺️ Places duel</h2><p>🔒 This duel is part of Ghar Premium. On the free tier, friends play Balloon Pop, Memory Match and Quiz Blitz.</p></div>';
