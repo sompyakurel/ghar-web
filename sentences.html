@@ -76,7 +76,99 @@ function playWrongFeedback() {
   feedbackPlayer.play().catch(() => {});
 }
 const player = new Audio();
-const WANT = ["kitab", "kukur", "biralo", "chara", "syau", "kera", "haatti", "baandar", "ghoda", "bagh", "maachha", "kharayo", "suntala", "bhuinkatahar", "gaai", "bakhra"];
+// Sentence patterns for the Build-a-Sentence game (2026-11-17: grew
+// from the single यो ___ हो। pattern to four). Each pattern draws its
+// blank from a pool of pack words that fit it; a run samples 3 words
+// per pattern, shuffled. The spoken question clip exists only for
+// the first pattern, so only it sets clip: true.
+const PATTERNS = [
+  { prefix: "यो", suffix: "हो।", hintEn: "This is a ___", clip: true,
+    ids: ["kitab", "kukur", "biralo", "chara", "syau", "kera", "haatti", "baandar", "ghoda", "bagh", "maachha", "kharayo", "suntala", "bhuinkatahar", "gaai", "bakhra"] },
+  { prefix: "मलाई", suffix: "मन पर्छ।", hintEn: "I like ___", clip: false,
+    ids: ["syau", "kera", "suntala", "bhuinkatahar", "kagati", "kukur", "biralo", "chara", "maachha"] },
+  { prefix: "म", suffix: "देख्छु।", hintEn: "I see a ___", clip: false,
+    ids: ["haatti", "baandar", "ghoda", "bagh", "gaai", "bakhra", "kharayo", "kukur", "biralo", "chara"] },
+  { prefix: "यो मेरो", suffix: "हो।", hintEn: "This is my ___", clip: false,
+    ids: ["haat", "khutta", "mukh", "naak", "kaan", "aankha", "tauko", "pet", "dhaad", "aunla", "daant", "kapaal"] },
+];
+// Everyday phrases (2026-11-17) — real things a kid says to family.
+// The same phrases are pinned in the backend's Bhunte facts, so
+// "how do you say I am hungry?" gets this exact answer.
+const PHRASES = [
+  { title: "👋 Meeting & greeting", items: [
+    { deva: "नमस्ते", rom: "Namaste", en: "Hello" },
+    { deva: "शुभ प्रभात", rom: "Shubha prabhat", en: "Good morning" },
+    { deva: "शुभ रात्रि", rom: "Shubha ratri", en: "Good night" },
+    { deva: "तपाईंलाई कस्तो छ?", rom: "Tapailai kasto chha?", en: "How are you?" },
+    { deva: "मलाई ठिक छ", rom: "Malai thik chha", en: "I am fine" },
+    { deva: "फेरि भेटौंला", rom: "Pheri bhetaula", en: "See you again" },
+  ]},
+  { title: "🙋 About me", items: [
+    { deva: "मेरो नाम ___ हो", rom: "Mero naam ___ ho", en: "My name is ___" },
+    { deva: "म अमेरिकामा बस्छु", rom: "Ma America-ma baschhu", en: "I live in America" },
+    { deva: "म नेपाली सिक्दै छु", rom: "Ma Nepali sikdai chhu", en: "I am learning Nepali" },
+    { deva: "मलाई नेपाली मन पर्छ", rom: "Malai Nepali man parchha", en: "I like Nepali" },
+  ]},
+  { title: "🏠 At home", items: [
+    { deva: "मलाई भोक लाग्यो", rom: "Malai bhok lagyo", en: "I am hungry" },
+    { deva: "मलाई तिर्खा लाग्यो", rom: "Malai tirkha lagyo", en: "I am thirsty" },
+    { deva: "मलाई पानी चाहियो", rom: "Malai pani chahiyo", en: "I need water" },
+    { deva: "मलाई भात खान मन छ", rom: "Malai bhat khana man chha", en: "I want to eat rice" },
+    { deva: "म सुत्न जान्छु", rom: "Ma sutna janchhu", en: "I am going to sleep" },
+    { deva: "एक छिन पर्खनुहोस्", rom: "Ek chhin parkhanuhos", en: "Please wait a moment" },
+  ]},
+  { title: "💛 Polite words", items: [
+    { deva: "धन्यवाद", rom: "Dhanyabad", en: "Thank you" },
+    { deva: "हजुरआमालाई धन्यवाद", rom: "Hajuraamalai dhanyabad", en: "Thank you, grandmother" },
+    { deva: "कृपया", rom: "Kripaya", en: "Please" },
+    { deva: "माफ गर्नुहोस्", rom: "Maaf garnuhos", en: "Excuse me / sorry" },
+    { deva: "हुन्छ", rom: "Hunchha", en: "Okay" },
+  ]},
+  { title: "😊 Feelings", items: [
+    { deva: "म खुशी छु", rom: "Ma khushi chhu", en: "I am happy" },
+    { deva: "मलाई दुःख लाग्यो", rom: "Malai dukha lagyo", en: "I am sad" },
+    { deva: "मलाई तपाईं मन पर्छ", rom: "Malai tapai man parchha", en: "I like you" },
+    { deva: "म तपाईंलाई माया गर्छु", rom: "Ma tapailai maya garchhu", en: "I love you" },
+  ]},
+];
+let mode = "phrases";
+let started = false;
+let byID = {};
+function tabsHTML(active) {
+  return `<div class="sent-tabs">
+    <button class="sent-tab${active === "phrases" ? " on" : ""}" data-mode="phrases" type="button">🗣️ Phrases</button>
+    <button class="sent-tab${active === "game" ? " on" : ""}" data-mode="game" type="button">🎮 Build-a-Sentence</button>
+  </div>`;
+}
+function wireTabs() {
+  document.querySelectorAll(".sent-tab").forEach(b => b.addEventListener("click", () => {
+    if (b.dataset.mode === "phrases") renderPhrases();
+    else if (!started) { started = true; dealQuestion(); }
+    else { mode = "game"; render(); }
+  }));
+}
+function renderPhrases() {
+  mode = "phrases";
+  const content = document.getElementById("content");
+  let h = tabsHTML("phrases") + `<h1 class="phr-title">🗣️ Everyday Phrases</h1><p class="phr-sub">Real sentences to say to your family — read them out loud together.</p>`;
+  PHRASES.forEach(g => {
+    h += `<h2 class="phr-group">${esc(g.title)}</h2><div class="phr-grid">`;
+    g.items.forEach(ph => {
+      h += `<div class="phr-card"><div class="phr-deva">${esc(ph.deva)}</div><div class="phr-rom">${esc(ph.rom)}</div><div class="phr-en">${esc(ph.en)}</div></div>`;
+    });
+    h += `</div>`;
+  });
+  content.innerHTML = h;
+  wireTabs();
+}
+function buildRun() {
+  const run = [];
+  PATTERNS.forEach(pat => {
+    pat.words = pat.ids.map(id => byID[id]).filter(Boolean);
+    shuffle([...pat.words]).slice(0, 3).forEach(w => run.push({ pictureWord: w, pattern: pat }));
+  });
+  return run;
+}
 let questions = [];
 let order = [];
 let index = 0;
@@ -105,41 +197,45 @@ function dealQuestion() {
   picked = null;
   wrongPicks = new Set();
   const q = current();
-  const pool = questions.map(x => x.pictureWord).filter(w => w.id !== q.pictureWord.id);
+  const pool = q.pattern.words.filter(w => w.id !== q.pictureWord.id);
   const distractors = shuffle([...pool]).slice(0, 2);
   options = shuffle([q.pictureWord, ...distractors]);
+  mode = "game";
   render();
-  askYoKeHo();
+  if (q.pattern.clip) askYoKeHo();
 }
 function render() {
   const content = document.getElementById("content");
   if (finished) {
-    content.innerHTML = `
+    content.innerHTML = tabsHTML("game") + `
       <div class="sent-done">
         <div class="sent-done-emoji">🎉</div>
         <h1>You built sentences!</h1>
         <p>+${earnedXP} XP · ${correctCount}/${questions.length} correct</p>
-        <p class="sent-done-sub">यो ___ हो। — you know how Nepali says "this is a ___".</p>
+        <p class="sent-done-sub">This is a ___, I like ___, I see a ___, this is my ___ — real Nepali sentences!</p>
         <button class="quiz-next" id="again">Play again</button>
       </div>`;
     document.getElementById("again").addEventListener("click", () => {
       index = 0; correctCount = 0; earnedXP = 0; finished = false;
+      questions = buildRun();
       order = shuffle(questions.map((_, i) => i));
       dealQuestion();
     });
+    wireTabs();
     return;
   }
   const q = current();
   const pic = q.pictureWord.image
     ? `<img class="sent-picture" src="${esc(asset(q.pictureWord.image))}" alt="${esc(q.pictureWord.english)}" onerror="this.style.display='none'">`
     : `<div class="sent-picture sent-picture-fallback">${esc(q.pictureWord.devanagari)}</div>`;
-  content.innerHTML = `
+  content.innerHTML = tabsHTML("game") + `
     <div class="quiz-player">
-      <h1>📝 This Is a Thing</h1>
+      <h1>📝 Build a Sentence</h1>
+      <p class="sent-pattern">${esc(q.pattern.hintEn)}</p>
       <p class="quiz-xp">⭐ ${dispXP()} XP · ${index + 1} / ${questions.length}</p>
       <div class="progress"><div style="width:${(index / questions.length * 100)}%"></div></div>
       ${pic}
-      <p class="sent-line"><span>यो</span> ${picked ? `<span class="sent-filled">${esc(picked.devanagari)}</span>` : `<span class="sent-blank">___</span>`} <span>हो।</span></p>
+      <p class="sent-line"><span>${esc(q.pattern.prefix)}</span> ${picked ? `<span class="sent-filled">${esc(picked.devanagari)}</span>` : `<span class="sent-blank">___</span>`} <span>${esc(q.pattern.suffix)}</span></p>
       ${picked ? "" : `<p class="sent-hint">Tap the missing word</p>`}
       <p class="quiz-stake ${wrongPicks.size === 0 ? "good" : "low"}">${wrongPicks.size === 0 ? "⭐ +5 XP" : "😅 +2 XP now"}</p>
       <div class="sent-options" id="opts"></div>
@@ -160,6 +256,7 @@ function render() {
     if (index + 1 < questions.length) { index += 1; dealQuestion(); }
     else { finished = true; render(); }
   });
+  wireTabs();
 }
 function pick(w) {
   const q = current();
@@ -196,13 +293,12 @@ GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => 
       content.innerHTML = `<div class="quiz-lock"><div class="big">🔒</div><h1>Sentences</h1><p>This unlocks with Ghar Premium.</p></div>`;
       return;
     }
-    const byID = {};
+    byID = {};
     pack.decks.forEach(d => d.words.forEach(w => { byID[w.id] = w; }));
-    const picked = WANT.map(id => byID[id]).filter(Boolean);
-    if (picked.length < 3) throw new Error("not enough words");
-    questions = picked.map(w => ({ pictureWord: w, prefix: "यो", suffix: "हो।" }));
+    questions = buildRun();
+    if (questions.length < 3) throw new Error("not enough words");
     order = shuffle(questions.map((_, i) => i));
-    dealQuestion();
+    renderPhrases();
   })
   .catch(() => { document.getElementById("error").hidden = false; });
 </script>
@@ -213,6 +309,18 @@ GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => 
 .site-footer a { color: #2e7d32; font-weight: 600; text-decoration: none; }
 .site-footer a:hover { text-decoration: underline; }
 .site-footer .sf-copy { color: #999; font-size: 13px; }
+.sent-tabs { display: flex; gap: 8px; justify-content: center; margin: 10px 0 18px; }
+.sent-tab { border: 2px solid #f0dfba; background: #fff; color: #6b5d43; border-radius: 999px; padding: 9px 18px; font-size: 15px; font-weight: 700; cursor: pointer; }
+.sent-tab.on { background: #2e7d32; border-color: #2e7d32; color: #fff; }
+.sent-pattern { text-align: center; color: #8a7a5c; font-size: 15px; margin: 2px 0 0; }
+.phr-title { text-align: center; margin: 4px 0 6px; }
+.phr-sub { text-align: center; color: #666; margin: 0 0 8px; }
+.phr-group { margin: 22px 0 10px; font-size: 19px; }
+.phr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.phr-card { background: #fff; border: 1px solid #f0dfba; border-radius: 14px; padding: 14px 16px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+.phr-deva { font-size: 24px; font-weight: 700; line-height: 1.35; }
+.phr-rom { color: #8a7a5c; font-size: 14px; margin-top: 2px; }
+.phr-en { color: #444; font-size: 15px; margin-top: 4px; }
 </style>
 <footer class="site-footer">
   <p>🐶 <strong>Ghar</strong> — Nepali for every family.</p>

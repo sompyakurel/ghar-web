@@ -38,6 +38,17 @@
     <p class="auth-note" id="digest-state" hidden></p>
   </div>
   <div class="auth-card">
+    <h2>💌 Share Ghar with another family</h2>
+    <p class="auth-note" style="margin:0 0 12px;">Know another Nepali family who would love this? A parent's word is worth more than any ad. Edit the message however you like, then send it your way:</p>
+    <textarea class="auth-input" id="share-text" rows="4">Hi! We've been using Ghar to help our kids learn Nepali — lessons, games, tracing, and a friendly helper called Bhunte. It's safe (no ads, no strangers) and free to start: https://gharlearn.com</textarea>
+    <div class="share-btns">
+      <button class="quiz-next" id="share-native" type="button" hidden>Share…</button>
+      <a class="share-btn" id="share-whatsapp" href="#" target="_blank" rel="noopener">WhatsApp</a>
+      <a class="share-btn" id="share-email" href="#">Email</a>
+      <button class="share-btn" id="share-copy" type="button">Copy message</button>
+    </div>
+  </div>
+  <div class="auth-card">
     <h2>Add a child</h2>
     <input class="auth-input" id="child-name" type="text" placeholder="Child's first name" maxlength="60">
     <button class="quiz-next" id="add-child">Add child →</button>
@@ -327,6 +338,44 @@ async function load() {
   }
 }
 document.getElementById("sign-out").addEventListener("click", () => GharAuth.signOut());
+// Share-with-a-family card: the parent can edit the message; the
+// WhatsApp / email links re-encode on every keystroke. The native
+// share button only appears where the device offers one. No
+// tracking, no referral codes — just the plain link, per the
+// privacy policy.
+(function () {
+  const ta = document.getElementById("share-text");
+  if (!ta) return;
+  const wa = document.getElementById("share-whatsapp");
+  const em = document.getElementById("share-email");
+  const cp = document.getElementById("share-copy");
+  const nt = document.getElementById("share-native");
+  function syncLinks() {
+    const msg = ta.value;
+    wa.href = "https://wa.me/?text=" + encodeURIComponent(msg);
+    em.href = "mailto:?subject=" + encodeURIComponent("Learning Nepali with Ghar")
+      + "&body=" + encodeURIComponent(msg);
+  }
+  ta.addEventListener("input", syncLinks);
+  syncLinks();
+  if (navigator.share) {
+    nt.hidden = false;
+    nt.addEventListener("click", async () => {
+      try { await navigator.share({ title: "Ghar — Learn Nepali", text: ta.value }); } catch (e) {}
+    });
+  }
+  cp.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(ta.value);
+    } catch (e) {
+      ta.select();
+      document.execCommand("copy");
+    }
+    const old = cp.textContent;
+    cp.textContent = "Copied ✓";
+    setTimeout(() => { cp.textContent = old; }, 2000);
+  });
+})();
 document.getElementById("digest-opt-in").addEventListener("change", async (e) => {
   const box = e.target;
   const state = document.getElementById("digest-state");
@@ -396,6 +445,10 @@ load();
 .show-all-btn:hover { background: #faf5ea; }
 .digest-toggle { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 700; cursor: pointer; }
 .digest-toggle input { width: 20px; height: 20px; accent-color: #2e7d32; cursor: pointer; }
+#share-text { width: 100%; box-sizing: border-box; resize: vertical; font-size: 14px; line-height: 1.5; }
+.share-btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; align-items: center; }
+.share-btn { display: inline-block; border: 1px solid #d8cfc0; background: #fff; color: #2e7d32; border-radius: 999px; padding: 10px 18px; font-size: 14px; font-weight: 700; cursor: pointer; text-decoration: none; }
+.share-btn:hover { background: #faf5ea; }
 </style>
 <style>
 .site-footer { text-align: center; padding: 28px 16px 36px; margin-top: 40px; border-top: 1px solid #e5e0d8; color: #666; font-size: 14px; }
