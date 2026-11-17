@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="style.css?v=37">
 <link rel="stylesheet" href="ask.css?v=3">
 <link rel="stylesheet" href="friends.css?v=2">
+<link rel="stylesheet" href="unlock.css?v=1">
 <script src="https://unpkg.com/@rive-app/webgl2@2.49.4/rive.js" integrity="sha384-RV9aehPhuWkr3poRCN7kYUCRgVmGp02K4UDD9mCdz+3WJC7iu76qMwbys1ctuK7T" crossorigin="anonymous"></script>
 <script src="assets/js/bhunte-rive.js?v=2"></script>
 <style>
@@ -66,7 +67,7 @@
     </a>
     <a class="fg-chip fg-chip-top" id="friends-chip" href="leaderboard.html" hidden></a>
     <a class="signin-btn" id="signin-btn" href="signin.html">👤 Sign in</a>
-    <a class="signin-btn" id="unlock-btn" href="#" hidden>🔓 Unlock — $7.99</a>
+    <a class="signin-btn" id="unlock-btn" href="#" hidden>🔓 Unlock · $7.99 one-time</a>
   </header>
   <nav class="subnav">
     <a href="#lessons">📚 Lessons</a>
@@ -121,6 +122,12 @@
           </a>
         </div>
       </div>
+    </div>
+<div class="unlock-prompt" id="unlock-prompt" hidden>
+      <button class="unlock-prompt-x" id="unlock-prompt-x" type="button" aria-label="Dismiss">✕</button>
+      <p class="unlock-prompt-title">🎉 Lesson complete!</p>
+      <p class="unlock-prompt-text">Unlock <strong>everything</strong> — all lessons, games and writing — for a <strong>one-time $7.99</strong>. No subscription, no renewals.</p>
+      <button class="unlock-prompt-btn" id="unlock-prompt-btn" type="button">🔓 Unlock everything — $7.99 one time</button>
     </div>
     <p class="error" id="error" hidden>Couldn't load the lessons. Check your connection and refresh.</p>
   </section>
@@ -242,6 +249,7 @@
 <script src="auth.js?v=18"></script>
 <script src="ask.js?v=4"></script>
 <script src="friends.js?v=7"></script>
+<script src="unlock.js?v=1"></script>
 <script>if (window.GharFriends) GharFriends.renderChip(document.getElementById("friends-chip"));</script>
 <script>
 const FREE = new Set(["alphabet", "numbers"]);
@@ -447,7 +455,9 @@ GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => 
     unlockBtn.hidden = false;
     unlockBtn.addEventListener("click", (e) => {
       e.preventDefault();
-      GharAuth.startCheckout().catch(() => toast("Could not start checkout — check your connection and try again.", 4000));
+      // The offer modal states plainly that $7.99 is a ONE-TIME payment
+      // (no subscription) before the parent is sent to Stripe Checkout.
+      GharUnlock.show();
     });
   } else {
     unlockBtn.hidden = true;
@@ -608,6 +618,20 @@ GharAuth.pull().catch(() => {}).then(() => GharAuth.refreshUnlock().catch(() => 
           const target = document.querySelector('[data-deck="' + nextDeck.id + '"]') || document.querySelector(".path-row.current");
           if (target) target.scrollIntoView({ behavior: "smooth", block: "center" });
         }, 150);
+      }
+      // Post-lesson unlock prompt: a family that has not unlocked sees
+      // the one-time offer once per completed lesson (this block runs
+      // once — the completion flags were consumed at its top). Guests
+      // see it too; the offer modal routes them to sign-in first.
+      if (!TEST && !GharAuth.isUnlocked()) {
+        const up = document.getElementById("unlock-prompt");
+        if (up) {
+          up.hidden = false;
+          const ub = document.getElementById("unlock-prompt-btn");
+          if (ub) ub.addEventListener("click", () => GharUnlock.show());
+          const ux = document.getElementById("unlock-prompt-x");
+          if (ux) ux.addEventListener("click", () => { up.hidden = true; });
+        }
       }
     }
   })
