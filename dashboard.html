@@ -32,6 +32,12 @@
   <div id="children-list"></div>
   <div data-ask="history"></div>
   <div class="auth-card">
+    <h2>📧 Weekly summary email</h2>
+    <p class="auth-note" style="margin:0 0 12px;">One email each Sunday morning with what your children learned that week — XP, lessons, quizzes, and the questions they asked Bhunte. Only your children, only to you. Off by default; turn it off any time here or from a link in the email.</p>
+    <label class="digest-toggle"><input type="checkbox" id="digest-opt-in"> Email me the weekly summary</label>
+    <p class="auth-note" id="digest-state" hidden></p>
+  </div>
+  <div class="auth-card">
     <h2>Add a child</h2>
     <input class="auth-input" id="child-name" type="text" placeholder="Child's first name" maxlength="60">
     <button class="quiz-next" id="add-child">Add child →</button>
@@ -90,6 +96,8 @@ async function load() {
     await GharAuth.pull().catch(() => {});
     const me = await GharAuth.api("/accounts/me");
     document.getElementById("parent-email").textContent = "Signed in as " + me.email;
+    const digestBox = document.getElementById("digest-opt-in");
+    if (digestBox) digestBox.checked = !!me.digest_opt_in;
     // One aggregate call for everything the cards below need
     // (2026-11-13) instead of 14 requests per child. If a backend
     // too old to know the endpoint answers, ovById stays null and
@@ -319,6 +327,24 @@ async function load() {
   }
 }
 document.getElementById("sign-out").addEventListener("click", () => GharAuth.signOut());
+document.getElementById("digest-opt-in").addEventListener("change", async (e) => {
+  const box = e.target;
+  const state = document.getElementById("digest-state");
+  box.disabled = true;
+  try {
+    const r = await GharAuth.api("/accounts/digest-pref", "POST", { opt_in: box.checked });
+    box.checked = !!r.digest_opt_in;
+    state.hidden = false;
+    state.textContent = box.checked
+      ? "✓ You're on — the first summary arrives Sunday morning, if there's learning to report."
+      : "Weekly summary emails are off.";
+  } catch (err) {
+    box.checked = !box.checked;
+    state.hidden = false;
+    state.textContent = "Couldn't save that — check your connection and try again.";
+  }
+  box.disabled = false;
+});
 document.getElementById("delete-account").addEventListener("click", async () => {
   const err = document.getElementById("delete-error");
   err.hidden = true;
@@ -368,6 +394,8 @@ load();
 .today-line { margin: 0; font-size: 14px; line-height: 1.8; color: #444; }
 .show-all-btn { background: none; border: 1px solid #d8cfc0; color: #6b5d43; border-radius: 999px; padding: 8px 16px; font-size: 13px; font-weight: 700; cursor: pointer; margin: 12px 0 4px; }
 .show-all-btn:hover { background: #faf5ea; }
+.digest-toggle { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 700; cursor: pointer; }
+.digest-toggle input { width: 20px; height: 20px; accent-color: #2e7d32; cursor: pointer; }
 </style>
 <style>
 .site-footer { text-align: center; padding: 28px 16px 36px; margin-top: 40px; border-top: 1px solid #e5e0d8; color: #666; font-size: 14px; }
